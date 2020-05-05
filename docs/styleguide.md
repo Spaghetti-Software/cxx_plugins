@@ -67,7 +67,9 @@ We will be using custom C++ exceptions in our code.
 
 The base class for the error exceptions should have the ability to save information about what line and file the exception has been thrown. This will be used for writting any caught exceptions' information into a log file.
 
->**ADD INFO ABOUT ASSERTIONS AND UNREACHABLE CODE**
+Assertions can be added to the code as long as they can be disabled (like defining NDEBUG).
+
+There should not be any unreachable code without a solid reason (e.g. special case bug fixing with a live debugger) and as a general rule should be avoided.
 
 ## Style Issues
 
@@ -243,3 +245,5 @@ Should utilize CTest.
 ### Fuzz testing
 
 ### Unit testing
+
+For code testing Catch2 or GoogleTest can be used.
