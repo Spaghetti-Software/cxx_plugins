@@ -1,11 +1,42 @@
 # Style Guide
 
+## Version Control
+
+### Versioning
+`MAJOR.MINOR.PATCH`
+Change of version meanings:
+`Major` - breaking changes to the interface were made 
+`Minor` - no breaking changes to the interface(only new functionality)
+`Patch` - change of implementation(bug fixing)
+
+Version number should be synchronized between cmake(or other build systems if used) and git.
+To update git version use:
+`git tag -a "${MAJOR}.${MINOR}.${PATCH}"`
+
+
+### Branching
+
+All development branches should have the following naming convention:
+`dev/${domain}/${feature}`
+
+
+### Github Actions
+
+Github actions should be used to check build status and test code.
+
+`master` branch should use github servers for testing in order to make sure that no special configuration of machine is required to compile and run code.
+
+In order to reduce used hours on github all other branches should use self-hosted servers.
+
+
 ## Files
 
-> All rules apply ony to local files and aren't applied to external repositories
+> All rules apply ony to local files and aren't applied to external repositories.
 
 ##### All files should contain no spaces and capital letters
-Exceptions: readme files  
+**Exceptions:** 
++ readme files  
++ CMakeLists.txt
 
 ##### Project file structure [dev]
 ```
@@ -38,20 +69,6 @@ project
 +-- all binary files
 ```
 
-## Version Control
-
-### Versioning
-`MAJOR.MINOR.PATCH`
-Change of version meanings:
-`Patch` - change of implementation
-`Minor` - no breaking changes to the interface(only new functionality)
-`Major` - breaking changes to the interface were made 
-
-
-### Branching
-
-All development branches should have the following naming convention:
-`dev/${domain}/${feature}`
 
 ## Code style
 
@@ -70,3 +87,6 @@ The base class for the error exceptions should have the ability to save informat
 
 #### Virtual Functions
 #### Virtual Inheritance
+
+
+## Testing
