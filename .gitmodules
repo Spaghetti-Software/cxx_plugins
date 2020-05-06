@@ -1,0 +1,6 @@
+[submodule "build/external/cmake-modules"]
+	path = build/external/cmake-modules
+	url = https://github.com/rpavlik/cmake-modules.git
+[submodule "external/cmake-modules"]
+	path = external/cmake-modules
+	url = https://github.com/rpavlik/cmake-modules.git
