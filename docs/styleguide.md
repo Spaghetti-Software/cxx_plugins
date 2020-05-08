@@ -67,7 +67,12 @@ We will be using custom C++ exceptions in our code.
 
 The base class for the error exceptions should have the ability to save information about what line and file the exception has been thrown. This will be used for writting any caught exceptions' information into a log file.
 
->**ADD INFO ABOUT ASSERTIONS AND UNREACHABLE CODE**
+Custom assertions should be employed to enforce error messages and custom logging. There should be the ability to enable/disable these assertions based on the build and other configurations.
+
+Ureachable code can be used for debugging and the following macro can be used: 
+```cpp
+#define unreachable(message) assert(0 && message)
+```
 
 ## Style Issues
 
@@ -163,9 +168,9 @@ int main() {
 See [Exceptions/Error handling](#exceptionserror-handling)
 
 
-#### #include <iostream> is Forbidden
+#### #include \<iostream\> is Forbidden
 
-> **NEED TO FIND** `iostream` **replacement**
+#include \<iostream\>  
 
 ## Version Control
 
@@ -243,3 +248,5 @@ Should utilize CTest.
 ### Fuzz testing
 
 ### Unit testing
+
+For code testing Catch2 or GoogleTest can be used.
