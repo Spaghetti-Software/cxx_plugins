@@ -37,8 +37,8 @@ Plugin is a class that should represent library. This library can be shared(shou
 **Required functionality:**
 + Function search
 + Class search
-+ Class creation (should be wrapped with some class that provides automatic deletion on destruction)
-+ Creation of polymorphic objects (Same idea as clas)
++ Class creation (should be wrapped with some class that provides automatic deletion on destruction)(only if user provides factories)
++ Creation of polymorphic objects (Same idea as class)
 
 
 ### `PluginManager`
