@@ -50,6 +50,37 @@ Modified standard header(Resharper live template syntax is used):
 4. External includes
 5. System includes
 
+#### Classes design
+
++ Prefer use of member functions for declaring what object can do
++ Prefer use of non-member functions for declaring what can you do with object
+
+Example:
+```cpp
+class Point {
+public:
+  vec2 get_position() const {
+    return pos_m;
+  }
+  void set_position(vec2 val) {
+    pos_m = val;
+  }
+
+  // Wrong, don't do this
+  void translate(vec2 vec) {
+    pos_m += vec
+  }
+
+private:
+  vec2 pos_m;
+};
+
+// Do this instead
+void translate(Point& p, vec2 vec) {
+  p.set_position(p.get_position() + vec);
+}
+```
+
 #### RTTI/Exceptions
 
 LLVM uses custom form of RTTI and prohibits C++ RTTI and exceptions.
