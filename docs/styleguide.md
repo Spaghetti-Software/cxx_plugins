@@ -67,9 +67,12 @@ We will be using custom C++ exceptions in our code.
 
 The base class for the error exceptions should have the ability to save information about what line and file the exception has been thrown. This will be used for writting any caught exceptions' information into a log file.
 
-Assertions can be added to the code as long as they can be disabled (like defining NDEBUG).
+Custom assertions should be employed to enforce error messages and custom logging. There should be the ability to enable/disable these assertions based on the build and other configurations.
 
-There should not be any unreachable code without a solid reason (e.g. special case bug fixing with a live debugger) and as a general rule should be avoided.
+Ureachable code can be used for debugging and the following macro can be used: 
+```cpp
+#define unreachable(message) assert(0 && message)
+```
 
 ## Style Issues
 
