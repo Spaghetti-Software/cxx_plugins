@@ -16,7 +16,7 @@ jobs:
       - self-hosted 
       - ${{matrix.config.os}}
       
-    name: Linux ${{matrix.config.cc}} ${{matrix.config.build_type}}
+    name: ${{matrix.config.os}} ${{matrix.config.cc}} ${{matrix.config.build_type}}
 
     strategy:
       matrix:
