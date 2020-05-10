@@ -28,20 +28,21 @@ project( ${This}
 
 include(cxx_plugins_options)
 include(external_packages_setup)
+include(common_flags)
 
 set(Sources
   src/cxx_plugins.cpp
 )
 set(Headers
   include/cxx_plugins/cxx_plugins.hpp
+  include/cxx_plugins/function_traits.hpp
+  include/cxx_plugins/function_traits.ipp
 )
 
 add_library(${This}
   ${Sources}
   ${Headers}
 )
-
-target_compile_features(${This} PRIVATE cxx_std_20)
 
 
 target_include_directories(${This} PRIVATE src)

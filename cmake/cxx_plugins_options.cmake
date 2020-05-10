@@ -16,3 +16,6 @@ option(CXX_PLUGINS_BUILD_TESTS OFF)
 if (CXX_PLUGINS_BUILD_TESTS)
   enable_testing()
 endif()
+
+# we don't need to install gtest, as we embed it
+option(INSTALL_GTEST OFF)
