@@ -68,4 +68,4 @@ jobs:
     - name: Configure cmake
       run:  |
             cd ${{env.build_dir}}
-            cmake ../../.. -G Ninja -DCMAKE_C_COMPILER=${{env.c_compiler}} -DCMAKE_CXX_COMPILER=${{env.cxx_compiler}} -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCXX_PLUGINS_BUILD_TESTS=ON 
+            cmake ../../.. -G Ninja -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -DCMAKE_BUILD_TYPE=${{env.build_type}} -DCXX_PLUGINS_BUILD_TESTS=ON 
