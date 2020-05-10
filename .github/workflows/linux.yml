@@ -1,0 +1,59 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on: [push,pull_request]
+
+
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build_and_test:
+    # The type of runner that the job will run on
+    runs-on: [self-hosted, linux]
+    
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+        configuration: [Release, Debug]
+        
+    name: Linux ${{matrix.compiler}} ${{matrix.configuration}}
+      
+    
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Setup variables
+    - if: matrix.compiler == 'gcc'
+      env:
+        c_compiler: gcc
+        cxx_compiler: g++
+    - if: matrix.compiler == 'clang'
+      env:
+        c_compiler: clang
+        cxx_compiler: clang++
+      
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Checkout submodules
+      run:  |
+            git submodule sync
+            git submodule update --init --recursive
+    
+    # Create build directory
+    - name: Create build directory
+      run:  |
+            mkdir -p build/linux/${{matrix.configuration}}
+    
+    # Clear build directory
+    - name: Clear old build
+      run:  |
+            rm -rf build/linux/${{matrix.compiler}}_${{matrix.configuration}} 
+    
+    # Configure
+    - name: Configure cmake
+      run:  |
+            cmake -G Ninja -DCMAKE_C_COMPILER=${{env.c_compiler}} -DCMAKE_CXX_COMPILER=${{env.cxx_compiler}} -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCXX_PLUGINS_BUILD_TESTS=ON 
