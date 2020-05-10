@@ -35,15 +35,26 @@ jobs:
             generator: "Unix Makefiles"
             cc: "clang"
             cxx: "clang++"
-            os: linux
+            os: Linux
+            build_dir: build/${{matrix.config.os}}/${{matrix.config.cc}}-${{matrix.config.build_type}}
           - build_type: "Debug"
             generator: "Unix Makefiles"
             cc: "clang"
             cxx: "clang++"
-            os: linux
-    
-    env:
-      build_dir: build/${{matrix.config.os}}/${{matrix.config.cc}}-${{matrix.config.build_type}}
+            os: Linux
+            build_dir: build/${{matrix.config.os}}/${{matrix.config.cc}}-${{matrix.config.build_type}}    
+          - build_type: "Release"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/${{matrix.config.os}}/visual-studio
+          - build_type: "Debug"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/${{matrix.config.os}}/visual-studio
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -56,33 +67,44 @@ jobs:
             git submodule sync
             git submodule update --init --recursive
     
-    # Create build directory
     - name: Create build directory
-      if:   matrix.config.os == 'linux'
+      if:   matrix.config.os == 'Linux'
       run:  |
-            mkdir -p ${{env.build_dir}}
+            mkdir -p ${{matrix.config.build_dir}}
+    - name: Create build directory
+      if:   matrix.config.os == 'Windows'
+      run:  New-Item -Path '${{matrix.config.build_dir}}' -Force -ItemType directory 
     
-    # Clear build directory
+
     - name: Clear old build
-      if:   matrix.config.os == 'linux'
+      if:   matrix.config.os == 'Linux'
       run:  |
-            rm -rf ${{env.build_dir}}/*
+            rm -rf ${{matrix.config.build_dir}}/*
+    - name: Clear old build
+      if:   matrix.config.os == 'Windows'
+      run:  Get-ChildItem -Path ${{matrix.config.build_dir}} -Include *.* -File -Recurse | foreach { $_.Delete()}
             
-    # Configure
+
     - name: Configure cmake
+      if:   matrix.config.os == 'Linux'
       run:  |
-            cd ${{env.build_dir}}
+            cd ${{matrix.config.build_dir}}
             cmake ../../.. -G "${{matrix.config.generator}}" -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}} -DCXX_PLUGINS_BUILD_TESTS=ON
+    - name: Configure cmake
+      if:   matrix.config.os == 'Windows'
+      run:  |
+            cd ${{matrix.config.build_dir}}
+            cmake ../../.. -G "${{matrix.config.generator}}" -DCXX_PLUGINS_BUILD_TESTS=ON
     
-    # Build
+
     - name: Build all
       run:  |
-            cd ${{env.build_dir}}
-            cmake --build . --target all
+            cd ${{matrix.config.build_dir}}
+            cmake --build . --config ${{matrix.config.build_type}} --target all
     
     # Run tests
     - name: Test
       run:  |
-            cd ${{env.build_dir}}
+            cd ${{matrix.config.build_dir}}
             ctest -C ${{matrix.config.build_type}} -V
     
