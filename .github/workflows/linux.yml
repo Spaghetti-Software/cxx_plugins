@@ -52,16 +52,16 @@ jobs:
     # Create build directory
     - name: Create build directory
       run:  |
-            mkdir -p ${{build_dir}}
+            mkdir -p ${{env.build_dir}}
     
     # Clear build directory
     - name: Clear old build
       run:  |
-            rm -rf ${{build_dir}}/*
+            rm -rf ${{env.build_dir}}/*
             
     - name: Change directory
       run:  |
-            cd ${{build_dir}}
+            cd ${{env.build_dir}}
     
     # Configure
     - name: Configure cmake
