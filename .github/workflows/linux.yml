@@ -12,34 +12,37 @@ on: [push,pull_request]
 jobs:
   build_and_test:
     # The type of runner that the job will run on
-    runs-on: [self-hosted, linux]
-    
+    runs-on: 
+      - self-hosted 
+      - ${{matrix.config.os}}
+      
+    name: Linux ${{matrix.config.cc}} ${{matrix.config}}
+
     strategy:
       matrix:
-        compiler: [gcc, clang]
-        configuration: [Release, Debug]
-        
-    name: Linux ${{matrix.compiler}} ${{matrix.configuration}}
-    env:
-      build_dir: build/linux/${{matrix.compiler}}-${{matrix.configuration}}
-      
+        config: 
+          - build_type: "Release"
+            cc: "gcc"
+            cxx: "g++"
+            os: linux
+          - build_type: "Debug"
+            cc: "gcc"
+            cxx: "g++"
+            os: linux
+          - build_type: "Release"
+            cc: "clang"
+            cxx: "clang++"
+            os: linux
+          - build_type: "Debug"
+            cc: "clang"
+            cxx: "clang++"
+            os: linux
     
+    env:
+      build_dir: build/${{matrix.config.os}}/${{matrix.config.cc}}-${{matrix.config.build_type}}
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Setup variables
-    - if: matrix.compiler == 'gcc'
-      env:
-        c_compiler: gcc
-        cxx_compiler: g++
-      run: | 
-            echo "C Compiler: ${{env.c_compiler}} C++ Compiler:${{env.cxx_compiler}}"
-    - if: matrix.compiler == 'clang'
-      env:
-        c_compiler: clang
-        cxx_compiler: clang++
-      run: | 
-            echo "C Compiler: ${{env.c_compiler}} C++ Compiler:${{env.cxx_compiler}}"
-      
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -51,11 +54,13 @@ jobs:
     
     # Create build directory
     - name: Create build directory
+      if:   matrix.config.os == 'linux'
       run:  |
             mkdir -p ${{env.build_dir}}
     
     # Clear build directory
     - name: Clear old build
+      if:   matrix.config.os == 'linux'
       run:  |
             rm -rf ${{env.build_dir}}/*
             
