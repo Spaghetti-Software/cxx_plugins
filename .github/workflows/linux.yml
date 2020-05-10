@@ -56,8 +56,12 @@ jobs:
     - name: Clear old build
       run:  |
             rm -rf build/linux/${{matrix.compiler}}_${{matrix.configuration}} 
+            
+    - name: Change directory
+      run:  |
+            cd build/linux/${{matrix.compiler}}_${{matrix.configuration}} 
     
     # Configure
     - name: Configure cmake
       run:  |
-            cmake -G Ninja -DCMAKE_C_COMPILER=${{env.c_compiler}} -DCMAKE_CXX_COMPILER=${{env.cxx_compiler}} -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCXX_PLUGINS_BUILD_TESTS=ON 
+            cmake ../../.. -G Ninja -DCMAKE_C_COMPILER=${{env.c_compiler}} -DCMAKE_CXX_COMPILER=${{env.cxx_compiler}} -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCXX_PLUGINS_BUILD_TESTS=ON 
