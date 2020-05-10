@@ -59,11 +59,8 @@ jobs:
       run:  |
             rm -rf ${{env.build_dir}}/*
             
-    - name: Change directory
-      run:  |
-            cd ${{env.build_dir}}
-    
     # Configure
     - name: Configure cmake
       run:  |
+            cd ${{env.build_dir}}
             cmake ../../.. -G Ninja -DCMAKE_C_COMPILER=${{env.c_compiler}} -DCMAKE_CXX_COMPILER=${{env.cxx_compiler}} -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCXX_PLUGINS_BUILD_TESTS=ON 
