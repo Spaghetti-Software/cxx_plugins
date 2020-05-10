@@ -16,21 +16,21 @@ jobs:
       - self-hosted 
       - ${{matrix.config.os}}
       
-    name: Linux ${{matrix.config.cc}} ${{matrix.config}}
+    name: Linux ${{matrix.config.cc}} ${{matrix.config.build_type}}
 
     strategy:
       matrix:
         config: 
-          - build_type: "Release"
-            generator: "Unix Makefiles"
-            cc: "gcc"
-            cxx: "g++"
-            os: linux
-          - build_type: "Debug"
-            generator: "Unix Makefiles"
-            cc: "gcc"
-            cxx: "g++"
-            os: linux
+#           - build_type: "Release"
+#             generator: "Unix Makefiles"
+#             cc: "gcc"
+#             cxx: "g++"
+#             os: linux
+#           - build_type: "Debug"
+#             generator: "Unix Makefiles"
+#             cc: "gcc"
+#             cxx: "g++"
+#             os: linux
           - build_type: "Release"
             generator: "Unix Makefiles"
             cc: "clang"
@@ -72,4 +72,17 @@ jobs:
     - name: Configure cmake
       run:  |
             cd ${{env.build_dir}}
-            cmake ../../.. -G "${{matrix.config.generator}}" -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}} -DCXX_PLUGINS_BUILD_TESTS=ON 
+            cmake ../../.. -G "${{matrix.config.generator}}" -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}} -DCXX_PLUGINS_BUILD_TESTS=ON
+    
+    # Build
+    - name: Build all
+      run:  |
+            cd ${{env.build_dir}}
+            cmake --build . --target all
+    
+    # Run tests
+    - name: Test
+      run:  |
+            cd ${{env.build_dir}}
+            ctest -C ${{matrix.config.build_type}} -V
+    
