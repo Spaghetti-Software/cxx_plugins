@@ -19,6 +19,7 @@ jobs:
     name: ${{matrix.config.os}} ${{matrix.config.cc}} ${{matrix.config.build_type}}
 
     strategy:
+      fail-fast: false
       matrix:
         config: 
 #           - build_type: "Release"
