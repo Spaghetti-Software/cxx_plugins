@@ -62,9 +62,8 @@ jobs:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
+      with:
+        submodules: 'recursive'
     
     - name: Create build directory
       if:   matrix.config.os == 'Linux'
