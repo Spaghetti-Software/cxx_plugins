@@ -1,9 +1,8 @@
 /*************************************************************************************************
- * Copyright (C) 2020 by Andrey Ponomarev and Timur Kazhimuratov
- * This file is part of cxx_plugins project.
- * License is available at
- *https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
- *************************************************************************************************/
+* Copyright (C) 2020 by Andrey Ponomarev and Timur Kazhimuratov
+* This file is part of cxx_plugins project.
+ * License is available at https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
+*************************************************************************************************/
 /*!
  * \file    example_api.hpp
  * \author  Andrey Ponomarev
