@@ -16,6 +16,8 @@ set(This CXX_PluginsTests)
 
 set(Sources
   cxx_plugins_tests.cpp
+  example_api.cpp
+  example_api.hpp
 )
 
 add_executable(${This} ${Sources})
@@ -24,7 +26,7 @@ target_link_libraries(${This}
     gtest
     cxx_plugins
 )
-target_compile_features(${This} PRIVATE cxx_std_20)
+
 
 add_test(
   NAME ${This}
