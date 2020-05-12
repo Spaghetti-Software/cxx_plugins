@@ -1,0 +1,68 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on: [push]
+
+
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build_and_test:
+    # The type of runner that the job will run on
+    runs-on: 
+      - self-hosted 
+      - ${{matrix.config.os}}
+      
+    name: ${{matrix.config.os}} ${{matrix.config.cc}} ${{matrix.config.build_type}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - build_type: "Release"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/windows/visual-studio
+          - build_type: "Debug"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/windows/visual-studio
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    
+    - name: Create build directory
+      run:  New-Item -Path '${{matrix.config.build_dir}}' -Force -ItemType directory 
+    
+    - name: Clear old build
+      run:  Get-ChildItem -Path ${{matrix.config.build_dir}} -Include *.* -File -Recurse | foreach { $_.Delete()}
+            
+    - name: Configure cmake
+      run:  |
+            cd ${{matrix.config.build_dir}}
+            cmake ../../.. -G "${{matrix.config.generator}}" -DCXX_PLUGINS_BUILD_TESTS=ON
+    
+
+    - name: Build all
+      run:  |
+            cd ${{matrix.config.build_dir}}
+            cmake --build . --config ${{matrix.config.build_type}} --target all
+    
+    # Run tests
+    - name: Test
+      run:  |
+            cd ${{matrix.config.build_dir}}
+            ctest -C ${{matrix.config.build_type}} -V
+    
