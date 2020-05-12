@@ -1,11 +1,17 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,llvm*,readability*,modernize*,clang*'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,llvm*,readability*,modernize*,clang*,readability-identifier-naming'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            andrey
 CheckOptions:
+  - { key: readability-identifier-naming.ClassCase,     value: CamelCase }
+  - { key: readability-identifier-naming.VariableCase,  value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase,  value: camelBack }
+  - { key: readability-identifier-naming.MemberSuffix,  value: _m        }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_casegi }
+  - { key: readability-identifier-naming.PointerParameterSuffix, value: _p}
   - key:             cert-dcl16-c.NewSuffixes
     value:           'L;LL;LU;LLU'
   - key:             cert-oop54-cpp.WarnOnlyIfThisHasSuspiciousField
