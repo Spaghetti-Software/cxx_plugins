@@ -11,7 +11,7 @@
 # This file contains initialization for cached variables and options of project
 
 option(CXX_PLUGINS_BUILD_TESTS OFF)
-
+option(CXX_PLUGINS_SHARED      OFF)
 
 if (CXX_PLUGINS_BUILD_TESTS)
   enable_testing()
