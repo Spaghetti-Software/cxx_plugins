@@ -18,50 +18,77 @@
  */
 #pragma once
 
-namespace ExampleCpp {
+#include <cstddef>
 
-class Shape {
+namespace ExampleCppAPI {
+
+struct Shape {
 public:
+  virtual ~Shape() = default;
   virtual void translate(float x, float y) = 0;
   virtual void rotate(float angle) = 0;
   virtual void draw() const = 0;
 };
+} // namespace ExampleCppAPI
 
-} // namespace ExampleCpp
+namespace ExampleCPPImpl {
+
+struct Circle : public ExampleCppAPI::Shape {
+public:
+  Circle() noexcept = default;
+  Circle(float x, float y, float radius) noexcept;
+
+  void translate(float x, float y) noexcept override;
+  void rotate([[maybe_unused]] float angle) noexcept override;
+
+  void draw() const noexcept override;
+
+  float x_m = 0.f;
+  float y_m = 0.f;
+  float radius_m = 0.f;
+};
+} // namespace ExampleCPPImpl
 
 // C example
 extern "C" {
-  struct ExampleC_Shape;
 
-  using ExampleC_Shape_translate = void(*)(ExampleC_Shape* shape_p, float x, float y);
-  using ExampleC_Shape_rotate = void(*)(ExampleC_Shape* shape_p, float angle);
-  using ExampleC_Shape_draw = void(*)(const ExampleC_Shape* shape_p);
+struct ExampleC_Shape;
+
+struct CAllocator {
+  void *(*allocate_fn)(size_t size, void *user_data) = nullptr;
+  void *user_data = nullptr;
+};
+
+using ExampleC_Shape_create = ExampleC_Shape *(*)();
+using ExampleC_Shape_translate = void (*)(ExampleC_Shape *shape_p, float x,
+                                          float y);
+using ExampleC_Shape_rotate = void (*)(ExampleC_Shape *shape_p, float angle);
+using ExampleC_Shape_draw = void (*)(const ExampleC_Shape *shape_p);
 }
+
+extern "C" {}
 
 namespace ExampleHybrid {
 
 class Shape;
 
-using translate_fn_p_t = void(*)(Shape*, float x, float y);
-using rotate_fn_p_t = void(*)(Shape*, float x, float y);
-using draw_fn_p_t = void(*)(const Shape*);
+using translate_fn_p_t = void (*)(Shape *, float x, float y);
+using rotate_fn_p_t = void (*)(Shape *, float x, float y);
+using draw_fn_p_t = void (*)(const Shape *);
 
 // Folliwng sections should be replaced with polymorphic
 
 struct ShapeVtable {
-  translate_fn_p_t  translate_p;
-  rotate_fn_p_t     rotate_p;
-  draw_fn_p_t       draw_p;
+  translate_fn_p_t translate_p;
+  rotate_fn_p_t rotate_p;
+  draw_fn_p_t draw_p;
 };
 
 class ShapePolymorphic {
-  private:
+private:
   // vtable pointer/variable
   // pointer to value
   // destroy function
 };
 
-
-
-  
-} // namespace ExampleHybrid 
+} // namespace ExampleHybrid
