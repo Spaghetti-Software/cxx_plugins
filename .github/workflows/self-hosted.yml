@@ -22,28 +22,40 @@ jobs:
       fail-fast: false
       matrix:
         config: 
-#           - build_type: "Release"
-#             generator: "Unix Makefiles"
-#             cc: "gcc"
-#             cxx: "g++"
-#             os: linux
-#           - build_type: "Debug"
-#             generator: "Unix Makefiles"
-#             cc: "gcc"
-#             cxx: "g++"
-#             os: linux
           - build_type: "Release"
-            generator: "Unix Makefiles"
+            generator: "Ninja"
+            cc: "gcc"
+            cxx: "g++"
+            os: linux
+          - build_type: "Debug"
+            generator: "Ninja"
+            cc: "gcc"
+            cxx: "g++"
+            os: linux
+          - build_type: "Release"
+            generator: "Ninja"
             cc: "clang"
             cxx: "clang++"
             os: Linux
             build_dir: build/linux/clang-release
           - build_type: "Debug"
-            generator: "Unix Makefiles"
+            generator: "Ninja"
             cc: "clang"
             cxx: "clang++"
             os: Linux
             build_dir: build/linux/clang-debug
+          - build_type: "Release"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/windows/visual-studio
+          - build_type: "Debug"
+            generator: "Visual Studio 16 2019"
+            cc: cl
+            cxx: cl
+            os: Windows
+            build_dir: build/windows/visual-studio
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -80,13 +92,13 @@ jobs:
       if:   matrix.config.os == 'Windows'
       run:  |
             cd ${{matrix.config.build_dir}}
-            cmake ../../.. -G "${{matrix.config.generator}}" -DCXX_PLUGINS_BUILD_TESTS=ON
+            cmake ../../.. -G "${{matrix.config.generator}}" -A x64 -DCXX_PLUGINS_BUILD_TESTS=ON
     
 
     - name: Build all
       run:  |
             cd ${{matrix.config.build_dir}}
-            cmake --build . --config ${{matrix.config.build_type}} --target all
+            cmake --build . --config ${{matrix.config.build_type}}
     
     # Run tests
     - name: Test
