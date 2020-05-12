@@ -41,7 +41,7 @@ target_sources(${This}
     src/cxx_plugins.cpp
   PUBLIC
     include/cxx_plugins/cxx_plugins.hpp
-    include/cxx_plugins/function_traits.hpp
+        include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
 )
 
