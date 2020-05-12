@@ -44,18 +44,6 @@ jobs:
             cxx: "clang++"
             os: Linux
             build_dir: build/linux/clang-debug
-          - build_type: "Release"
-            generator: "Visual Studio 16 2019"
-            cc: cl
-            cxx: cl
-            os: Windows
-            build_dir: build/windows/visual-studio
-          - build_type: "Debug"
-            generator: "Visual Studio 16 2019"
-            cc: cl
-            cxx: cl
-            os: Windows
-            build_dir: build/windows/visual-studio
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
