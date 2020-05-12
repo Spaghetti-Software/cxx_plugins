@@ -27,11 +27,13 @@ jobs:
             cc: "gcc"
             cxx: "g++"
             os: Linux
+            build_dir: build/linux/gcc-release
           - build_type: "Debug"
             generator: "Ninja"
             cc: "gcc"
             cxx: "g++"
             os: Linux
+            build_dir: build/linux/gcc-debug
           - build_type: "Release"
             generator: "Ninja"
             cc: "clang"
