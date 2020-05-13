@@ -19,8 +19,10 @@
  * \attention   Don't use FunctionPointer like this:
  *              auto ptr = FunctionPointer<Signature>(fn);
  *              As it casts any function to the given Signature. Use this
- * instead: FunctionPointer<Signature> ptr = fn; Or this(for safe cast): auto
- * ptr = functionPointerCast<Signature>(fn);
+ *              instead: FunctionPointer<Signature> ptr = fn;
+ *              Or this(for safe cast):
+ *              auto ptr = functionPointerCast<Signature>(fn);
+ * \todo Finish documentation in function_traits.hpp
  */
 #pragma once
 

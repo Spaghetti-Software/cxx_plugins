@@ -34,14 +34,15 @@ include(cxx_plugins_options)
 include(external_packages_setup)
 include(common_flags)
 
-add_library(${This} STATIC)
+add_library(${This} STATIC include/cxx_plugins/definitions.hpp)
 
 target_sources(${This}
   PRIVATE
     src/cxx_plugins.cpp
   PUBLIC
+    include/cxx_plugins/vtable.hpp
     include/cxx_plugins/cxx_plugins.hpp
-        include/cxx_plugins/function_traits.hpp
+    include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
 )
 
