@@ -24,6 +24,8 @@
  */
 #pragma once
 
+#include <utility>
+
 namespace utility {
 
 namespace impl {
@@ -31,6 +33,8 @@ namespace impl {
 template <typename Signature, typename Class = void>
 struct SignatureToFunctionPointerImpl;
 
+template <typename T, bool IsClass = std::is_class_v<std::decay_t<T>>>
+struct IsCallableImpl;
 } // namespace impl
 
 template <typename T> struct FunctionTraits;
@@ -65,6 +69,9 @@ template <typename Signature, typename Class,
           FunctionPointer<Signature, Class> method>
 constexpr auto castMethodToFunction();
 
+template <typename T>
+static constexpr bool is_callable_v = impl::IsCallableImpl<T>::value;
+
 } // namespace utility
 
-#include "function_traits.ipp"
+#include <cxx_plugins/function_traits.ipp>
