@@ -11,29 +11,15 @@
  * \brief
  *
  * \todo Finish documentation
+ * \todo Split file(too many templates related only to implementation)
  */
 #pragma once
 
 #include "cxx_plugins/definitions.hpp"
 #include "cxx_plugins/function_traits.hpp"
-
-#include <functional>
-#include <type_traits>
+#include "cxx_plugins/tuple.hpp"
 
 namespace CxxPlugins {
-
-template <typename... Targs> using Tuple = std::tuple<Targs...>;
-
-template <size_t I, typename T>
-using TupleElement = typename std::tuple_element<I, T>::type;
-
-template <size_t id, typename T> static constexpr auto get(T &&val) -> auto & {
-  return std::get<id>(std::forward<T>(val));
-}
-
-template <size_t id, typename T> static constexpr auto get(T &val) -> auto & {
-  return std::get<id>(val);
-}
 
 template <typename Tag, typename Fn> struct Entry {
   static_assert(

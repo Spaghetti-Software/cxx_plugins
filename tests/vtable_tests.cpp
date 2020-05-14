@@ -14,6 +14,7 @@
  */
 #include <cxx_plugins/vtable.hpp>
 
+
 #include <gtest/gtest.h>
 
 struct Foo {};

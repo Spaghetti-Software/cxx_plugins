@@ -17,8 +17,8 @@
 #include <cstdlib>
 #include <string_view>
 
-static constexpr void cxxPluginsAssert(bool condition,
-                                       std::string_view message) {
+static constexpr void cxxPluginsAssert([[maybe_unused]] bool condition,
+                                       [[maybe_unused]] std::string_view message) {
 #if defined(CXX_PLUGINS_ENABLE_ASSERT) || !defined(NDEBUG)
   if (!condition) {
     fprintf(stderr, "Assertion failed: %*.*s", int(message.size()),

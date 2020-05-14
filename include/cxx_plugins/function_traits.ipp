@@ -77,19 +77,7 @@ struct TrampolineGeneratorImpl<ptr, InputT> {
   static constexpr auto value = &fnImpl;
 };
 
-/*!
- * This class helps with detecting callable objects
- *
- * This solution was taken from here:
- * https://stackoverflow.com/questions/15393938/find-out-whether-a-c-object-is-callable
- *
- * \note It doesn't work with methods but can be extended.
- *
- *
- * @tparam T        object/function pointer will give true, anything else will
- * give false
- * @tparam IsClass  DO NOT SPECIFY
- */
+
 template <typename T, bool IsClass> struct IsCallableImpl;
 
 template <typename T> struct IsCallableImpl<T, true> {

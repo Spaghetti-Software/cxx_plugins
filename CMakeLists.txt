@@ -34,7 +34,7 @@ include(cxx_plugins_options)
 include(external_packages_setup)
 include(common_flags)
 
-add_library(${This} STATIC include/cxx_plugins/definitions.hpp)
+add_library(${This} STATIC)
 
 target_sources(${This}
   PRIVATE
@@ -44,6 +44,8 @@ target_sources(${This}
     include/cxx_plugins/cxx_plugins.hpp
     include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
+    include/cxx_plugins/tuple.hpp
+    include/cxx_plugins/definitions.hpp
 )
 
 
@@ -63,6 +65,9 @@ endif()
 
 if(CXX_PLUGINS_BUILD_TESTS)
   add_subdirectory(tests)
+endif()
+if(CXX_PLUGINS_BUILD_DOCUMENTATION)
+  add_subdirectory(docs)
 endif()
 
 
