@@ -15,7 +15,6 @@
 
 #include <cxx_plugins/function_traits.hpp>
 
-#include <sys/cdefs.h>
 #include <type_traits>
 #include <utility>
 

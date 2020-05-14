@@ -24,24 +24,25 @@ set(This cxx_plugins)
 
 project( ${This}
   VERSION ${VERSION}
+  DESCRIPTION     "Create/manage external libraries with plugin manager"
+  HOMEPAGE_URL    "https://github.com/Spaghetti-Software/cxx_plugins"
+  LANGUAGES       C CXX
 )
+
 
 include(cxx_plugins_options)
 include(external_packages_setup)
 include(common_flags)
 
-set(Sources
-  src/cxx_plugins.cpp
-)
-set(Headers
-  include/cxx_plugins/cxx_plugins.hpp
-  include/cxx_plugins/function_traits.hpp
-  include/cxx_plugins/function_traits.ipp
-)
+add_library(${This} STATIC)
 
-add_library(${This}
-  ${Sources}
-  ${Headers}
+target_sources(${This}
+  PRIVATE
+    src/cxx_plugins.cpp
+  PUBLIC
+    include/cxx_plugins/cxx_plugins.hpp
+        include/cxx_plugins/function_traits.hpp
+    include/cxx_plugins/function_traits.ipp
 )
 
 
