@@ -1,6 +1,5 @@
-#include <utility>
 
-namespace utility {
+namespace CxxPlugins::utility {
 
 template <typename Return, typename... Args>
 struct FunctionTraits<Return(Args...)> {
@@ -38,6 +37,10 @@ struct SignatureToFunctionPointerImpl<Return(Args...), void> {
   using type = Return (*)(Args...);
 };
 
+template <typename Return, typename... Args>
+struct SignatureToFunctionPointerImpl<Return (*)(Args...), void>
+    : public SignatureToFunctionPointerImpl<Return(Args...)> {};
+
 template <typename Return, typename... Args, typename Class>
 struct SignatureToFunctionPointerImpl<Return(Args...), Class> {
   using type = Return (Class::*)(Args...);
@@ -53,21 +56,63 @@ template <auto method, typename InputT> struct TrampolineGeneratorImpl;
 template <typename Class, typename Return, typename... Args,
           Return (Class::*ptr)(Args...), typename InputT>
 struct TrampolineGeneratorImpl<ptr, InputT> {
-  static constexpr FunctionPointer<Return(InputT *, Args...)> value =
-      [](InputT *input_p, Args... args) -> Return {
+
+  static constexpr Return fnImpl(InputT *input_p, Args... args) {
     auto obj_p = static_cast<Class *>(input_p);
     return (obj_p->*ptr)(std::forward<Args>(args)...);
-  };
+  }
+
+  static constexpr auto value = &fnImpl;
 };
 
 template <typename Class, typename Return, typename... Args,
           Return (Class::*ptr)(Args...) const, typename InputT>
 struct TrampolineGeneratorImpl<ptr, InputT> {
-  static constexpr FunctionPointer<Return(const InputT *, Args...)> value =
-      [](const InputT *input_p, Args... args) -> Return {
-    const auto* obj_p = static_cast<const Class *>(input_p);
+
+  static constexpr Return fnImpl(const InputT *input_p, Args... args) {
+    const auto *obj_p = static_cast<const Class *>(input_p);
     return (obj_p->*ptr)(std::forward<Args>(args)...);
+  }
+
+  static constexpr auto value = &fnImpl;
+};
+
+
+template <typename T, bool IsClass> struct IsCallableImpl;
+
+template <typename T> struct IsCallableImpl<T, true> {
+private:
+  using yes = char (&)[1];
+  using no = char (&)[2];
+
+  struct Fallback {
+    void operator()();
   };
+  struct Derived : T, Fallback {};
+
+  template <typename U, U> struct Check;
+
+  template <typename> static yes test(...);
+
+  template <typename C>
+  static no test(Check<void (Fallback::*)(), &C::operator()> *);
+
+public:
+  static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(yes);
+};
+
+template <typename Return, typename... Args>
+struct IsCallableImpl<Return (*)(Args...), false> {
+  static constexpr bool value = true;
+};
+
+template <typename Return, typename... Args>
+struct IsCallableImpl<Return(Args...), false> {
+  static constexpr bool value = true;
+};
+
+template <typename T> struct IsCallableImpl<T, false> {
+  static constexpr bool value = false;
 };
 
 } // namespace impl
@@ -79,7 +124,8 @@ template <auto method> constexpr auto castMethodToFunction() {
   return generateTrampoline<method, typename Traits::ClassType>();
 }
 
-template <typename Signature, typename Class, FunctionPointer<Signature, Class> method>
+template <typename Signature, typename Class,
+          FunctionPointer<Signature, Class> method>
 constexpr auto castMethodToFunction() {
   return generateTrampoline<method, Class>();
 }
@@ -91,9 +137,9 @@ template <auto method, typename InputT> constexpr auto generateTrampoline() {
 }
 
 template <typename Signature, typename Class,
-    FunctionPointer<Signature, Class> method, typename InputT>
+          FunctionPointer<Signature, Class> method, typename InputT>
 constexpr auto generateTrampoline() {
   return generateTrampoline<method, InputT>();
 }
 
-} // namespace utility
+} // namespace CxxPlugins::utility
