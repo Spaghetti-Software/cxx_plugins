@@ -26,7 +26,7 @@ struct Foo {
 } // namespace
 
 TEST(FunctionPointerTests, SimpleFn) {
-
+  using namespace CxxPlugins;
   auto expected_fn = &simpleFunction;
   auto result_fn = utility::functionPointerCast<void()>(simpleFunction);
   EXPECT_EQ(expected_fn, result_fn);
@@ -36,6 +36,7 @@ TEST(FunctionPointerTests, SimpleFn) {
 }
 
 TEST(FunctionPointerTests, OverloadedFn) {
+  using namespace CxxPlugins;
   using type0 = void (*)();
   using type1 = void (*)(int);
   auto expected_overloaded0 = type0(overloadedFunction);
@@ -55,6 +56,8 @@ TEST(FunctionPointerTests, OverloadedFn) {
 }
 
 TEST(FunctionPointerTests, SimpleMethod) {
+  using namespace CxxPlugins;
+
   auto expected_fn = &Foo::simpleMethod;
   auto result_fn = utility::functionPointerCast<int(), Foo>(&Foo::simpleMethod);
 
@@ -65,6 +68,7 @@ TEST(FunctionPointerTests, SimpleMethod) {
 }
 
 TEST(FunctionPointerTests, OverloadedMethod) {
+  using namespace CxxPlugins;
   using type0 = int (Foo::*)();
   using type1 = int (Foo::*)(int);
   using type2 = int (Foo::*)() const;
@@ -93,6 +97,7 @@ TEST(FunctionPointerTests, OverloadedMethod) {
 }
 
 TEST(castMethodToFunctionTests, SimpleFunction) {
+  using namespace CxxPlugins;
 
   Foo f;
   auto expected = f.simpleMethod();
@@ -105,6 +110,7 @@ TEST(castMethodToFunctionTests, SimpleFunction) {
 }
 
 TEST(castMethodToFunctionTests, OverloadedFunction) {
+  using namespace CxxPlugins;
   Foo f;
 
   auto expected0 = f.overloadedMethod();
@@ -131,6 +137,7 @@ TEST(castMethodToFunctionTests, OverloadedFunction) {
 }
 
 TEST(voidTrampolineTest, SimpleMethod) {
+  using namespace CxxPlugins;
 
   Foo f;
   auto expected = f.simpleMethod();
@@ -143,6 +150,8 @@ TEST(voidTrampolineTest, SimpleMethod) {
 }
 
 TEST(voidTrampolineTest, OverloadedMethod) {
+  using namespace CxxPlugins;
+
   Foo f;
 
   auto expected0 = f.overloadedMethod();

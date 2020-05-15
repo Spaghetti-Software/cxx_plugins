@@ -19,15 +19,25 @@
 #include <tuple>
 
 namespace CxxPlugins {
-template <typename... Targs> using Tuple = std::tuple<Targs...>;
+/*!
+ * \brief Alias for tuple.
+ * \details
+ * We need to alias tuple as we might need to change tuple type to be
+ * a pod. This might be required to be able to transfer tuples between shared
+ * libraries compiled with different compilers/versions of compilers.
+ */
+template <typename... TArgs> using Tuple = std::tuple<TArgs...>;
 
+//! Alias for std::tuple_element
 template <size_t I, typename T>
 using TupleElement = typename std::tuple_element<I, T>::type;
 
+//! Alias for std::get(<tuple>)
 template <size_t id, typename T> static constexpr auto get(T &&val) -> auto & {
   return std::get<id>(std::forward<T>(val));
 }
 
+//! Alias for std::get(<tuple>)
 template <size_t id, typename T> static constexpr auto get(T &val) -> auto & {
   return std::get<id>(val);
 }

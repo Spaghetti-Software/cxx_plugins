@@ -11,14 +11,23 @@
  *
  * \brief Provides helper classes/functions to work with methods and functions.
  *
- * \todo Finish documentation in function_traits.hpp
  */
 #pragma once
 
 #include <utility>
 
-namespace utility {
 
+
+/*!
+ * \brief Contains helper functions/classes
+ * \details
+ * Inside this namespace you will mainly find classes and functions used
+ * in implementation but they are generic and can be used by external
+ * applications.
+ */
+namespace CxxPlugins::utility {
+
+// implementation details
 namespace impl {
 
 template <typename Signature, typename Class = void>
@@ -28,18 +37,42 @@ template <typename T, bool IsClass = std::is_class_v<std::decay_t<T>>>
 struct IsCallableImpl;
 } // namespace impl
 
+/*!
+ * \brief Provides traits for given function
+ * \tparam T [Signature|Function Pointer|Pointer to Member Function]
+ */
+#ifdef DOXYGEN
+template <typename T> struct FunctionTraits {
+  //! \brief Return type of the function/method
+  using ReturnType = Return;
+  //! \brief `std::tuple` of function/method arguments
+  using ArgsTuple = std::tuple<Args...>;
+  //! \brief `true` if pointer to member function, `false` otherwise
+  static constexpr bool is_method;
+  //! \brief
+  //! `true` if method is const, `false` otherwise.
+  //! Exists only if `is_method = true`.
+  static constexpr bool is_const;
+  //! \brief
+  //! Class of the given method.
+  //! Exists only if `is_method = true`.
+  using ClassType = Class;
+};
+#else
 template <typename T> struct FunctionTraits;
+#endif
 
 /*!
- *
+ * \brief
+ * Converts signature into pointer type.
+ * Simplifies function pointer declaration.
  * \tparam Signature    Should be used in the way you will do it in
  *                      std::function
  * \tparam Class        Optional parameter if given function is method of
  *                      this class.
- * \brief Converts signature into pointer type.
- *        Simplifies function pointer declaration.
- * \subsubsection ex Example
- * \code
+ * \details
+ * # Example:
+ * ```cpp
  * void foo();
  * void foo(int);
  *
@@ -58,29 +91,35 @@ template <typename T> struct FunctionTraits;
  *  bar b;
  *  (b->*bar_call)();
  * }
- * \endcode
+ * ```
  * \attention
  * Don't use FunctionPointer like this:
- * \code
+ * ```cpp
  * auto ptr = FunctionPointer<Signature>(fn);
- * \endcode
- * As it is essentially a c cast. And compiler will not warn you about something like this:
- * \code
+ * ```
+ * \details
+ * As it is essentially a c cast. And compiler will not warn you about something
+ * like this:
+ * ```cpp
  * void foo();
  *
  * void bar() {
  *  auto ptr = FunctionPointer<void(int)>(foo);
- *  ptr(4); // undefined behavior sanitizer might help detect this
+ *  ptr(4); // Undefined behavior. Sanitizer might help detect this.
  * }
- * \endcode
+ * ```
+ *
  * Use this instead:
- * \code
+ *
+ * ```cpp
  * FunctionPointer<Signature> ptr = fn;
- * \endcode
+ * ```
+ *
  * Or use functionPointerCast<Signature,Class>() for safe cast:
- * \code
+ *
+ * ```cpp
  * auto ptr = functionPointerCast<Signature>(fn);
- * \endcode
+ * ```
  */
 template <typename Signature, typename Class = void>
 using FunctionPointer =
@@ -98,8 +137,10 @@ using FunctionPointer =
  * \param fn_ptr        Pointer to function/method
  * \return Returns pointer to function/method that was passed inside
  * functionPointerCast
- * \subsubsection ex Example
- * \code
+ *
+ * \details
+ * # Example:
+ * ```cpp
  * void foo();
  * void foo(int);
  *
@@ -114,11 +155,11 @@ using FunctionPointer =
  *  foo_empty();
  *
  *  // take const method
- *  auto bar_call = functionPointerCast<void()const,bar>(&bar::call);
+ *  auto bar_call = functionPointerCast<void() const, bar>(&bar::call);
  *  bar b;
  *  (b->*bar_call)();
  * }
- * \endcode
+ * ```
  *
  */
 template <typename Signature, typename Class = void>
@@ -127,19 +168,60 @@ constexpr auto functionPointerCast(FunctionPointer<Signature, Class> fn_ptr) {
 }
 
 /*!
- * \brief  Generates trampoline function that casts given InputT pointer to
- *         the underlying class.
+ * \brief
+ * Generates trampoline function that casts given InputT pointer to
+ * the underlying class.
  * \tparam method   Pointer to member function
  * \tparam InputT   Conversion type
  * \return pointer to the function of the form `Return(InputT*, TArgs...)`
  *
+ * \details
+ * Essentially it generates function and returns pointer to it.
+ * For example given method of this type: `void(foo::*)()const`
+ * will give you function with signature `void(const InputT*)`.
+ * (by default InputT = void)
+ *
+ * # Example:
+ * ```cpp
+ * struct foo {
+ *  void call();
+ * };
+ *
+ * void bar() {
+ *  foo f;
+ *  auto fn_ptr = generateTrampoline<&foo::call>(); // void(*)(void*);
+ *  fn_ptr(&f);
+ * }
+ * ```
  *
  */
 template <auto method, typename InputT = void>
 constexpr auto generateTrampoline();
 
 /*!
+ * \brief
+ * This is an overloaded function, provided for convenience.
+ * It differs from the above function only in what argument(s) it accepts.
+ * \tparam Signature Method signature
+ * \tparam Class     Class of the provided method
+ * \tparam method    Pointer to member function
+ * \tparam InputT    Conversion type
+ * \return pointer to the function of the form `Return(InputT*, TArgs...)`
+ * \details
+ * Simplifies generating overloaded methods.
+ * # Example:
+ * ```cpp
+ * struct foo {
+ *  void call();
+ *  void call() const;
+ * };
  *
+ * void bar() {
+ *  foo f;
+ *  auto fn_ptr = generateTrampoline<void() const, foo, &foo::call>(); //
+ * void(*)(const void*); fn_ptr(&f);
+ * }
+ * ```
  */
 template <typename Signature, typename Class,
           FunctionPointer<Signature, Class> method, typename InputT = void>
@@ -156,8 +238,8 @@ constexpr auto generateTrampoline();
  *
  * Uses generateTrampoline<Signature,ClassOfTheMethod>() internally.
  *
- * \subsubsection ex Example
- * \code
+ * # Example:
+ * ```cpp
  * struct foo {
  *  void call();
  * };
@@ -167,17 +249,23 @@ constexpr auto generateTrampoline();
  *  foo f;
  *  fn(&f);
  * }
+ * ```
  *
- * \endcode
  */
 template <auto method> constexpr auto castMethodToFunction();
 /*!
- * \brief  Simplifies casting overloaded methods
+ * \brief
+ * This is an overloaded function, provided for convenience.
+ * It differs from the above function only in what argument(s) it accepts.
  * \tparam Signature Forced signature of the method
  * \tparam Class     Class of the method
  * \tparam method    Pointer to method
- * \subsubsection ex Example
- * \code
+ * \details
+ *
+ * Simplifies generating overloaded methods.
+ * # Example:
+ *
+ * ```cpp
  * struct foo {
  *  void call();
  *  void call() const;
@@ -189,15 +277,20 @@ template <auto method> constexpr auto castMethodToFunction();
  *  const foo f;
  *  fn(&f);
  * }
- * \endcode
+ * ```
  */
 template <typename Signature, typename Class,
           FunctionPointer<Signature, Class> method>
 constexpr auto castMethodToFunction();
 
+/*!
+ * \brief       Checks if given type is callable
+ * \attention   Returns `false` for pointers to member functions
+ * As syntax of calling member functions differs from regular functions.
+ */
 template <typename T>
 static constexpr bool is_callable_v = impl::IsCallableImpl<T>::value;
 
-} // namespace utility
+} // namespace CxxPlugins::utility
 
 #include <cxx_plugins/function_traits.ipp>

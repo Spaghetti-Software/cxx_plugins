@@ -1,5 +1,5 @@
 
-namespace utility {
+namespace CxxPlugins::utility {
 
 template <typename Return, typename... Args>
 struct FunctionTraits<Return(Args...)> {
@@ -142,4 +142,4 @@ constexpr auto generateTrampoline() {
   return generateTrampoline<method, InputT>();
 }
 
-} // namespace utility
+} // namespace CxxPlugins::utility

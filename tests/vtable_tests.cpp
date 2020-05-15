@@ -14,7 +14,6 @@
  */
 #include <cxx_plugins/vtable.hpp>
 
-
 #include <gtest/gtest.h>
 
 struct Foo {};
@@ -36,7 +35,7 @@ int barFn(int) {
 // showing that both methods of declaring type should work
 // (function pointer and function)
 using foo_type = decltype(&fooFn);
-using bar_type = utility::FunctionPointer<int(int)>;
+using bar_type = CxxPlugins::utility::FunctionPointer<int(int)>;
 
 TEST(VTableTests, CompileSimpleCtors) {
   using namespace CxxPlugins;
@@ -92,11 +91,9 @@ struct Baz {};
 
 static constexpr Baz baz_tag;
 
-void bazFn(void*, void*) {
+void bazFn(void *, void *) {}
 
-}
-
-TEST(VTableTests, UpCasting) {
+TEST(VTableTests, Conversions) {
   using namespace CxxPlugins;
   auto derived_table =
       makeVTable(makeEntry(foo_tag, fooFn), makeEntry(bar_tag, barFn));
@@ -106,8 +103,6 @@ TEST(VTableTests, UpCasting) {
 
   EXPECT_EQ(&fooFn, base_table0[foo_tag]);
   EXPECT_EQ(&barFn, base_table1[bar_tag]);
-
-
 
   auto recreated_table = makeVTableSuperset(base_table0, base_table1);
   EXPECT_EQ(&fooFn, recreated_table[foo_tag]);
@@ -119,7 +114,11 @@ TEST(VTableTests, UpCasting) {
   EXPECT_EQ(&barFn, bigger_table[bar_tag]);
   EXPECT_EQ(&bazFn, bigger_table[baz_tag]);
 
-
   auto base_table2 = makeVTableSubset(std::move(derived_table), foo_tag);
   EXPECT_EQ(&fooFn, base_table2[foo_tag]);
+
+  [[maybe_unused]] VTable<Entry<Bar, bar_type>, Entry<Foo, foo_type>>
+      swapped_table(bigger_table);
+  EXPECT_EQ(&fooFn, swapped_table[foo_tag]);
+  EXPECT_EQ(&barFn, swapped_table[bar_tag]);
 }
