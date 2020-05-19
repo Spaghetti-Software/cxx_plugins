@@ -43,6 +43,9 @@ target_sources(${This}
     include/cxx_plugins/cxx_plugins.hpp
         include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
+    include/cxx_plugins/memory/stack_allocator.hpp
+    include/cxx_plugins/memory/alligned_allocator.hpp
+    include/cxx_plugins/memory/mallocator.hpp
 )
 
 

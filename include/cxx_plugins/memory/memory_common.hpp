@@ -14,8 +14,7 @@
  */
 #pragma once
 
-struct mem_block
-{
-    void* ptr;
-    size_t size;
+struct mem_block {
+  void *ptr;
+  size_t size;
 };

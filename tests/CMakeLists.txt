@@ -19,6 +19,7 @@ target_sources(${This}
   PRIVATE
     cxx_plugins_tests.cpp
     function_traits_tests.cpp
+    allocators_tests.cpp
 
     example_api.cpp
     example_api.hpp

@@ -16,27 +16,48 @@
 
 #include "memory_common.hpp"
 
-template <size_t s>
-class stack_allocator
-{
+namespace utility {
+
+template <size_t S>
+class StackAllocator {
 public:
-    constexpr stack_allocator() noexcept : p(stack) {}
-    constexpr ~stack_allocator() {}
-    constexpr decltype(auto) allocate(size_t n)
-    {
-        return mem_block{nullptr, 0};
+  constexpr StackAllocator() noexcept
+    : stack_(), p_(stack_) {}
+
+  ~StackAllocator() = default;
+
+  constexpr mem_block allocate(size_t n) {
+    if (n == 0)
+      return {nullptr, 0};
+
+    if (stack_ + S < p_ + n) 
+      return {nullptr, 0}; // out of stack memory
+    auto *ret = p_;
+    p_ += n;
+    return {ret, n}; 
+  }
+
+  constexpr void deallocate(mem_block block) {
+    if (!owns(block)) {
+      return; // pointer provided was not allocated by this allocator
     }
-    constexpr void deallocate(mem_block block)
-    {
-    }
-    constexpr void deallocate_all()
-    {
-    }
-    constexpr bool owns(mem_block block) const noexcept
-    {
-        return true;
-    }
+    char *ptr = reinterpret_cast<char *>(block.ptr);
+    if (ptr == p_ - block.size)
+      p_ -= block.size; // deallocating last allocation
+  }
+
+  constexpr void deallocateAll() {
+    p_ = stack_;
+  }
+
+  constexpr bool owns(mem_block block) const noexcept {
+    char *ptr = reinterpret_cast<char *>(block.ptr);
+    return ptr >= stack_ && ptr < stack_ + S;
+  }
+
 private:
-    char stack[s];
-    char* p;
+  char stack_[S];
+  char *p_;
 };
+
+} // namespace utility
