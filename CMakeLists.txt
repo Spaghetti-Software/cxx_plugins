@@ -40,12 +40,16 @@ target_sources(${This}
   PRIVATE
     src/cxx_plugins.cpp
   PUBLIC
+    include/cxx_plugins/vtable.hpp
     include/cxx_plugins/cxx_plugins.hpp
-        include/cxx_plugins/function_traits.hpp
+    include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
     include/cxx_plugins/memory/stack_allocator.hpp
     include/cxx_plugins/memory/alligned_allocator.hpp
     include/cxx_plugins/memory/mallocator.hpp
+    include/cxx_plugins/type_traits.hpp
+    include/cxx_plugins/tuple.hpp
+    include/cxx_plugins/definitions.hpp
 )
 
 
@@ -65,6 +69,9 @@ endif()
 
 if(CXX_PLUGINS_BUILD_TESTS)
   add_subdirectory(tests)
+endif()
+if(CXX_PLUGINS_BUILD_DOCUMENTATION)
+  add_subdirectory(docs)
 endif()
 
 
