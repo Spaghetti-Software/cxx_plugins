@@ -16,7 +16,7 @@ jobs:
       - self-hosted 
       - ${{matrix.config.os}}
       
-    name: ${{matrix.config.os}} ${{matrix.config.cc}} ${{matrix.config.build_type}}
+    name: ${{matrix.config.os}} ${{matrix.config.arch}} ${{matrix.config.compiler}}-${{matrix.config.compiler_version}} ${{matrix.config.build_type}}
 
     strategy:
       fail-fast: false
