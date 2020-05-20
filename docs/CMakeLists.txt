@@ -1,5 +1,18 @@
 
-set(DOXYGEN_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/m.css/documentation/doxygen.py)
+# We require doxygen, so it is in the path
+find_package(Doxygen REQUIRED)
+include(FetchContent)
+FetchContent_Declare(
+        mcss
+        GIT_REPOSITORY https://github.com/mosra/m.css.git
+        GIT_TAG        origin/master
+)
+FetchContent_GetProperties(mcss)
+if (NOT mcss_POPULATED)
+    FetchContent_Populate(mcss)
+endif()
+
+set(DOXYGEN_EXECUTABLE ${mcss_SOURCE_DIR}/documentation/doxygen.py)
 
 set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
 set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
