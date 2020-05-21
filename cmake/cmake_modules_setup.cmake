@@ -10,7 +10,6 @@
 # \brief
 # Cmake file for setting up module paths
 
-
 set(CMAKE_MODULE_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/external/cmake-modules 
