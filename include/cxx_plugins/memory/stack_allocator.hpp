@@ -14,50 +14,54 @@
  */
 #pragma once
 
-#include "memory_common.hpp"
+#include <cassert>
+#include <cxx_plugins/memory/memory_common.hpp>
+#include <cstddef>
+#include <new>
 
 namespace utility {
 
 template <size_t S>
 class StackAllocator {
 public:
-  constexpr StackAllocator() noexcept
-    : stack_(), p_(stack_) {}
+  constexpr StackAllocator() noexcept : m_stack(), m_p(m_stack) {}
 
   ~StackAllocator() = default;
 
   constexpr mem_block allocate(size_t n) {
     if (n == 0)
-      return {nullptr, 0};
+      throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    if (stack_ + S < p_ + n) 
-      return {nullptr, 0}; // out of stack memory
-    auto *ret = p_;
-    p_ += n;
-    return {ret, n}; 
+    if (m_stack + S < m_p + n) 
+      throw std::bad_alloc(); // out of stack memory. TODO: replace with out custom exception
+    auto *ret = m_p;
+    m_p += n;
+    return mem_block{ret, n}; 
   }
 
   constexpr void deallocate(mem_block block) {
+    assert(block.ptr != nullptr);
+
     if (!owns(block)) {
       return; // pointer provided was not allocated by this allocator
     }
     char *ptr = reinterpret_cast<char *>(block.ptr);
-    if (ptr == p_ - block.size)
-      p_ -= block.size; // deallocating last allocation
+    if (ptr == m_p - block.size)
+      m_p -= block.size; // deallocating last allocation
   }
 
   constexpr void deallocateAll() {
-    p_ = stack_;
+    m_p = m_stack;
   }
 
   constexpr bool owns(mem_block block) const noexcept {
     char *ptr = reinterpret_cast<char *>(block.ptr);
-    return ptr >= stack_ && ptr < stack_ + S;
+    return ptr >= m_stack && ptr < m_stack + S;
   }
 
 private:
-  char stack_[S];
-  char *p_;
+  char m_stack[S];
+  char *m_p;
 };
 
 } // namespace utility

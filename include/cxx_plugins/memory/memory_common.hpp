@@ -14,6 +14,8 @@
  */
 #pragma once
 
+#include <cstddef>
+
 struct mem_block {
   void *ptr;
   size_t size;

@@ -14,8 +14,10 @@
  */
 #pragma once
 
-#include "memory_common.hpp"
+#include <cxx_plugins/memory/memory_common.hpp>
+#include <cstddef>
 #include <memory>
+#include <new>
 
 namespace utility {
 
@@ -26,19 +28,26 @@ public:
 
   mem_block allocate(size_t n) {
     if (n == 0)
-      return {nullptr, 0};
-    if (n <= allignment)
-      return allocator_.allocate(allignment);
-    return allocator_.allocate(n + (allignment - n % allignment));
+      throw std::bad_alloc();
+    mem_block block;
+    if (n <= allignment) {
+      block = m_allocator.allocate(allignment);
+    }
+    else {
+      block = m_allocator.allocate(n + (allignment - n % allignment));
+    }
+      
+    return block;
   }
 
-  void deallocate(mem_block block) { allocator_.deallocate(block); }
+  void deallocate(mem_block block) { m_allocator.deallocate(block); }
 
-  void deallocateAll() { allocator_.deallocateAll(); }
+  void deallocateAll() { m_allocator.deallocateAll(); }
 
-  bool owns(mem_block block) { return allocator_.owns(block); }
+  bool owns(mem_block block) { return m_allocator.owns(block); }
+
 private:
-  Allocator allocator_;
+  Allocator m_allocator;
 };
 
 } // namespace utility 

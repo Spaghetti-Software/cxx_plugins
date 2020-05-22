@@ -14,8 +14,10 @@
  */
 #pragma once
 
-#include "memory_common.hpp"
+#include <cassert>
+#include <cxx_plugins/memory/memory_common.hpp>
 #include <cstdlib>
+#include <cstddef>
 #include <new>
 
 namespace utility {
@@ -28,16 +30,18 @@ public:
 
   mem_block allocate(size_t n) {
     if (n == 0)
-      return {nullptr, 0};
+      throw std::bad_alloc(); // TODO: replace with out custom exception
 
     void *ptr = malloc(n);
     if (ptr == nullptr)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    return {ptr, n};
+    return mem_block{ptr, n};
   }
 
   void deallocate(mem_block block) {
+    assert(block.ptr != nullptr);
+
     if (!owns(block))
       return;
     
