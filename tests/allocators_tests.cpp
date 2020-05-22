@@ -5,31 +5,51 @@
 #include <cxx_plugins/memory/alligned_allocator.hpp>
 #include <cxx_plugins/memory/mallocator.hpp>
 #include <gtest/gtest.h>
+#include <cstddef>
 
 struct AllocatorsTests : public ::testing::Test {
+  mem_block block;
+
   template<class Allocator>
-  void testAllocationSize(size_t allocationSize, size_t expectedSize) {
+  void testAllocation(size_t allocationSize, size_t expectedSize) {
     Allocator a;
 
-    mem_block block = a.allocate(allocationSize);
+    block = a.allocate(allocationSize);
 
+    EXPECT_NE(nullptr, block.ptr);
     EXPECT_EQ(expectedSize, block.size);
     EXPECT_EQ(true, a.owns(block));
 
     a.deallocate(block);
   }
+
+  void testAllignment(size_t expectedAllignment) const {
+    auto block = getBlock();
+    uint64_t pVal = reinterpret_cast<uint64_t>(block.ptr);
+    EXPECT_EQ(0, pVal % expectedAllignment);
+  }
+
+  mem_block getBlock() const {
+    return block;
+  }
 };
 
 TEST_F(AllocatorsTests, StackAllocatorTest) {
-  testAllocationSize<utility::StackAllocator<4>>(4, 4);
+  testAllocation<utility::StackAllocator<4>>(4, 4);
+  testAllignment(4);
 }
 
 TEST_F(AllocatorsTests, MallocatorTest) {
-  testAllocationSize<utility::Mallocator>(4, 4);
+  testAllocation<utility::Mallocator>(4, 4);
+  testAllignment(4);
 }
 
 TEST_F(AllocatorsTests, AllignedAllocatorTest) {
-  testAllocationSize<utility::AllignedAllocator<utility::StackAllocator<32>, 32>>(4, 32);
+  testAllocation<utility::AllignedAllocator<utility::StackAllocator<32>, 32>>(
+      4, 32);
+  testAllignment(32);
 
-  testAllocationSize<utility::AllignedAllocator<utility::StackAllocator<1000>, 32>>(159, 160);
+  testAllocation<utility::AllignedAllocator<utility::StackAllocator<1000>, 32>>(
+      159, 160);
+  testAllignment(32);
 }
