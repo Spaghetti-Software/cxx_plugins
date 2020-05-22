@@ -34,12 +34,7 @@ project( ${This}
 include(cxx_plugins_options)
 include(common_flags)
 
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-else()
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-endif()
-conan_basic_setup(TARGETS)
+
 
 
 if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
@@ -59,6 +54,8 @@ target_sources(${This}
     include/cxx_plugins/type_traits.hpp
     include/cxx_plugins/tuple.hpp
     include/cxx_plugins/definitions.hpp
+    include/cxx_plugins/polymorphic.hpp
+    include/cxx_plugins/tuple_map.hpp
 )
 
 
@@ -77,6 +74,7 @@ endif()
 
 
 if(CXX_PLUGINS_BUILD_TESTS)
+  #add_subdirectory(example_plugin)
   add_subdirectory(tests)
 endif()
 if(CXX_PLUGINS_BUILD_DOCUMENTATION)
