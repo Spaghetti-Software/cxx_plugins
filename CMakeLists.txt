@@ -40,7 +40,7 @@ include(common_flags)
 if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
   add_library(${This} SHARED)
 else()
-  add_library(${This} STATIC)
+  add_library(${This} STATIC )
 endif()
 
 target_sources(${This}
@@ -56,8 +56,8 @@ target_sources(${This}
     include/cxx_plugins/definitions.hpp
     include/cxx_plugins/polymorphic.hpp
     include/cxx_plugins/tuple_map.hpp
+    include/cxx_plugins/tuple_impl.ipp
 )
-
 
 target_include_directories(${This} PRIVATE src)
 
