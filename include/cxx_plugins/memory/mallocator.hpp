@@ -28,11 +28,16 @@ public:
 
   ~Mallocator() = default;
 
-  mem_block allocate(size_t n) {
+  mem_block allocate(std::size_t n, std::size_t alignment = 4) {
     if (n == 0)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    void *ptr = malloc(n);
+#ifdef _MSC_VER
+    void *ptr = _aligned_malloc(n, alignment);
+#else
+    void *ptr = std::aligned_alloc(alignment, n);
+#endif
+    
     if (ptr == nullptr)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
@@ -44,8 +49,11 @@ public:
 
     if (!owns(block))
       return;
-    
-    free(block.ptr);
+#ifdef _MSC_VER
+    _aligned_free(block.ptr);
+#else
+    std::free(block.ptr);
+#endif
   }
 
   void deallocateAll() {
@@ -53,7 +61,7 @@ public:
              // Probably will involve going over the container of allocated blocks and deallocating the pointers.
   }
 
-  bool owns(mem_block block) {
+  bool owns(mem_block block) const noexcept {
     return true; // TODO: actually check if it was returned by malloc (check in the container of allocated blocks)
   }
 private:

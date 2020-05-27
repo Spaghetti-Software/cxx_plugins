@@ -16,7 +16,16 @@
 
 #include <cstddef>
 
+namespace utility {
+
 struct mem_block {
   void *ptr;
-  size_t size;
+  std::size_t size;
 };
+
+constexpr std::size_t roundLengthToAlignment(std::size_t len, std::size_t alignment) {
+  return len % alignment ? len + (alignment - len % alignment) : len;
+}
+
+}
+

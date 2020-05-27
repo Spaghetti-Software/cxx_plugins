@@ -45,8 +45,8 @@ target_sources(${This}
     include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
     include/cxx_plugins/memory/stack_allocator.hpp
-    include/cxx_plugins/memory/alligned_allocator.hpp
     include/cxx_plugins/memory/mallocator.hpp
+    include/cxx_plugins/memory/memory_common.hpp
     include/cxx_plugins/type_traits.hpp
     include/cxx_plugins/tuple.hpp
     include/cxx_plugins/definitions.hpp

@@ -17,26 +17,31 @@
 #include <cassert>
 #include <cxx_plugins/memory/memory_common.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <new>
 
 namespace utility {
 
-template <size_t S>
+template <std::size_t S>
 class StackAllocator {
 public:
   constexpr StackAllocator() noexcept : m_stack(), m_p(m_stack) {}
 
   ~StackAllocator() = default;
 
-  constexpr mem_block allocate(size_t n) {
+  constexpr mem_block allocate(std::size_t n, std::size_t alignment = 4) {
     if (n == 0)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    if (m_stack + S < m_p + n) 
+    const auto alignedSize = roundLengthToAlignment(n, alignment);
+    const auto mod = reinterpret_cast<std::uint64_t>(m_p) % alignment;
+    const auto offset = mod ? alignment - mod : 0;
+    auto *alignedPtr = m_p + offset;
+    if (m_stack + S < alignedPtr + alignedSize) 
       throw std::bad_alloc(); // out of stack memory. TODO: replace with out custom exception
-    auto *ret = m_p;
-    m_p += n;
-    return mem_block{ret, n}; 
+
+    m_p = alignedPtr + alignedSize;
+    return mem_block{alignedPtr, alignedSize}; 
   }
 
   constexpr void deallocate(mem_block block) {
