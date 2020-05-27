@@ -15,9 +15,10 @@ cmake_minimum_required(VERSION 3.15)
 
 include(cmake/cmake_modules_setup.cmake)
 
-include(get_git_version)
+#include(get_git_version)
+#get_git_version(VERSION)
+set(VERSION 0.0.1)
 
-get_git_version(VERSION)
 
 set(This cxx_plugins)
 
@@ -31,10 +32,21 @@ project( ${This}
 
 
 include(cxx_plugins_options)
-include(external_packages_setup)
 include(common_flags)
 
-add_library(${This} STATIC)
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+else()
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+endif()
+conan_basic_setup(TARGETS)
+
+
+if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
+  add_library(${This} SHARED)
+else()
+  add_library(${This} STATIC)
+endif()
 
 target_sources(${This}
   PRIVATE
@@ -44,12 +56,12 @@ target_sources(${This}
     include/cxx_plugins/cxx_plugins.hpp
     include/cxx_plugins/function_traits.hpp
     include/cxx_plugins/function_traits.ipp
-    include/cxx_plugins/memory/stack_allocator.hpp
-    include/cxx_plugins/memory/mallocator.hpp
-    include/cxx_plugins/memory/memory_common.hpp
     include/cxx_plugins/type_traits.hpp
     include/cxx_plugins/tuple.hpp
     include/cxx_plugins/definitions.hpp
+    include/cxx_plugins/memory/stack_allocator.hpp
+    include/cxx_plugins/memory/mallocator.hpp
+    include/cxx_plugins/memory/memory_common.hpp
 )
 
 
@@ -73,5 +85,6 @@ endif()
 if(CXX_PLUGINS_BUILD_DOCUMENTATION)
   add_subdirectory(docs)
 endif()
+
 
 

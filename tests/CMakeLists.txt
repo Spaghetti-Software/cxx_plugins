@@ -28,7 +28,7 @@ target_sources(${This}
 
 target_link_libraries(${This} 
   PUBLIC
-    gtest
+    CONAN_PKG::gtest
     cxx_plugins
 )
 
