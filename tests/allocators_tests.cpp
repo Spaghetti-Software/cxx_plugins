@@ -29,6 +29,13 @@ struct AllocatorsTests : public ::testing::Test {
   }
 
   template <class Allocator>
+  void deallocate(utility::mem_block block) {
+    auto *a = reinterpret_cast<Allocator *>(allocator);
+
+    a->deallocate(block);
+  }
+
+  template <class Allocator>
   void testAllocation(utility::mem_block block, std::size_t expectedSize) const {
     EXPECT_NE(nullptr, block.ptr);
     EXPECT_EQ(expectedSize, block.size);
@@ -74,10 +81,12 @@ TEST_F(AllocatorsTests, StackAllocatorTest) {
   allocate<allocatorT2>(4, 4);
   testAllocation<allocatorT2>(getLastAllocationBlock(), 4);
   testAllignment(getLastAllocationBlock(), 4);
+  deallocate<allocatorT1>(getLastAllocationBlock());
 
   allocate<allocatorT2>(4, 6);
   testAllocation<allocatorT2>(getLastAllocationBlock(), 6);
   testAllignment(getLastAllocationBlock(), 6);
+  deallocate<allocatorT1>(getLastAllocationBlock());
 
   deleteAllocator<allocatorT2>();
 }
@@ -89,10 +98,12 @@ TEST_F(AllocatorsTests, MallocatorTest) {
   allocate<allocatorT1>(4, 4);
   testAllocation<allocatorT1>(getLastAllocationBlock(), 4);
   testAllignment(getLastAllocationBlock(), 4);
+  deallocate<allocatorT1>(getLastAllocationBlock());
 
   allocate<allocatorT1>(5, 16);
   testAllocation<allocatorT1>(getLastAllocationBlock(), 16);
   testAllignment(getLastAllocationBlock(), 16);
+  deallocate<allocatorT1>(getLastAllocationBlock());
 
   deleteAllocator<allocatorT1>();
 }
