@@ -91,7 +91,7 @@ TEST_F(AllocatorsTests, MallocatorTest) {
   testAllignment(getLastAllocationBlock(), 4);
 
   allocate<allocatorT1>(5, 16);
-  testAllocation<allocatorT1>(getLastAllocationBlock(), 5);
+  testAllocation<allocatorT1>(getLastAllocationBlock(), 16);
   testAllignment(getLastAllocationBlock(), 16);
 
   deleteAllocator<allocatorT1>();

@@ -32,16 +32,17 @@ public:
     if (n == 0)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
+    const auto alignedSize = roundLengthToAlignment(n, alignment);
 #ifdef _MSC_VER
-    void *ptr = _aligned_malloc(n, alignment);
+    void *ptr = _aligned_malloc(alignedSize, alignment);
 #else
-    void *ptr = std::aligned_alloc(alignment, n);
+    void *ptr = std::aligned_alloc(alignment, alignedSize);
 #endif
     
     if (ptr == nullptr)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    return mem_block{ptr, n};
+    return mem_block{ptr, alignedSize};
   }
 
   void deallocate(mem_block block) {
