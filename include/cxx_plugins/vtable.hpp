@@ -126,10 +126,10 @@ public:
 
 private:
   template <typename T>
-  static constexpr size_t index_v = utility::Index<T, Tags...>::value;
+  static constexpr size_t index_v = utility::index_of<T, Tags...>;
 
   template <typename T>
-  using FunctionTypeAt = TupleElement<index_v<T>, TableType>;
+  using FunctionTypeAt = TupleElementType<index_v<T>, TableType>;
 
 public:
   //! \brief Default ctor

@@ -13,26 +13,59 @@
 cmake_minimum_required(VERSION 3.15)
 
 set(This CXX_PluginsTests)
+set(CONAN_SYSTEM_INCLUDE ON)
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+else()
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+endif()
+conan_basic_setup(TARGETS)
 
-add_executable(${This})
+#get_target_property(gtest_include_dirs CONAN_PKG::gtest INTERFACE_INCLUDE_DIRECTORIES)
+#set(TARGET CONAN_PKG::gtest PROPERTY INTERFACE_INCLUDE_DIRECTORIES "")
+#set(TARGET CONAN_PKG::gtest PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${gtest_include_dirs})
+
+
+add_executable(${This} )
 target_sources(${This}
   PRIVATE
     cxx_plugins_tests.cpp
     function_traits_tests.cpp
-    vtable_tests.cpp
-
+#    vtable_tests.cpp
+#    tuple_map_tests.cpp
     example_api.cpp
     example_api.hpp
 )
 
-target_link_libraries(${This} 
+
+target_link_libraries(${This}
   PUBLIC
     CONAN_PKG::gtest
     cxx_plugins
 )
-
+#target_include_directories(${This} PUBLIC ${CONAN_INCLUDE_DIRS_GTEST})
 
 add_test(
-  NAME ${This}
-  COMMAND ${This}
+        NAME ${This}
+        COMMAND ${This}
 )
+
+add_executable(tuple_tests)
+target_sources(tuple_tests
+        PRIVATE
+        packed_tuple_tests.cpp)
+target_link_libraries(tuple_tests
+        PUBLIC
+        CONAN_PKG::gtest
+        cxx_plugins
+        )
+#target_include_directories(tuple_tests PUBLIC ${CONAN_INCLUDE_DIRS_GTEST})
+add_test(
+        NAME tuple_tests
+        COMMAND tuple_tests
+)
+if (MSVC)
+  target_compile_options(tuple_tests PRIVATE "/bigobj")
+endif()
+
+
