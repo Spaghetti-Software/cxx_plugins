@@ -428,10 +428,10 @@ struct TupleCatResult<TupleMap<TaggedValues...>> {
 };
 
 template <typename... TTags, typename... TTypes, typename UTags,
-          typename... UTypes, typename... RestTupleMaps>
+          typename... UTypes, typename RestFirst, typename... RestTupleMaps>
 struct TupleCatResult<TupleMap<TaggedValue<TTags, TTypes>...>,
                       TupleMap<TaggedValue<UTags, UTypes>...>,
-                      RestTupleMaps...> {
+                      RestFirst, RestTupleMaps...> {
   using Type = typename TupleCatResult<
       TupleMap<TaggedValue<TTags, TTypes>..., TaggedValue<UTags, UTypes>...>,
       typename TupleCatResult<RestTupleMaps...>::Type>::Type;

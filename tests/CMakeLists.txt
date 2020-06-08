@@ -71,7 +71,8 @@ add_test(
         COMMAND tuple_tests
 )
 if (MSVC)
-  target_compile_options(tuple_tests PRIVATE "/bigobj")
+    target_compile_options(CXX_PluginsTests PRIVATE "/bigobj")
+    target_compile_options(tuple_tests PRIVATE "/bigobj")
 endif()
 
 
