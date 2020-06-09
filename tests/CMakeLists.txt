@@ -13,18 +13,6 @@
 cmake_minimum_required(VERSION 3.15)
 
 set(This CXX_PluginsTests)
-set(CONAN_SYSTEM_INCLUDE ON)
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-else()
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-endif()
-conan_basic_setup(TARGETS)
-
-#get_target_property(gtest_include_dirs CONAN_PKG::gtest INTERFACE_INCLUDE_DIRECTORIES)
-#set(TARGET CONAN_PKG::gtest PROPERTY INTERFACE_INCLUDE_DIRECTORIES "")
-#set(TARGET CONAN_PKG::gtest PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${gtest_include_dirs})
-
 
 add_executable(${This} )
 target_sources(${This}
