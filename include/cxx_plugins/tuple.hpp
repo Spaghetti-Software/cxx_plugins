@@ -923,6 +923,16 @@ template <typename T, typename U> constexpr auto makePair(T &&t, U &&u) {
   return std::make_pair(std::forward<T>(t), std::forward<U>(u));
 }
 
+namespace impl {
+
+
+
+template <typename... Ts> struct TupleCatHelper {
+  using TupleSizeSequence = std::index_sequence<tuple_size_v<Ts>...>;
+  using ResultIndexSequence =
+      std::make_index_sequence<(tuple_size_v<Ts> + ...)>;
+};
+} // namespace impl
 
 template <typename... Tuples> struct TupleCatResult;
 
