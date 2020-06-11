@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include "cxx_plugins/type_traits.hpp"
+#include "tuple/tuple_storage.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -46,7 +46,6 @@ template <typename T, typename U> constexpr auto makePair(T &&t, U &&u);
 template <typename... Types>
 constexpr auto forwardAsTuple(Types &&... vals) noexcept -> Tuple<Types &&...>;
 
-template <typename T> struct TupleSize;
 
 template <typename... Types> struct TupleSize<Tuple<Types...>> {
   static constexpr std::size_t value = sizeof...(Types);
@@ -56,8 +55,6 @@ template <typename U0, typename U1> struct TupleSize<Pair<U0, U1>> {
   static constexpr std::size_t value = 2;
 };
 
-template <typename T>
-static constexpr std::size_t tuple_size_v = TupleSize<T>::value;
 
 template <typename T, typename Fn>
 constexpr void tupleForEach(T &&fn, Fn &&tuple);
@@ -120,11 +117,7 @@ get(Pair<U0, U1> const &&pair) noexcept {
   }
 }
 
-} // namespace CxxPlugins
 
-#include "cxx_plugins/tuple_impl.ipp"
-
-namespace CxxPlugins {
 /*!
  * \brief
  * PackedTuple is a drop-in replacement for std::tuple.
@@ -224,9 +217,9 @@ namespace CxxPlugins {
  *   + ☑ apply with multiple tuples
  *   + ☑ tupleForEach with multiple tuples
  */
-template <typename... Ts> struct Tuple : private impl::PackedTupleImpl<Ts...> {
+template <typename... Ts> struct Tuple : private TupleStorage<Ts...> {
 private:
-  using Parent = impl::PackedTupleImpl<Ts...>;
+  using Parent = TupleStorage<Ts...>;
 
   template <bool Condition, typename... TArgs> struct Constraints {
 
@@ -320,6 +313,11 @@ public:
   template <std::size_t I, typename... Us>
   friend constexpr TupleElementType<I, Tuple<Us...>> const &&
   get(Tuple<Us...> const &&tuple) noexcept;
+
+
+  template<typename... Us>
+  friend struct Tuple;
+
 
   /*!
    * \brief  Default constructor. Value-initializes all elements.
@@ -727,24 +725,24 @@ template <class T1, class T2> Tuple(Pair<T1, T2>) -> Tuple<T1, T2>;
 template <std::size_t I, typename... Us>
 constexpr TupleElementType<I, Tuple<Us...>> const &
 get(Tuple<Us...> const &tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> const &>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> const &>(tuple));
 }
 
 template <std::size_t I, typename... Us>
 constexpr TupleElementType<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> &>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> &>(tuple));
 }
 
 template <std::size_t I, typename... Us>
 constexpr TupleElementType<I, Tuple<Us...>> &&
 get(Tuple<Us...> &&tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> &&>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> &&>(tuple));
 }
 
 template <std::size_t I, typename... Us>
 constexpr TupleElementType<I, Tuple<Us...>> const &&
 get(Tuple<Us...> const &&tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> const &&>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> const &&>(tuple));
 }
 
 //! \todo Test three-way comparison when compilers will be more feature complete

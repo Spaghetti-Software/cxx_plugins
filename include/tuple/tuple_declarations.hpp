@@ -28,13 +28,10 @@ template <typename T> struct TupleSize;
 template <typename T>
 static constexpr std::size_t tuple_size_v = TupleSize<T>::value;
 template <std::size_t I, typename T> struct TupleElement;
-template <std::size_t I, typename T> struct TupleInnerElement;
 
 template <std::size_t I, typename T>
 using TupleElementT = typename TupleElement<I, T>::Type;
 
-template <std::size_t I, typename T>
-using TupleInnerElementT = typename TupleInnerElement<I, T>::Type;
 
 template <typename T> struct IsTuple : public std::false_type {};
 template <typename... Ts>

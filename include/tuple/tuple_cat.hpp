@@ -13,15 +13,39 @@
  */
 #pragma once
 
-#include "cxx_plugins/tuple_impl/tuple_declarations.hpp"
 #include "cxx_plugins/type_traits.hpp"
 #include "sequence/exclusive_scan.hpp"
 #include "sequence/inclusive_scan.hpp"
 #include "sequence/map.hpp"
+#include "tuple/tuple_declarations.hpp"
+#include "tuple/forward.hpp"
 
 #include <utility>
 
 namespace CxxPlugins {
+
+template <typename... Tuples> constexpr auto tupleCat(Tuples &&... tuples);
+
+namespace impl {
+template <typename... Tuples> struct TupleCatHelper;
+
+template <typename Return, std::size_t... outer_indices,
+          std::size_t... inner_indices, typename TupleOfTuples>
+constexpr Return tupleCat(std::index_sequence<outer_indices...> /*unused*/,
+                          std::index_sequence<inner_indices...> /*unused*/,
+                          TupleOfTuples&& values);
+} // namespace impl
+
+template <typename... Tuples> constexpr auto tupleCat(Tuples &&... tuples) {
+  using helper = TupleCatHelper<std::decay_t<Tuples>>;
+  return impl::tupleCat<typename helper::ReturnT>(
+        helper::outer_indices,
+        helper::inner_indices,
+        forwardAsTuple(std::forward<Tuples>(tuples))
+      );
+}
+
+template <typename T> struct TupleCatResult<T> { using Type = T; };
 
 template <typename OuterSeq, typename InnerSeq, typename TupleOfTuple>
 using TupleCatResultT =

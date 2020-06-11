@@ -12,7 +12,7 @@
  * $BRIEF$
  */
 #pragma once
-#include "tuple.hpp"
+#include "tuple/tuple.hpp"
 
 namespace CxxPlugins {
 

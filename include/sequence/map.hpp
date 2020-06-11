@@ -40,28 +40,43 @@ static constexpr auto select_v =
     decltype(impl::select<I>(std::declval<impl::Indexer<Seq>>()))::value;
 
 template <std::size_t I, typename Seq>
-using select_t = decltype(select_v<I, Seq>);
+using select_t = std::integral_constant<decltype(select_v<I, Seq>), select_v<I, Seq>>;
 
 } // namespace impl
 
 template <std::size_t I, typename T, T... vals> struct AtIndex {
-  using type = impl::select_t<I, std::integer_sequence<T, vals...>>;
-  static constexpr auto value =
-      impl::select_v<I, std::integer_sequence<T, vals...>>;
+  using type =  impl::select_t<I,std::integer_sequence<T,vals...>>;
 };
 
 template <std::size_t I, typename T, T... vals>
 struct AtIndex<I, std::integer_sequence<T, vals...>> {
   using type = impl::select_t<I, std::integer_sequence<T, vals...>>;
-  static constexpr auto value =
-      impl::select_v<I, std::integer_sequence<T, vals...>>;
 };
 
 template <std::size_t I, typename T, T... vals>
 using AtIndexT = typename AtIndex<I, T, vals...>::type;
 
 template <std::size_t I, typename T, T... vals>
-static constexpr auto at_index_v = AtIndex<I, T, vals...>::value;
+static constexpr auto at_index_v = AtIndexT<I, T, vals...>::value;
+
+template<typename T, T... vals>
+struct Last {
+  static_assert(sizeof...(vals) > 0, "Sequence is empty");
+  using type = AtIndexT<sizeof...(vals) - 1, T, vals...>;
+};
+
+template<typename T, T... vals>
+struct Last<std::integer_sequence<T,vals...>> {
+  static_assert(sizeof...(vals) > 0, "Sequence is empty");
+  using type = AtIndexT<sizeof...(vals) - 1, std::integer_sequence<T,vals...>>;
+};
+
+template<typename T, T... vals>
+using LastT = typename Last<T,vals...>::type ;
+
+template<typename T, T... vals>
+static constexpr auto last_v = LastT<T,vals...>::value;
+
 
 template <typename KeysSeq, typename ValuesSeq> struct Map;
 
