@@ -60,7 +60,6 @@ target_sources(${This}
         include/cxx_plugins/function_traits.hpp
         include/cxx_plugins/function_traits.ipp
         include/cxx_plugins/type_traits.hpp
-        include/tuple/tuple.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/tuple_map.hpp
@@ -72,11 +71,14 @@ target_sources(${This}
         include/sequence/operators.hpp
         include/sequence/map.hpp
 
+        include/tuple/tuple.hpp
         include/tuple/tuple_cat.hpp
         include/tuple/tuple_declarations.hpp
         include/tuple/tuple_helpers.hpp
         include/tuple/forward.hpp
         include/tuple/tuple_storage.hpp
+        include/tuple/tuple_impl.hpp
+
         )
 
 target_include_directories(${This} PRIVATE src)

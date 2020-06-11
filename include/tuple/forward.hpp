@@ -15,8 +15,8 @@
 
 namespace CxxPlugins {
 
-template<typename... Args>
-auto forwardAsTuple(Args&&...args);
+//template<typename... Args>
+//auto forwardAsTuple(Args&&...args);
 
 
 } // namespace CxxPlugins

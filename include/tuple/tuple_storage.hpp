@@ -51,7 +51,7 @@ namespace impl {
 
 template <std::size_t I, typename T> struct TupleInnerElement;
 template <std::size_t I, typename T>
-using TupleInnerElementT = typename TupleInnerElement<I,T>::Type;
+using TupleInnerElementT = typename TupleInnerElement<I, T>::Type;
 
 template <std::size_t I, typename... Ts>
 constexpr auto getInner(TupleStorage<Ts...> const &t) noexcept ->
@@ -71,22 +71,24 @@ constexpr auto getInner(TupleStorage<Ts...> const &&t) noexcept ->
 
 template <typename... Ts> struct TupleTypeHelper;
 
-template <typename U> struct PackedTupleRefWrapper;
+template <typename U> struct TupleRefWrapper;
 
 template <typename U>
 using TupleInnerType =
-    std::conditional_t<std::is_reference_v<U>, PackedTupleRefWrapper<U>, U>;
+    std::conditional_t<std::is_reference_v<U>, TupleRefWrapper<U>, U>;
 
 } // namespace impl
 
 // Implementation
 
 template <typename... Ts> struct TupleStorage {
-private:
-  using Helper = impl::TupleTypeHelper<Ts...>;
-
 public:
   template <typename U> using InnerType = impl::TupleInnerType<U>;
+
+private:
+  using Helper = impl::TupleTypeHelper<InnerType<Ts>...>;
+
+public:
 
   // Noexcept specifiers
   static constexpr bool is_nothrow_default_ctor =
@@ -104,11 +106,9 @@ public:
 
   // Sizes and offsets
 
-
   using OffsetsType = typename Helper::OffsetsType;
   using SizesType = typename Helper::SizesType;
   using AlignmentsType = typename Helper::AlignmentsType;
-
 
   static constexpr std::size_t max_alignment =
       Helper::max_alignment == 0 ? 1 : Helper::max_alignment;
@@ -118,19 +118,20 @@ public:
   // Friends
   template <std::size_t I, typename... Us>
   friend constexpr auto impl::getInner(TupleStorage<Us...> const &t) noexcept ->
-  typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type const &;
+      typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type const &;
 
   template <std::size_t I, typename... Us>
   friend constexpr auto impl::getInner(TupleStorage<Us...> &t) noexcept ->
-  typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type &;
+      typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type &;
 
   template <std::size_t I, typename... Us>
   friend constexpr auto impl::getInner(TupleStorage<Us...> &&t) noexcept ->
-  typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type &&;
+      typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type &&;
 
   template <std::size_t I, typename... Us>
-  friend constexpr auto impl::getInner(TupleStorage<Us...> const &&t) noexcept ->
-  typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type const &&;
+  friend constexpr auto impl::getInner(TupleStorage<Us...> const &&t) noexcept
+      ->
+      typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type const &&;
 
   ~TupleStorage() noexcept(is_nothrow_dtor) { destructor(sequence); }
 
@@ -217,11 +218,11 @@ public:
 
 private:
   template <std::size_t I> auto unsafeAt() -> void * {
-    return &data_m[Sequence::at_index_v<I,OffsetsType>];
+    return &data_m[Sequence::at_index_v<I, OffsetsType>];
   }
 
   template <std::size_t I>[[nodiscard]] auto unsafeAt() const -> const void * {
-    return &data_m[Sequence::at_index_v<I,OffsetsType>];
+    return &data_m[Sequence::at_index_v<I, OffsetsType>];
   }
 
   template <std::size_t... indices>
@@ -247,7 +248,8 @@ private:
   constexpr void copyCtor(
       std::index_sequence<indices...> /*unused*/,
       TupleStorage<Us...> const &rhs) noexcept(is_nothrow_ctor<Us const &...>) {
-    (new (unsafeAt<indices>()) InnerType<Ts>(impl::getInner<indices>(rhs)), ...);
+    (new (unsafeAt<indices>()) InnerType<Ts>(impl::getInner<indices>(rhs)),
+     ...);
   }
 
   template <typename... Us, std::size_t... indices>
@@ -292,8 +294,8 @@ private:
   template <typename U1, typename U2>
   constexpr void
   conversionCtor(Pair<U1, U2> &&other) noexcept(is_nothrow_ctor<U1 &&, U2 &&>) {
-    new (unsafeAt<0>())
-        impl::TupleInnerElementT<0, TupleStorage>(std::forward<U1>(other.first));
+    new (unsafeAt<0>()) impl::TupleInnerElementT<0, TupleStorage>(
+        std::forward<U1>(other.first));
     new (unsafeAt<1>()) impl::TupleInnerElementT<1, TupleStorage>(
         std::forward<U2>(other.second));
   }
@@ -347,7 +349,7 @@ namespace impl {
 
 template <std::size_t I, typename... Ts>
 struct TupleInnerElement<I, TupleStorage<Ts...>> {
-  using Type = TupleInnerType<utility::ElementType<I,Ts...>>;
+  using Type = TupleInnerType<utility::ElementType<I, Ts...>>;
 };
 
 template <std::size_t I, typename T> struct TupleInnerElement;
@@ -425,7 +427,8 @@ constexpr auto
 operator|(TupleTypeInfoSequence<Head...> seq,
           TupleTypeInfo<RhsOffset, RhsSize, RhsAlignment> /*unused*/) noexcept {
 
-  constexpr auto LhsOffset = Sequence::last_v<typename decltype(seq)::OffsetsType>;
+  constexpr auto LhsOffset =
+      Sequence::last_v<typename decltype(seq)::OffsetsType>;
   constexpr auto LhsSize = Sequence::last_v<typename decltype(seq)::SizesType>;
 
   constexpr std::size_t rhs_start = LhsOffset + LhsSize;
@@ -463,9 +466,9 @@ public:
 //! \attention For internal usage only!
 //! \brief Wrapper for reference types
 //! (we can't construct references with placement new)
-template <typename U> struct PackedTupleRefWrapper {
+template <typename U> struct TupleRefWrapper {
   static_assert(std::is_reference_v<U>, "U should be a reference");
-  constexpr explicit PackedTupleRefWrapper(U ref) noexcept : reference_m(ref) {}
+  constexpr explicit TupleRefWrapper(U ref) noexcept : reference_m(std::forward<U>(ref)) {}
   U reference_m;
 };
 

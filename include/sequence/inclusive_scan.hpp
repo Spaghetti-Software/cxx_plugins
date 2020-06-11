@@ -19,12 +19,12 @@
 namespace Sequence {
 
 template <typename T, T... vals>
-struct InclusiveScan : public PlusT<ExclusiveScanT<T, vals...>,
+struct InclusiveScan : public Plus<ExclusiveScanT<T, vals...>,
                                     std::integer_sequence<T, vals...>> {};
 
 template <typename T, T... vals>
 struct InclusiveScan<std::integer_sequence<T, vals...>>
-    : public PlusT<ExclusiveScanT<std::integer_sequence<T, vals...>>,
+    : public Plus<ExclusiveScanT<std::integer_sequence<T, vals...>>,
                    std::integer_sequence<T, vals...>> {};
 
 template<typename T, T... vals>

@@ -12,7 +12,8 @@
  * $BRIEF$
  */
 #pragma once
-#include "tuple/tuple.hpp"
+#include "tuple/tuple_impl.hpp"
+#include "tuple/tuple_cat.hpp"
 
 namespace CxxPlugins {
 
@@ -418,32 +419,12 @@ constexpr auto makeTupleMap(TaggedValues &&... vals) {
   return TupleMap<std::decay_t<TaggedValues>...>(vals.value_m...);
 }
 
-template <typename... Types> struct TupleSize<TupleMap<Types...>> {
-  static constexpr std::size_t value = sizeof...(Types);
+
+template<std::size_t I, typename... Tags, typename... Values>
+struct TupleCatElement<I, TupleMap<TaggedValue<Tags,Values>...>> {
+  using Type = utility::ElementType<I,TaggedValue<Tags,Values>...>;
 };
 
-template <typename... TaggedValues>
-struct TupleCatResult<TupleMap<TaggedValues...>> {
-  using Type = TupleMap<TaggedValues...>;
-};
-
-template <typename... TTags, typename... TTypes, typename UTags,
-          typename... UTypes, typename RestFirst, typename... RestTupleMaps>
-struct TupleCatResult<TupleMap<TaggedValue<TTags, TTypes>...>,
-                      TupleMap<TaggedValue<UTags, UTypes>...>,
-                      RestFirst, RestTupleMaps...> {
-  using Type = typename TupleCatResult<
-      TupleMap<TaggedValue<TTags, TTypes>..., TaggedValue<UTags, UTypes>...>,
-      typename TupleCatResult<RestTupleMaps...>::Type>::Type;
-};
-
-template <typename... TTags, typename... TTypes, typename UTags,
-          typename... UTypes>
-struct TupleCatResult<TupleMap<TaggedValue<TTags, TTypes>...>,
-                      TupleMap<TaggedValue<UTags, UTypes>...>> {
-  using Type =
-      TupleMap<TaggedValue<TTags, TTypes>..., TaggedValue<UTags, UTypes>...>;
-};
 
 /*!
  * \brief Creates new TupleMap that is a subset of given TupleMap.

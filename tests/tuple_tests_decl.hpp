@@ -1091,9 +1091,9 @@ public:
     bool result = std::is_same_v<decltype(cat0), Tuple<Ts...,Ts...>>;
     EXPECT_TRUE(result);
     auto cat1 = tupleCat(t0,t1,t2);
-    result = std::is_same_v<decltype(cat0), Tuple<Ts...,Ts...,Ts...>>;
+    result = std::is_same_v<decltype(cat1), Tuple<Ts...,Ts...,Ts...>>;
     EXPECT_TRUE(result);
-    result = std::is_same_v<decltype(cat0), decltype(tupleCat(cat0, std::declval<Tuple<Ts...>>()))>;
+    result = std::is_same_v<decltype(cat1), decltype(tupleCat(cat0, std::declval<Tuple<Ts...>>()))>;
     EXPECT_TRUE(result);
     auto cat2 = tupleCat(t0,t1,t2,t3);
     result = std::is_same_v<decltype(cat2), Tuple<Ts...,Ts...,Ts...,Ts...>>;
@@ -1156,36 +1156,40 @@ TYPED_TEST_P(PackedTupleTests, MemberSwap) { TestFixture::testMemberSwap(); }
 TYPED_TEST_P(PackedTupleTests, MakeTuple) { TestFixture::testMakeTuple(); }
 
 TYPED_TEST_P(PackedTupleTests, AdlSwap) {
-//  TestFixture::testAdlSwap();
+  TestFixture::testAdlSwap();
 }
 
 TYPED_TEST_P(PackedTupleTests, Apply) {
-//  TestFixture::testApply();
+  TestFixture::testApply();
 }
 
 TYPED_TEST_P(PackedTupleTests, ApplyMulti) {
-//  TestFixture::testMultiArgumentApply();
+  TestFixture::testMultiArgumentApply();
 }
 
 TYPED_TEST_P(PackedTupleTests, ForEach) {
-//  TestFixture::testForEach();
+  TestFixture::testForEach();
 }
 
 TYPED_TEST_P(PackedTupleTests, ForEachMulti) {
-//  TestFixture::testForEachMultiArgument();
+  TestFixture::testForEachMultiArgument();
+}
+TYPED_TEST_P(PackedTupleTests, Tie) {
+  TestFixture::testTie();
+}
+TYPED_TEST_P(PackedTupleTests, Cat) {
+  TestFixture::testTupleCat();
 }
 
 TYPED_TEST_P(PackedTupleTests, DeductionGuides) {
-//  TestFixture::testTypeDeductionGuides();
+  TestFixture::testTypeDeductionGuides();
 }
 
 TYPED_TEST_P(PackedTupleTests, StructuredBinding) {
-//  TestFixture::testStructuredBinding();
+  TestFixture::testStructuredBinding();
 }
 
-TYPED_TEST_P(PackedTupleTests, Tie) {
-//  TestFixture::testTie();
-}
+
 
 REGISTER_TYPED_TEST_SUITE_P(
     PackedTupleTests, DefaultConstructor, DirectConstructor,
@@ -1193,7 +1197,7 @@ REGISTER_TYPED_TEST_SUITE_P(
     PairCopyConstructor, PairMoveConstructor, CopyConstructor, MoveConstructor,
     CopyAssignment, MoveAssignment, ConversionCopyAssignment,
     ConversionMoveAssignment, MemberSwap, MakeTuple, AdlSwap, Apply, ApplyMulti,
-    ForEach, ForEachMulti, Tie, DeductionGuides, StructuredBinding);
+    ForEach, ForEachMulti, Tie, Cat, DeductionGuides, StructuredBinding);
 
 // clang-format off
 using EmptyType = CxxPlugins::Tuple<>;
