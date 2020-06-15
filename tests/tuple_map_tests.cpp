@@ -12,7 +12,7 @@
  * $BRIEF$
  */
 
-#include <cxx_plugins/tuple_map.hpp>
+#include <tuple/tuple_map.hpp>
 
 #include <gtest/gtest.h>
 

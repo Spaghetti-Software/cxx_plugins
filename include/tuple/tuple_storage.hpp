@@ -77,6 +77,7 @@ template <typename U>
 using TupleInnerType =
     std::conditional_t<std::is_reference_v<U>, TupleRefWrapper<U>, U>;
 
+
 } // namespace impl
 
 // Implementation
@@ -89,7 +90,6 @@ private:
   using Helper = impl::TupleTypeHelper<InnerType<Ts>...>;
 
 public:
-
   // Noexcept specifiers
   static constexpr bool is_nothrow_default_ctor =
       (std::is_nothrow_default_constructible_v<InnerType<Ts>> && ...);
@@ -468,7 +468,8 @@ public:
 //! (we can't construct references with placement new)
 template <typename U> struct TupleRefWrapper {
   static_assert(std::is_reference_v<U>, "U should be a reference");
-  constexpr explicit TupleRefWrapper(U ref) noexcept : reference_m(std::forward<U>(ref)) {}
+  constexpr explicit TupleRefWrapper(U ref) noexcept
+      : reference_m(std::forward<U>(ref)) {}
   U reference_m;
 };
 

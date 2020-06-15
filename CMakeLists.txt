@@ -62,7 +62,7 @@ target_sources(${This}
         include/cxx_plugins/type_traits.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
-        include/cxx_plugins/tuple_map.hpp
+        include/tuple/tuple_map.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp
