@@ -70,7 +70,7 @@
  *
  */
 
-#include <cxx_plugins/tuple.hpp>
+#include <tuple/tuple.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -101,7 +101,7 @@ public:
   virtual ~TupleChecker() = default;
 };
 
-void a() {
+inline void a() {
   std::tuple<> e;
   std::tuple<> e0;
   e0 = e;
@@ -212,7 +212,7 @@ public:
   ~ExplicitData() { checker_p_m->dtor(); }
 
   template <bool enable = std::is_default_constructible_v<T>,
-            std::enable_if_t<enable, bool> = true>
+      std::enable_if_t<enable, bool> = true>
   explicit ExplicitData() : value_m() {
     checker_p_m->defaultCtor();
   }
@@ -251,7 +251,7 @@ public:
   }
 
   template <bool enable = !std::is_reference_v<T>,
-            std::enable_if_t<enable, bool> = true>
+      std::enable_if_t<enable, bool> = true>
   ExplicitData &operator=(T &&rhs) {
     value_m = rhs;
     checker_p_m->conversionMoveAssignment();
@@ -320,12 +320,12 @@ constexpr auto operator+(std::integral_constant<T, lhs_val>,
 }
 
 template <typename T,
-          std::enable_if_t<std::is_floating_point_v<T> || std::is_integral_v<T>,
-                           bool> = true>
+    std::enable_if_t<std::is_floating_point_v<T> || std::is_integral_v<T>,
+        bool> = true>
 using uniform_distribution =
-    std::conditional_t<std::is_floating_point_v<T>,
-                       std::uniform_real_distribution<T>,
-                       std::uniform_int_distribution<T>>;
+std::conditional_t<std::is_floating_point_v<T>,
+    std::uniform_real_distribution<T>,
+    std::uniform_int_distribution<T>>;
 
 template <typename T> struct RandomGenerator {
   T operator()() { return distribution_m(random_engine_m); }
@@ -344,7 +344,7 @@ template <typename... Ts>
 class PackedTupleTests<CxxPlugins::Tuple<Ts...>> : public ::testing::Test {
 public:
   static_assert(true &&
-                    ((is_implicit_data_v<Ts> || is_explicit_data_v<Ts>)&&...),
+                ((is_implicit_data_v<Ts> || is_explicit_data_v<Ts>)&&...),
                 "Ts should be instances of ExplictData or ImplicitData");
 
   template <std::size_t i>
@@ -354,7 +354,7 @@ public:
 
   static constexpr std::size_t implicit_count =
       (const_id<0>() + ... +
-       std::conditional_t<is_implicit_data_v<Ts>, const_id<1>, const_id<0>>());
+          std::conditional_t<is_implicit_data_v<Ts>, const_id<1>, const_id<0>>());
 
   struct DummyAny {
     template <typename... Us>
@@ -396,7 +396,7 @@ public:
   }
 
   template <std::size_t index,
-            std::enable_if_t<index >= 0 && sizeof...(Ts) >= 1, int> = 0>
+      std::enable_if_t<index >= 0 && sizeof...(Ts) >= 1, int> = 0>
   void checkEqualityImpl(CxxPlugins::Tuple<Ts...> const &tuple,
                          std::tuple<Ts...> const &expected) {
     EXPECT_EQ(CxxPlugins::get<index>(tuple).value_m,
@@ -404,7 +404,7 @@ public:
   }
 
   template <std::size_t... indices,
-            std::enable_if_t<sizeof...(indices) >= 1, int> = 0>
+      std::enable_if_t<sizeof...(indices) >= 1, int> = 0>
   void checkEquality(std::index_sequence<indices...> /*unused*/,
                      CxxPlugins::Tuple<Ts...> const &tuple,
                      std::tuple<Ts...> const &expected) {
@@ -445,7 +445,7 @@ public:
       EXPECT_CALL(*mock_m, dtor).Times(elements_count);
     } else {
       EXPECT_FALSE(std::is_default_constructible_v<Tuple<Ts...>>)
-          << "PackedTuple shouldn't have default constructor.";
+              << "PackedTuple shouldn't have default constructor.";
     }
   }
 
@@ -524,13 +524,13 @@ public:
 
       EXPECT_CALL(*mock_m, dtor).Times(elements_count); // tmp
     }
-    // Need to check for >= 1, as otherwise default ctor will be selected and
-    // true will be returned
+      // Need to check for >= 1, as otherwise default ctor will be selected and
+      // true will be returned
     else if constexpr (sizeof...(Ts) >= 1) {
       bool is_constructible =
           std::is_constructible_v<Tuple<Ts...>, Ts const &...>;
       EXPECT_FALSE(is_constructible)
-          << "PackedTuple should have no direct constructor";
+              << "PackedTuple should have no direct constructor";
     }
   }
   void testConvertingCtor() {
@@ -553,14 +553,14 @@ public:
       // explicit ctor should work in implicit case as well
       testConvertingCtorExplicitImpl(sequence, input_data);
     }
-    // Need to check for >= 1, as otherwise default ctor will be selected and
-    // true will be returned
+      // Need to check for >= 1, as otherwise default ctor will be selected and
+      // true will be returned
     else if constexpr (sizeof...(Ts) >= 1) {
       bool is_constructible =
           std::is_constructible_v<Tuple<Ts...>,
-                                  DecayedUnderlyingTypeT<Ts> const &...>;
+              DecayedUnderlyingTypeT<Ts> const &...>;
       EXPECT_FALSE(is_constructible)
-          << "PackedTuple should have no conversion constructor";
+              << "PackedTuple should have no conversion constructor";
     }
   }
   void testConvertingCopyCtor() {
@@ -590,14 +590,14 @@ public:
       EXPECT_EQ(explicit_data, tmp);
       EXPECT_CALL(*mock_m, dtor).Times(elements_count);
     }
-    // Need to check for >= 1, as otherwise default ctor will be selected and
-    // true will be returned
+      // Need to check for >= 1, as otherwise default ctor will be selected and
+      // true will be returned
     else if constexpr (sizeof...(Ts) >= 1) {
       bool is_constructible =
           std::is_constructible_v<Tuple<Ts...>,
-                                  Tuple<DecayedUnderlyingTypeT<Ts>...> const &>;
+              Tuple<DecayedUnderlyingTypeT<Ts>...> const &>;
       EXPECT_FALSE(is_constructible)
-          << "PackedTuple should have no conversion copy constructor";
+              << "PackedTuple should have no conversion copy constructor";
     }
   }
   void testConvertingMoveCtor() {
@@ -629,14 +629,14 @@ public:
       EXPECT_EQ(explicit_data, expected);
 
     }
-    // Need to check for >= 1, as otherwise default ctor will be selected and
-    // true will be returned
+      // Need to check for >= 1, as otherwise default ctor will be selected and
+      // true will be returned
     else if constexpr (sizeof...(Ts) >= 1) {
       bool is_constructible =
           std::is_constructible_v<Tuple<Ts...>,
-                                  Tuple<DecayedUnderlyingTypeT<Ts>...> const &>;
+              Tuple<DecayedUnderlyingTypeT<Ts>...> const &>;
       EXPECT_FALSE(is_constructible)
-          << "PackedTuple should have no conversion move constructor";
+              << "PackedTuple should have no conversion move constructor";
     }
   }
   void testPairCopyCtor() {
@@ -855,10 +855,10 @@ public:
     using namespace CxxPlugins;
 
     bool is_same = std::is_same_v<Tuple<Ts...>,
-                                  decltype(makeTuple(std::declval<Ts>()...))>;
+        decltype(makeTuple(std::declval<Ts>()...))>;
 
     EXPECT_TRUE(is_same)
-        << "makeTuple(Ts()...) is different from std::tuple<Ts...>";
+            << "makeTuple(Ts()...) is different from std::tuple<Ts...>";
   }
 
   void testApply() {
@@ -882,8 +882,8 @@ public:
     auto fn = [this](auto &&... val) {
       EXPECT_CALL(*mock_m, conversionMoveAssignment).Times(elements_count);
       ((val = std::numeric_limits<
-            DecayedUnderlyingTypeT<std::decay_t<decltype(val)>>>::max()),
-       ...);
+          DecayedUnderlyingTypeT<std::decay_t<decltype(val)>>>::max()),
+          ...);
     };
     apply(fn, value);
 
@@ -915,8 +915,8 @@ public:
     auto fn = [this](auto &&... val) {
       EXPECT_CALL(*mock_m, conversionMoveAssignment).Times(elements_count * 2);
       ((val = std::numeric_limits<
-            DecayedUnderlyingTypeT<std::decay_t<decltype(val)>>>::max()),
-       ...);
+          DecayedUnderlyingTypeT<std::decay_t<decltype(val)>>>::max()),
+          ...);
     };
     apply(fn, value0, value1);
 
@@ -1002,9 +1002,9 @@ public:
     setStrictMock();
 
     bool is_same = std::is_same_v<Tuple<Ts const &...>,
-                                  decltype(tie(std::declval<Ts const &>()...))>;
+        decltype(tie(std::declval<Ts const &>()...))>;
     EXPECT_TRUE(is_same)
-        << "tie(Ts()...) is different from std::tuple<Ts const &... > ";
+            << "tie(Ts()...) is different from std::tuple<Ts const &... > ";
 
     EXPECT_CALL(*mock_m, conversionMoveCtor).Times(elements_count);
     Tuple<Ts...> my_tuple(RandomGenerator<DecayedUnderlyingTypeT<Ts>>{}()...);
@@ -1024,15 +1024,15 @@ public:
     using type0 = decltype(tuple0);
     bool is_correct0 = std::is_same_v<type0, Tuple<Ts...>>;
     EXPECT_TRUE(is_correct0)
-        << "Deduction guide Tuple tuple0(Ts{}...) didn't create Tuple<Ts...>";
+            << "Deduction guide Tuple tuple0(Ts{}...) didn't create Tuple<Ts...>";
 
     Tuple tuple1(RandomGenerator<DecayedUnderlyingTypeT<Ts>>{}()...);
     using type1 = decltype(tuple1);
     bool is_correct1 =
         std::is_same_v<type1, Tuple<DecayedUnderlyingTypeT<Ts>...>>;
     EXPECT_TRUE(is_correct1)
-        << "Deduction guide Tuple tuple1(DecayedUnderlyingTypeT<Ts>...) didn't "
-           "create Tuple<DecayedUnderlyingTypeT<Ts>...>";
+            << "Deduction guide Tuple tuple1(DecayedUnderlyingTypeT<Ts>...) didn't "
+               "create Tuple<DecayedUnderlyingTypeT<Ts>...>";
   }
 
   void testStructuredBinding() {
@@ -1077,6 +1077,32 @@ public:
       EXPECT_EQ(member_val1, CxxPlugins::get<1>(tuple));
       EXPECT_EQ(member_val2, CxxPlugins::get<2>(tuple));
     }
+  }
+
+  void testTupleCat() {
+    using namespace CxxPlugins;
+    setNiceMock();
+    Tuple<Ts...> t0;
+    Tuple<Ts...> t1;
+    Tuple<Ts...> t2;
+    Tuple<Ts...> t3;
+
+    auto cat0 = tupleCat(t0,t1);
+    bool result = std::is_same_v<decltype(cat0), Tuple<Ts...,Ts...>>;
+    EXPECT_TRUE(result);
+    auto cat1 = tupleCat(t0,t1,t2);
+    result = std::is_same_v<decltype(cat1), Tuple<Ts...,Ts...,Ts...>>;
+    EXPECT_TRUE(result);
+    result = std::is_same_v<decltype(cat1), decltype(tupleCat(cat0, std::declval<Tuple<Ts...>>()))>;
+    EXPECT_TRUE(result);
+    auto cat2 = tupleCat(t0,t1,t2,t3);
+    result = std::is_same_v<decltype(cat2), Tuple<Ts...,Ts...,Ts...,Ts...>>;
+    EXPECT_TRUE(result);
+    result = std::is_same_v<decltype(cat2), decltype(tupleCat(cat0,cat0))>;
+    EXPECT_TRUE(result);
+
+
+
   }
 
   void TearDown() override { (Ts::resetChecker(), ...); }
@@ -1129,18 +1155,30 @@ TYPED_TEST_P(PackedTupleTests, MemberSwap) { TestFixture::testMemberSwap(); }
 
 TYPED_TEST_P(PackedTupleTests, MakeTuple) { TestFixture::testMakeTuple(); }
 
-TYPED_TEST_P(PackedTupleTests, AdlSwap) { TestFixture::testAdlSwap(); }
+TYPED_TEST_P(PackedTupleTests, AdlSwap) {
+  TestFixture::testAdlSwap();
+}
 
-TYPED_TEST_P(PackedTupleTests, Apply) { TestFixture::testApply(); }
+TYPED_TEST_P(PackedTupleTests, Apply) {
+  TestFixture::testApply();
+}
 
 TYPED_TEST_P(PackedTupleTests, ApplyMulti) {
   TestFixture::testMultiArgumentApply();
 }
 
-TYPED_TEST_P(PackedTupleTests, ForEach) { TestFixture::testForEach(); }
+TYPED_TEST_P(PackedTupleTests, ForEach) {
+  TestFixture::testForEach();
+}
 
 TYPED_TEST_P(PackedTupleTests, ForEachMulti) {
   TestFixture::testForEachMultiArgument();
+}
+TYPED_TEST_P(PackedTupleTests, Tie) {
+  TestFixture::testTie();
+}
+TYPED_TEST_P(PackedTupleTests, Cat) {
+  TestFixture::testTupleCat();
 }
 
 TYPED_TEST_P(PackedTupleTests, DeductionGuides) {
@@ -1151,7 +1189,7 @@ TYPED_TEST_P(PackedTupleTests, StructuredBinding) {
   TestFixture::testStructuredBinding();
 }
 
-TYPED_TEST_P(PackedTupleTests, Tie) { TestFixture::testTie(); }
+
 
 REGISTER_TYPED_TEST_SUITE_P(
     PackedTupleTests, DefaultConstructor, DirectConstructor,
@@ -1159,7 +1197,7 @@ REGISTER_TYPED_TEST_SUITE_P(
     PairCopyConstructor, PairMoveConstructor, CopyConstructor, MoveConstructor,
     CopyAssignment, MoveAssignment, ConversionCopyAssignment,
     ConversionMoveAssignment, MemberSwap, MakeTuple, AdlSwap, Apply, ApplyMulti,
-    ForEach, ForEachMulti, Tie, DeductionGuides, StructuredBinding);
+    ForEach, ForEachMulti, Tie, Cat, DeductionGuides, StructuredBinding);
 
 // clang-format off
 using EmptyType = CxxPlugins::Tuple<>;
@@ -1241,7 +1279,7 @@ template <> struct PaddedStruct<2> {
 };
 
 static_assert(sizeof(CxxPlugins::Tuple<double, int, char>) ==
-                  sizeof(PaddedStruct<2>),
+              sizeof(PaddedStruct<2>),
               "Size is wrong");
 
 template <> struct PaddedStruct<3> {
@@ -1251,7 +1289,7 @@ template <> struct PaddedStruct<3> {
 };
 
 static_assert(sizeof(CxxPlugins::Tuple<char, int, double>) ==
-                  sizeof(PaddedStruct<3>),
+              sizeof(PaddedStruct<3>),
               "Size is wrong");
 
 template <> struct PaddedStruct<4> {
@@ -1262,7 +1300,7 @@ template <> struct PaddedStruct<4> {
 };
 
 static_assert(sizeof(CxxPlugins::Tuple<char, double, char, double>) ==
-                  sizeof(PaddedStruct<4>),
+              sizeof(PaddedStruct<4>),
               "Size is wrong");
 
 template <> struct PaddedStruct<5> {
@@ -1273,34 +1311,9 @@ template <> struct PaddedStruct<5> {
 };
 
 static_assert(sizeof(CxxPlugins::Tuple<double, double, char, char>) ==
-                  sizeof(PaddedStruct<5>),
+              sizeof(PaddedStruct<5>),
               "Size is wrong");
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-#endif
-
-INSTANTIATE_TYPED_TEST_SUITE_P(Empty, PackedTupleTests, EmptyType);
-INSTANTIATE_TYPED_TEST_SUITE_P(SimpleSingleTypes, PackedTupleTests,
-                               SimpleSingleTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(SimpleMultiTypes, PackedTupleTests,
-                               SimpleMultiTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(MixedMultiTypes, PackedTupleTests,
-                               MixedMultiTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(PaddedTypes, PackedTupleTests, PaddedTypes);
-
-// Tests for references should be created separately
-// INSTANTIATE_TYPED_TEST_SUITE_P(ReferenceTypes, PackedTupleTests,
-//                               ReferenceTypes);
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  auto result = RUN_ALL_TESTS();
-  return result;
-}
+

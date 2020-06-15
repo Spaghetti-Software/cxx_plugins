@@ -23,23 +23,25 @@ set(VERSION 0.0.1)
 set(This cxx_plugins)
 
 
-project(${This}
-        VERSION ${VERSION}
-        DESCRIPTION "Create/manage external libraries with plugin manager"
-        HOMEPAGE_URL "https://github.com/Spaghetti-Software/cxx_plugins"
-        LANGUAGES C CXX
-        )
+project( ${This}
+  VERSION ${VERSION}
+  DESCRIPTION     "Create/manage external libraries with plugin manager"
+  HOMEPAGE_URL    "https://github.com/Spaghetti-Software/cxx_plugins"
+  LANGUAGES       C CXX
+)
 
 
 include(cxx_plugins_options)
 include(common_flags)
 
 
+
+
 if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
-    add_library(${This} SHARED)
-else ()
-    add_library(${This} STATIC)
-endif ()
+  add_library(${This} SHARED)
+else()
+  add_library(${This} STATIC )
+endif()
 
 set(CONAN_SYSTEM_INCLUDE ON)
 if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
@@ -58,11 +60,25 @@ target_sources(${This}
         include/cxx_plugins/function_traits.hpp
         include/cxx_plugins/function_traits.ipp
         include/cxx_plugins/type_traits.hpp
-        include/cxx_plugins/tuple.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
-        include/cxx_plugins/tuple_map.hpp
-        include/cxx_plugins/tuple_impl.ipp
+        include/tuple/tuple_map.hpp
+
+        include/sequence/size.hpp
+        include/sequence/partial_sum.hpp
+        include/sequence/exclusive_scan.hpp
+        include/sequence/inclusive_scan.hpp
+        include/sequence/operators.hpp
+        include/sequence/map.hpp
+
+        include/tuple/tuple.hpp
+        include/tuple/tuple_cat.hpp
+        include/tuple/tuple_declarations.hpp
+        include/tuple/tuple_helpers.hpp
+        include/tuple/forward.hpp
+        include/tuple/tuple_storage.hpp
+        include/tuple/tuple_impl.hpp
+
         )
 
 target_include_directories(${This} PRIVATE src)
@@ -72,19 +88,20 @@ target_link_libraries(${This} INTERFACE CONAN_PKG::boost)
 # We need different configurations, so warnings from our library
 # are not seen from users compilation
 if (CXX_PLUGINS_BUILD_TESTS)
-    target_include_directories(${This} PUBLIC include)
-else ()
-    target_include_directories(${This} INTERFACE SYSTEM include)
-    target_include_directories(${This} PRIVATE include)
-endif ()
+  target_include_directories(${This} PUBLIC include)
+else()
+  target_include_directories(${This} INTERFACE SYSTEM include)
+  target_include_directories(${This} PRIVATE include)
+endif()
 
 
-if (CXX_PLUGINS_BUILD_TESTS)
-    #add_subdirectory(example_plugin)
-    add_subdirectory(tests)
-endif ()
-if (CXX_PLUGINS_BUILD_DOCUMENTATION)
-    add_subdirectory(docs)
-endif ()
+
+if(CXX_PLUGINS_BUILD_TESTS)
+  #add_subdirectory(example_plugin)
+  add_subdirectory(tests)
+endif()
+if(CXX_PLUGINS_BUILD_DOCUMENTATION)
+  add_subdirectory(docs)
+endif()
 
 

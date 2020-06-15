@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include "cxx_plugins/type_traits.hpp"
+#include "tuple/tuple_storage.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -28,25 +28,16 @@ namespace CxxPlugins {
 
 template <typename... Ts> struct Tuple;
 
-template <std::size_t I, typename T> struct TupleElement;
 
-template <std::size_t I, typename... Ts> struct TupleElement<I, Tuple<Ts...>> {
-  using Type = utility::ElementType<I, Ts...>;
-};
-//! Alias for TupleElement::Type
-template <std::size_t I, typename T>
-using TupleElementType = typename TupleElement<I, T>::Type;
 
-template <typename... Tuples> constexpr auto tupleCat(Tuples &&... args);
 
 template <typename T, typename U> using Pair = std::pair<T, U>;
 
 template <typename T, typename U> constexpr auto makePair(T &&t, U &&u);
 
 template <typename... Types>
-constexpr auto forwardAsTuple(Types &&... args) noexcept -> Tuple<Types &&...>;
+constexpr auto forwardAsTuple(Types &&... vals) noexcept -> Tuple<Types &&...>;
 
-template <typename T> struct TupleSize;
 
 template <typename... Types> struct TupleSize<Tuple<Types...>> {
   static constexpr std::size_t value = sizeof...(Types);
@@ -56,24 +47,23 @@ template <typename U0, typename U1> struct TupleSize<Pair<U0, U1>> {
   static constexpr std::size_t value = 2;
 };
 
-template <typename T>
-static constexpr std::size_t tuple_size_v = TupleSize<T>::value;
 
-template <typename T, typename Fn> constexpr void tupleForEach(T &&fn, Fn &&tuple);
+template <typename T, typename Fn>
+constexpr void tupleForEach(T &&fn, Fn &&tuple);
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> const &
+constexpr TupleElementT<I, Tuple<Us...>> const &
 get(Tuple<Us...> const &tuple) noexcept;
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept;
+constexpr TupleElementT<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept;
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> &&
+constexpr TupleElementT<I, Tuple<Us...>> &&
 get(Tuple<Us...> &&tuple) noexcept;
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> const &&
+constexpr TupleElementT<I, Tuple<Us...>> const &&
 get(Tuple<Us...> const &&tuple) noexcept;
 
 template <std::size_t I, typename U0, typename U1>
@@ -119,11 +109,7 @@ get(Pair<U0, U1> const &&pair) noexcept {
   }
 }
 
-} // namespace CxxPlugins
 
-#include "cxx_plugins/tuple_impl.ipp"
-
-namespace CxxPlugins {
 /*!
  * \brief
  * PackedTuple is a drop-in replacement for std::tuple.
@@ -223,9 +209,9 @@ namespace CxxPlugins {
  *   + ☑ apply with multiple tuples
  *   + ☑ tupleForEach with multiple tuples
  */
-template <typename... Ts> struct Tuple : private impl::PackedTupleImpl<Ts...> {
+template <typename... Ts> struct Tuple : private TupleStorage<Ts...> {
 private:
-  using Parent = impl::PackedTupleImpl<Ts...>;
+  using Parent = TupleStorage<Ts...>;
 
   template <bool Condition, typename... TArgs> struct Constraints {
 
@@ -278,8 +264,8 @@ private:
   template <typename... Us>
   static constexpr bool is_same = (std::is_same_v<Ts, Us> && ...);
 
-  static constexpr bool is_nothrow_swappable = (std::is_nothrow_swappable_v<Ts> &&
-    ...);
+  static constexpr bool is_nothrow_swappable =
+      (std::is_nothrow_swappable_v<Ts> && ...);
 
   static constexpr auto sequence = Parent::sequence;
 
@@ -305,20 +291,25 @@ private:
 
 public:
   template <std::size_t I, typename... Us>
-  friend constexpr TupleElementType<I, Tuple<Us...>> const &
+  friend constexpr TupleElementT<I, Tuple<Us...>> const &
   get(Tuple<Us...> const &tuple) noexcept;
 
   template <std::size_t I, typename... Us>
-  friend constexpr TupleElementType<I, Tuple<Us...>> &
+  friend constexpr TupleElementT<I, Tuple<Us...>> &
   get(Tuple<Us...> &tuple) noexcept;
 
   template <std::size_t I, typename... Us>
-  friend constexpr TupleElementType<I, Tuple<Us...>> &&
+  friend constexpr TupleElementT<I, Tuple<Us...>> &&
   get(Tuple<Us...> &&tuple) noexcept;
 
   template <std::size_t I, typename... Us>
-  friend constexpr TupleElementType<I, Tuple<Us...>> const &&
+  friend constexpr TupleElementT<I, Tuple<Us...>> const &&
   get(Tuple<Us...> const &&tuple) noexcept;
+
+
+  template<typename... Us>
+  friend struct Tuple;
+
 
   /*!
    * \brief  Default constructor. Value-initializes all elements.
@@ -685,8 +676,9 @@ public:
 
 private:
   template <std::size_t... indices>
-  constexpr void swapImpl(Tuple &other,
-                          std::index_sequence<indices...> /*unused*/) noexcept(is_nothrow_swappable) {
+  constexpr void
+  swapImpl(Tuple &other, std::index_sequence<indices...> /*unused*/) noexcept(
+      is_nothrow_swappable) {
     using std::swap;
     ((swap(get<indices>(*this), get<indices>(other))), ...);
   }
@@ -718,34 +710,31 @@ private:
   }
 };
 
-template<typename... Ts>
-Tuple(Ts...)->Tuple<Ts...>;
+template <typename... Ts> Tuple(Ts...) -> Tuple<Ts...>;
 
-template<class T1, class T2>
-Tuple(Pair<T1, T2>) -> Tuple<T1, T2>;
-
+template <class T1, class T2> Tuple(Pair<T1, T2>) -> Tuple<T1, T2>;
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> const &
+constexpr TupleElementT<I, Tuple<Us...>> const &
 get(Tuple<Us...> const &tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> const &>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> const &>(tuple));
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> &>(tuple));
+constexpr TupleElementT<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept {
+  return get<I>(static_cast<TupleStorage<Us...> &>(tuple));
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> &&
+constexpr TupleElementT<I, Tuple<Us...>> &&
 get(Tuple<Us...> &&tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> &&>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> &&>(tuple));
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementType<I, Tuple<Us...>> const &&
+constexpr TupleElementT<I, Tuple<Us...>> const &&
 get(Tuple<Us...> const &&tuple) noexcept {
-  return get<I>(static_cast<impl::PackedTupleImpl<Us...> const &&>(tuple));
+  return get<I>(static_cast<TupleStorage<Us...> const &&>(tuple));
 }
 
 //! \todo Test three-way comparison when compilers will be more feature complete
@@ -834,9 +823,9 @@ struct Compare<Tuple<Ts...>, Tuple<Us...>> {
   template <std::size_t i = 0>
   static constexpr bool less(Tuple<Ts...> const &lhs, Tuple<Us...> const &rhs) {
     if constexpr (i < sizeof...(Ts)) {
-      if constexpr (get<i>(lhs) < get<i>(rhs)) {
+      if (get<i>(lhs) < get<i>(rhs)) {
         return true;
-      } else if constexpr (get<i>(rhs) < get<i>(lhs)) {
+      } else if (get<i>(rhs) < get<i>(lhs)) {
         return false;
       }
       return less<i + 1>(lhs, rhs);
@@ -895,7 +884,7 @@ constexpr auto makeTuple(Ts &&... vals) noexcept(
 
 template <typename... Types>
 constexpr auto forwardAsTuple(Types &&... vals) noexcept -> Tuple<Types &&...> {
-  return Tuple<Types &&...>(std::forward<Types>(vals)...);
+  return Tuple<decltype(vals)...>(std::forward<Types>(vals)...);
 }
 
 struct IgnoredType {
@@ -924,52 +913,11 @@ template <typename T, typename U> constexpr auto makePair(T &&t, U &&u) {
   return std::make_pair(std::forward<T>(t), std::forward<U>(u));
 }
 
-template <typename... Tuples> struct TupleCatResult;
 
-template <typename... Ts> struct TupleCatResult<Tuple<Ts...>> {
-  using Type = Tuple<Ts...>;
-};
 
-template <typename... Ts, typename... Us, typename... RestTuples>
-struct TupleCatResult<Tuple<Ts...>, Tuple<Us...>, RestTuples...> {
-  using Type = typename TupleCatResult<
-      Tuple<Ts..., Us...>, typename TupleCatResult<RestTuples...>::Type>::Type;
-};
 
-template <typename... Tuples>
-using TupleCatResultT = typename TupleCatResult<Tuples...>::Type;
 
-namespace impl {
-template <typename NewTuple, std::size_t... inner_indices,
-          std::size_t... outer_indices, typename... TupleRefs>
-constexpr auto
-tupleCatHelper(Tuple<TupleRefs...> &tuple_of_tuples,
-               std::index_sequence<inner_indices...> /*unused*/,
-               std::index_sequence<outer_indices...> /*unused*/) {
-  static_assert(sizeof...(inner_indices) == sizeof...(outer_indices),
-                "Sizes should be same");
-  return NewTuple(get<outer_indices>(get<inner_indices>(tuple_of_tuples))...);
-}
 
-} // namespace impl
-
-template <typename... Tuples> constexpr auto tupleCat(Tuples &&... tuples) {
-
-  static_assert(sizeof...(Tuples) >= 1,
-                "tupleCat works non 0 number of arguments");
-
-  using NewTupleType = TupleCatResultT<std::decay_t<Tuples>...>;
-  using Sizes = std::index_sequence<tuple_size_v<std::decay_t<Tuples>>...>;
-
-  using inner_indices = utility::RepeatingIndexSequenceT<0, Sizes>;
-
-  using outer_indices = utility::IntegerSequenceCatT<
-      std::make_index_sequence<tuple_size_v<std::decay_t<Tuples>>>...>;
-
-  return impl::tupleCatHelper<NewTupleType>(
-      forwardAsTuple<Tuples &&...>(tuples...), inner_indices{},
-      outer_indices{});
-}
 
 namespace impl {
 template <typename Fn, typename Tuples, std::size_t... inner_indices,
@@ -1013,10 +961,12 @@ constexpr decltype(auto) apply(Fn &&fn, FirstTuple &&first,
       std::make_index_sequence<tuple_size_v<std::decay_t<FirstTuple>>>,
       std::make_index_sequence<tuple_size_v<std::decay_t<RestTuples>>>...>;
 
+  decltype(auto) tuple = forwardAsTuple(std::forward<FirstTuple>(first),
+                              std::forward<RestTuples>(rest)...);
+
   return impl::applyComplexImpl(
       std::forward<Fn>(fn),
-      forwardAsTuple(std::forward<FirstTuple>(first),
-                     std::forward<RestTuples>(rest)...),
+      tuple,
       inner_indices(), outer_indices());
 }
 
@@ -1077,15 +1027,14 @@ constexpr void tupleForEach(Fn &&fn, Ts &&... tuples) {
 
 // Enable structured binding
 
-
-template<typename... Ts>
-class std::tuple_size<CxxPlugins::Tuple<Ts...>> {
+template <typename... Ts> class std::tuple_size<CxxPlugins::Tuple<Ts...>> {
 public:
-  static constexpr std::size_t value = CxxPlugins::tuple_size_v<CxxPlugins::Tuple<Ts...>>;
+  static constexpr std::size_t value =
+      CxxPlugins::tuple_size_v<CxxPlugins::Tuple<Ts...>>;
 };
 
-template<std::size_t I, typename... Ts>
+template <std::size_t I, typename... Ts>
 class std::tuple_element<I, CxxPlugins::Tuple<Ts...>> {
 public:
-  using type = CxxPlugins::TupleElementType<I,CxxPlugins::Tuple<Ts...>>;
+  using type = CxxPlugins::TupleElementT<I, CxxPlugins::Tuple<Ts...>>;
 };

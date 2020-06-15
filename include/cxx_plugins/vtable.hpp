@@ -18,8 +18,8 @@
 
 #include "cxx_plugins/definitions.hpp"
 #include "cxx_plugins/function_traits.hpp"
-#include "cxx_plugins/tuple.hpp"
 #include "cxx_plugins/type_traits.hpp"
+#include "tuple/tuple_impl.hpp"
 
 namespace CxxPlugins {
 
