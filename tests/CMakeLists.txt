@@ -20,7 +20,6 @@ target_sources(${This}
     cxx_plugins_tests.cpp
     function_traits_tests.cpp
     vtable_tests.cpp
-    any_tests.cpp
 
     example_api.cpp
     example_api.hpp
