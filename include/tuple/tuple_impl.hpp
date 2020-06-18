@@ -28,16 +28,12 @@ namespace CxxPlugins {
 
 template <typename... Ts> struct Tuple;
 
-
-
-
 template <typename T, typename U> using Pair = std::pair<T, U>;
 
 template <typename T, typename U> constexpr auto makePair(T &&t, U &&u);
 
 template <typename... Types>
 constexpr auto forwardAsTuple(Types &&... vals) noexcept -> Tuple<Types &&...>;
-
 
 template <typename... Types> struct TupleSize<Tuple<Types...>> {
   static constexpr std::size_t value = sizeof...(Types);
@@ -46,7 +42,6 @@ template <typename... Types> struct TupleSize<Tuple<Types...>> {
 template <typename U0, typename U1> struct TupleSize<Pair<U0, U1>> {
   static constexpr std::size_t value = 2;
 };
-
 
 template <typename T, typename Fn>
 constexpr void tupleForEach(T &&fn, Fn &&tuple);
@@ -59,8 +54,7 @@ template <std::size_t I, typename... Us>
 constexpr TupleElementT<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept;
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementT<I, Tuple<Us...>> &&
-get(Tuple<Us...> &&tuple) noexcept;
+constexpr TupleElementT<I, Tuple<Us...>> &&get(Tuple<Us...> &&tuple) noexcept;
 
 template <std::size_t I, typename... Us>
 constexpr TupleElementT<I, Tuple<Us...>> const &&
@@ -108,7 +102,6 @@ get(Pair<U0, U1> const &&pair) noexcept {
     return std::move(pair.second);
   }
 }
-
 
 /*!
  * \brief
@@ -306,10 +299,7 @@ public:
   friend constexpr TupleElementT<I, Tuple<Us...>> const &&
   get(Tuple<Us...> const &&tuple) noexcept;
 
-
-  template<typename... Us>
-  friend struct Tuple;
-
+  template <typename... Us> friend struct Tuple;
 
   /*!
    * \brief  Default constructor. Value-initializes all elements.
@@ -568,12 +558,7 @@ public:
 //            std::enable_if_t<enable, bool> = true>
 #endif
   constexpr Tuple &
-  operator=(Tuple const &other) noexcept(is_nothrow_copy_assign) {
-    if (this != &other) {
-      assign(sequence, other);
-    }
-    return *this;
-  }
+  operator=(Tuple const &other) noexcept(is_nothrow_copy_assign) = default;
 
   /*!
    * \brief
@@ -584,12 +569,8 @@ public:
 //  template <bool enable = (std::is_move_assignable_v<Ts> && ...),
 //            std::enable_if_t<enable, bool> = true>
 #endif
-  constexpr Tuple &operator=(Tuple &&other) noexcept(is_nothrow_move_assign) {
-    if (this != &other) {
-      assign(sequence, std::move(other));
-    }
-    return *this;
-  }
+  constexpr Tuple &
+  operator=(Tuple &&other) noexcept(is_nothrow_move_assign) = default;
 
   /*!
    * \brief
@@ -726,8 +707,7 @@ constexpr TupleElementT<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept {
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementT<I, Tuple<Us...>> &&
-get(Tuple<Us...> &&tuple) noexcept {
+constexpr TupleElementT<I, Tuple<Us...>> &&get(Tuple<Us...> &&tuple) noexcept {
   return get<I>(static_cast<TupleStorage<Us...> &&>(tuple));
 }
 
@@ -913,12 +893,6 @@ template <typename T, typename U> constexpr auto makePair(T &&t, U &&u) {
   return std::make_pair(std::forward<T>(t), std::forward<U>(u));
 }
 
-
-
-
-
-
-
 namespace impl {
 template <typename Fn, typename Tuples, std::size_t... inner_indices,
           std::size_t... outer_indices>
@@ -962,12 +936,10 @@ constexpr decltype(auto) apply(Fn &&fn, FirstTuple &&first,
       std::make_index_sequence<tuple_size_v<std::decay_t<RestTuples>>>...>;
 
   decltype(auto) tuple = forwardAsTuple(std::forward<FirstTuple>(first),
-                              std::forward<RestTuples>(rest)...);
+                                        std::forward<RestTuples>(rest)...);
 
-  return impl::applyComplexImpl(
-      std::forward<Fn>(fn),
-      tuple,
-      inner_indices(), outer_indices());
+  return impl::applyComplexImpl(std::forward<Fn>(fn), tuple, inner_indices(),
+                                outer_indices());
 }
 
 namespace impl {

@@ -12,53 +12,40 @@
  * $BRIEF$
  */
 #pragma once
-#include "tuple/tuple_impl.hpp"
 #include "tuple/tuple_cat.hpp"
+#include "tuple/tuple_impl.hpp"
 
 namespace CxxPlugins {
-
-template <typename T> struct Tag {};
-
-/*!
- * \brief Simplifies declaring tags
- * ```cpp
- * struct Foo {};
- * ...
- * my_map[tag<Foo>] = ...;
- * ```
- * \tparam T User defined tag type
- */
-template <typename T> constexpr Tag<T> tag = {};
 
 template <typename... TaggedValues> struct TupleMap;
 
 template <typename TagT, typename T> struct TaggedValue {
-  TaggedValue() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
+  constexpr TaggedValue() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
   template <typename U>
-  TaggedValue(TagT && /*unused*/,
+  constexpr TaggedValue(TagT && /*unused*/,
               U &&val) noexcept(std::is_nothrow_constructible_v<T, U &&>)
       : value_m(std::forward<U>(val)) {}
   template <typename U>
-  TaggedValue(TagT const & /*unused*/,
+  constexpr TaggedValue(TagT const & /*unused*/,
               U &&val) noexcept(std::is_nothrow_constructible_v<T, U &&>)
       : value_m(std::forward<U>(val)) {}
-  explicit TaggedValue(T const &val) noexcept(
+  explicit constexpr TaggedValue(T const &val) noexcept(
       std::is_nothrow_copy_constructible_v<T>)
       : value_m(val) {}
 
-  explicit TaggedValue(T &&val) noexcept(
+  explicit constexpr TaggedValue(T &&val) noexcept(
       std::is_nothrow_move_constructible_v<T>)
       : value_m(std::move(val)) {}
 
   template <typename U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
-  TaggedValue &operator=(TaggedValue<TagT, U> const &rhs) noexcept(
+  constexpr TaggedValue &operator=(TaggedValue<TagT, U> const &rhs) noexcept(
       std::is_nothrow_assignable_v<T, const U &>) {
     value_m = rhs.value_m;
     return *this;
   }
 
   template <typename U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
-  TaggedValue &operator=(TaggedValue<TagT, U> &&rhs) noexcept(
+  constexpr TaggedValue &operator=(TaggedValue<TagT, U> &&rhs) noexcept(
       std::is_nothrow_assignable_v<T, U &&>) {
     value_m = std::move(rhs.value_m);
     return *this;
@@ -231,6 +218,14 @@ public:
   explicit constexpr TupleMap(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
       : Parent(std::move(get<Tags>(std::move(rhs)))...) {}
 
+  template<bool enable = sizeof...(Tags) != 0, std::enable_if_t<enable,int> = 0>
+  constexpr TupleMap(TaggedValue<Tags, TValues> const &... vals)
+      : Parent(vals.value_m...) {}
+
+  template<bool enable = sizeof...(Tags) != 0, std::enable_if_t<enable,unsigned> = 1>
+  constexpr TupleMap(TaggedValue<Tags, TValues> &&... vals)
+      : Parent(std::move(vals.value_m)...) {}
+
   /*!
    * \brief Copy assignment operator from TupleMap with another order of
    * template parameters. Or with different value parameters.
@@ -264,13 +259,13 @@ public:
    */
   template <typename Tag>
   constexpr auto operator[]([[maybe_unused]] Tag &&tag) const
-      -> decltype(get<Tag>(*this)) {
+      -> decltype(get<std::decay_t<Tag>>(*this)) {
     return get<std::decay_t<Tag>>(*this);
   }
   //! \overload
   template <typename Tag>
   constexpr auto operator[]([[maybe_unused]] Tag &&tag)
-      -> decltype(get<Tag>(*this)) {
+      -> decltype(get<std::decay_t<Tag>>(*this)) {
     return get<std::decay_t<Tag>>(*this);
   }
 
@@ -283,8 +278,9 @@ public:
   }
 };
 
-template <typename... TaggedValues>
-TupleMap(TaggedValues...) -> TupleMap<TaggedValues...>;
+template <typename... Tags, typename... ValuesT>
+TupleMap(TaggedValue<Tags, ValuesT>...)
+    -> TupleMap<TaggedValue<Tags, ValuesT>...>;
 
 // CxxPlugins::impl::Compare<
 //    CxxPlugins::TupleMap<CxxPlugins::TaggedValue<CxxPlugins::Tag<Foo>, float>,
@@ -408,8 +404,6 @@ constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map)
   get<utility::index_of<Tag, UTags...>>(std::move(map));
 }
 
-
-
 /*!
  * \brief   Creates TupleMap from list of tagged values
  * \relates TupleMap
@@ -419,12 +413,10 @@ constexpr auto makeTupleMap(TaggedValues &&... vals) {
   return TupleMap<std::decay_t<TaggedValues>...>(vals.value_m...);
 }
 
-
-template<std::size_t I, typename... Tags, typename... Values>
-struct TupleCatElement<I, TupleMap<TaggedValue<Tags,Values>...>> {
-  using Type = utility::ElementType<I,TaggedValue<Tags,Values>...>;
+template <std::size_t I, typename... Tags, typename... Values>
+struct TupleCatElement<I, TupleMap<TaggedValue<Tags, Values>...>> {
+  using Type = utility::ElementType<I, TaggedValue<Tags, Values>...>;
 };
-
 
 /*!
  * \brief Creates new TupleMap that is a subset of given TupleMap.

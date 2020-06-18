@@ -63,7 +63,8 @@ target_sources(${This}
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/polymorphic_traits.hpp
-        include/tuple/tuple_map.hpp
+        include/cxx_plugins/polymorphic_ref.hpp
+        include/cxx_plugins/function_proxy.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp
@@ -79,6 +80,7 @@ target_sources(${This}
         include/tuple/forward.hpp
         include/tuple/tuple_storage.hpp
         include/tuple/tuple_impl.hpp
+        include/tuple/tuple_map.hpp
 
         )
 

@@ -16,8 +16,6 @@
 
 #include <utility>
 
-
-
 /*!
  * \brief Contains helper functions/classes
  * \details
@@ -171,7 +169,7 @@ constexpr auto functionPointerCast(FunctionPointer<Signature, Class> fn_ptr) {
  * \brief
  * Generates trampoline function that casts given InputT pointer to
  * the underlying class.
- * \tparam method   Pointer to member function
+ * \tparam method   Pointer to method/function
  * \tparam InputT   Conversion type
  * \return pointer to the function of the form `Return(InputT*, TArgs...)`
  *
@@ -195,7 +193,7 @@ constexpr auto functionPointerCast(FunctionPointer<Signature, Class> fn_ptr) {
  * ```
  *
  */
-template <auto method, typename InputT = void>
+template <auto function, typename InputT>
 constexpr auto generateTrampoline();
 
 /*!
@@ -224,7 +222,11 @@ constexpr auto generateTrampoline();
  * ```
  */
 template <typename Signature, typename Class,
-          FunctionPointer<Signature, Class> method, typename InputT = void>
+          FunctionPointer<Signature, Class> method, typename InputT>
+constexpr auto generateTrampoline();
+
+template <typename Signature,
+    FunctionPointer<Signature> function, typename InputT>
 constexpr auto generateTrampoline();
 
 /*!

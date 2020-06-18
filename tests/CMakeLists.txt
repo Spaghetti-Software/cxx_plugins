@@ -23,6 +23,7 @@ target_sources(${This}
     tuple_map_tests.cpp
     example_api.cpp
     example_api.hpp
+    polymorphic_ref_tests.cpp
 )
 
 

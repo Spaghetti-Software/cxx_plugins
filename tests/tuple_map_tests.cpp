@@ -12,6 +12,7 @@
  * $BRIEF$
  */
 
+#include <cxx_plugins/polymorphic_traits.hpp>
 #include <tuple/tuple_map.hpp>
 
 #include <gtest/gtest.h>
@@ -36,12 +37,14 @@ TEST(TupleMapTests, ConstructorsAndAssignments) {
   [[maybe_unused]] auto empty = makeTupleMap();
   auto complex_map =
       makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 5.0f));
+  TupleMap complex_map1(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 5.0f));
 
   TupleMap<TaggedValue<Tag<Bar>, double>, TaggedValue<Tag<Foo>, int64_t>>
       modified_complex_map(complex_map);
 
   modified_complex_map = complex_map;
   modified_complex_map = std::move(complex_map);
+  modified_complex_map = complex_map1;
 }
 
 TEST(TupleMapTests, Subscript) {
@@ -64,13 +67,16 @@ TEST(TupleMapTests, Subscript) {
 TEST(TupleMapTests, Comparison) {
   using namespace CxxPlugins;
 
-  auto t0 = makeTupleMap(TaggedValue(tag<Foo>, 0.5f), TaggedValue(tag<Bar>, 1.5f));
-  auto t1 = makeTupleMap(TaggedValue(tag<Foo>, 0.5), TaggedValue(tag<Bar>, 1.5));
+  auto t0 =
+      makeTupleMap(TaggedValue(tag<Foo>, 0.5f), TaggedValue(tag<Bar>, 1.5f));
+  auto t1 =
+      makeTupleMap(TaggedValue(tag<Foo>, 0.5), TaggedValue(tag<Bar>, 1.5));
 
   EXPECT_TRUE(t0 == t1);
   EXPECT_FALSE(t0 != t1);
 
-  auto t3 = makeTupleMap(TaggedValue(tag<Bar>, 1.5), TaggedValue(tag<Foo>, 0.5));
+  auto t3 =
+      makeTupleMap(TaggedValue(tag<Bar>, 1.5), TaggedValue(tag<Foo>, 0.5));
 
   EXPECT_TRUE(t0 == t3) << "Reversing order broke.";
   EXPECT_FALSE(t0 != t3);
@@ -80,7 +86,9 @@ TEST(TupleMapTests, Cat) {
   using namespace CxxPlugins;
   auto map0 = makeTupleMap(TaggedValue(tag<Foo>, 5));
   auto map1 = makeTupleMap(TaggedValue(tag<Bar>, 2.0));
-  auto expected = makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 2.0));
+  auto expected =
+      makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 2.0));
+
   auto result = tupleCat(map0, map1);
   EXPECT_TRUE(result == expected);
   EXPECT_EQ(expected, result);
