@@ -81,56 +81,12 @@ using TupleInnerType =
 
 // Implementation
 
-namespace impl {
-template <bool trivial_dtor, bool trivial_copy, typename... Ts>
-struct TupleStorageImpl;
-
-template <typename... Ts> struct TupleStorageImpl<true, true, Ts...> {
-public:
-  template <typename U> using InnerType = impl::TupleInnerType<U>;
-
-  using Helper = impl::TupleTypeHelper<InnerType<Ts>...>;
-  // Sizes and offsets
-
-  using OffsetsType = typename Helper::OffsetsType;
-  using SizesType = typename Helper::SizesType;
-  using AlignmentsType = typename Helper::AlignmentsType;
-
-  static constexpr std::size_t max_alignment =
-      Helper::max_alignment == 0 ? 1 : Helper::max_alignment;
-  static constexpr std::size_t total_size =
-      (Helper::total_size == 0 ? 1 : Helper::total_size);
-
-  constexpr TupleStorageImpl() noexcept = default;
-  ~TupleStorageImpl() noexcept = default;
-  constexpr TupleStorageImpl(TupleStorageImpl const &) noexcept = default;
-  constexpr TupleStorageImpl(TupleStorageImpl &&) noexcept = default;
-
-  constexpr TupleStorageImpl &
-  operator=(TupleStorageImpl const &) noexcept = default;
-  constexpr TupleStorageImpl &operator=(TupleStorageImpl &&) noexcept = default;
-
-  alignas(max_alignment) unsigned char data_m[total_size] = {};
-};
-
-} // namespace impl
-
-template <typename... Ts>
-struct TupleStorage
-    : impl::TupleStorageImpl<
-          (std::is_trivially_destructible_v<impl::TupleInnerType<Ts>> && ...),
-          (std::is_trivially_copyable_v<impl::TupleInnerType<Ts>> && ...),
-          impl::TupleInnerType<Ts>...> {
+template <typename... Ts> struct TupleStorage {
 public:
   template <typename U> using InnerType = impl::TupleInnerType<U>;
 
 private:
   using Helper = impl::TupleTypeHelper<InnerType<Ts>...>;
-
-  using impl::TupleStorageImpl<
-      (std::is_trivially_destructible_v<impl::TupleInnerType<Ts>> && ...),
-      (std::is_trivially_copyable_v<impl::TupleInnerType<Ts>> && ...),
-      impl::TupleInnerType<Ts>...>::data_m;
 
 public:
   // Noexcept specifiers
@@ -140,12 +96,18 @@ public:
       (std::is_nothrow_copy_constructible_v<InnerType<Ts>> && ...);
   static constexpr bool is_nothrow_move_ctor =
       (std::is_nothrow_move_constructible_v<InnerType<Ts>> && ...);
+
   template <typename... Args>
   static constexpr bool is_nothrow_ctor =
       (std::is_nothrow_constructible_v<InnerType<Ts>, Args> && ...);
   static constexpr bool is_nothrow_dtor =
       (std::is_nothrow_destructible_v<InnerType<Ts>> && ...);
   static constexpr auto sequence = std::index_sequence_for<Ts...>{};
+
+  static constexpr bool is_nothrow_copy_assign =
+      (std::is_nothrow_copy_assignable_v<InnerType<Ts>> && ...);
+  static constexpr bool is_nothrow_move_assign =
+      (std::is_nothrow_move_assignable_v<InnerType<Ts>> && ...);
 
   // Sizes and offsets
 
@@ -175,6 +137,8 @@ public:
   friend constexpr auto impl::getInner(TupleStorage<Us...> const &&t) noexcept
       ->
       typename impl::TupleInnerElement<I, TupleStorage<Us...>>::Type const &&;
+
+  ~TupleStorage() noexcept(is_nothrow_dtor) { destructor(sequence); }
 
   constexpr TupleStorage() noexcept(is_nothrow_default_ctor) {
     defaultCtor(sequence);
@@ -249,11 +213,27 @@ public:
   }
 
   constexpr TupleStorage(TupleStorage const &other) noexcept(
-      is_nothrow_copy_ctor) = default;
-  constexpr TupleStorage(TupleStorage &&other) noexcept(is_nothrow_move_ctor) =
-      default;
-  constexpr TupleStorage &operator=(TupleStorage const &) noexcept = default;
-  constexpr TupleStorage &operator=(TupleStorage &&) noexcept = default;
+      is_nothrow_copy_ctor) {
+    copyCtor(sequence, other);
+  }
+  constexpr TupleStorage(TupleStorage &&other) noexcept(is_nothrow_move_ctor) {
+    moveCtor(sequence, std::move(other));
+  }
+
+  constexpr TupleStorage &
+  operator=(TupleStorage const &other) noexcept(is_nothrow_copy_assign) {
+    if (this != &other) {
+      assign(sequence, other);
+    }
+    return *this;
+  }
+  constexpr TupleStorage &
+  operator=(TupleStorage &&other) noexcept(is_nothrow_move_assign) {
+    if (this != &other) {
+      assign(sequence, std::move(other));
+    }
+    return *this;
+  }
 
 private:
   template <std::size_t I> auto unsafeAt() -> void * {
@@ -338,6 +318,22 @@ private:
     new (unsafeAt<1>()) impl::TupleInnerElementT<1, TupleStorage>(
         std::forward<U2>(other.second));
   }
+
+  template <std::size_t... indices>
+  constexpr void
+  assign(std::index_sequence<indices...> /*unused*/,
+         TupleStorage const &rhs) noexcept(is_nothrow_copy_assign) {
+    ((impl::getInner<indices>(*this) = impl::getInner<indices>(rhs)), ...);
+  }
+  template <std::size_t... indices>
+  constexpr void assign(std::index_sequence<indices...> /*unused*/,
+                        TupleStorage &&rhs) noexcept(is_nothrow_copy_assign) {
+    ((impl::getInner<indices>(*this) =
+          std::move(impl::getInner<indices>(std::move(rhs)))),
+     ...);
+  }
+
+  alignas(max_alignment) char data_m[total_size];
 };
 
 template <std::size_t I, typename... Us>
@@ -508,8 +504,6 @@ template <typename U> struct TupleRefWrapper {
   static_assert(std::is_reference_v<U>, "U should be a reference");
   constexpr explicit TupleRefWrapper(U ref) noexcept
       : reference_m(std::forward<U>(ref)) {}
-  constexpr TupleRefWrapper(TupleRefWrapper const &) noexcept = default;
-  constexpr TupleRefWrapper(TupleRefWrapper &&) noexcept = default;
   U reference_m;
 };
 
