@@ -20,14 +20,15 @@ namespace CxxPlugins {
 template <typename... TaggedValues> struct TupleMap;
 
 template <typename TagT, typename T> struct TaggedValue {
-  constexpr TaggedValue() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
+  constexpr TaggedValue() noexcept(std::is_nothrow_default_constructible_v<T>) =
+      default;
   template <typename U>
-  constexpr TaggedValue(TagT && /*unused*/,
-              U &&val) noexcept(std::is_nothrow_constructible_v<T, U &&>)
+  constexpr TaggedValue(TagT && /*unused*/, U &&val) noexcept(
+      std::is_nothrow_constructible_v<T, U &&>)
       : value_m(std::forward<U>(val)) {}
   template <typename U>
-  constexpr TaggedValue(TagT const & /*unused*/,
-              U &&val) noexcept(std::is_nothrow_constructible_v<T, U &&>)
+  constexpr TaggedValue(TagT const & /*unused*/, U &&val) noexcept(
+      std::is_nothrow_constructible_v<T, U &&>)
       : value_m(std::forward<U>(val)) {}
   explicit constexpr TaggedValue(T const &val) noexcept(
       std::is_nothrow_copy_constructible_v<T>)
@@ -218,13 +219,21 @@ public:
   explicit constexpr TupleMap(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
       : Parent(std::move(get<Tags>(std::move(rhs)))...) {}
 
-  template<bool enable = sizeof...(Tags) != 0, std::enable_if_t<enable,int> = 0>
-  constexpr TupleMap(TaggedValue<Tags, TValues> const &... vals)
+  template <typename... UTags, typename... UVals,
+            std::enable_if_t<sizeof...(UTags) != 0 &&
+                                 sizeof...(UTags) == sizeof...(Tags) &&
+                                 (std::is_same_v<UTags, Tags> && ...),
+                             int> = 0>
+  constexpr TupleMap(TaggedValue<UTags, UVals> const &... vals)
       : Parent(vals.value_m...) {}
 
-  template<bool enable = sizeof...(Tags) != 0, std::enable_if_t<enable,unsigned> = 1>
-  constexpr TupleMap(TaggedValue<Tags, TValues> &&... vals)
-      : Parent(std::move(vals.value_m)...) {}
+  template <typename... UTags, typename... UVals,
+            std::enable_if_t<sizeof...(UTags) != 0 &&
+                                 sizeof...(UTags) == sizeof...(Tags) &&
+                                 (std::is_same_v<UTags, Tags> && ...),
+                             int> = 0>
+  constexpr TupleMap(TaggedValue<UTags, UVals> &&... vals)
+      : Parent(vals.value_m...) {}
 
   /*!
    * \brief Copy assignment operator from TupleMap with another order of
