@@ -5,12 +5,14 @@
  * https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
  *************************************************************************************************/
 /*!
- * \file    polymorphic.hpp
+ * \file    tuple.hpp
  * \author  Andrey Ponomarev
- * \date    21 May 2020
+ * \date    11 Jun 2020
  * \brief
  * $BRIEF$
  */
 #pragma once
 
-#include "cxx_plugins/vtable.hpp"
+#include "tuple/tuple_impl.hpp"
+#include "tuple/tuple_cat.hpp"
+#include "tuple/tuple_helpers.hpp"

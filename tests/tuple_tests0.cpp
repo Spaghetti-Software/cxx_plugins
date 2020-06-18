@@ -5,12 +5,21 @@
  * https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
  *************************************************************************************************/
 /*!
- * \file    polymorphic.hpp
+ * \file    tuple_tests0.cpp
  * \author  Andrey Ponomarev
- * \date    21 May 2020
+ * \date    04 Jun 2020
  * \brief
  * $BRIEF$
  */
-#pragma once
 
-#include "cxx_plugins/vtable.hpp"
+#include "tuple_tests_decl.hpp"
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
+INSTANTIATE_TYPED_TEST_SUITE_P(Empty, PackedTupleTests, EmptyType);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

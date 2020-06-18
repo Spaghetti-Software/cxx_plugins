@@ -34,37 +34,56 @@ project( ${This}
 include(cxx_plugins_options)
 include(common_flags)
 
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-else()
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-endif()
-conan_basic_setup(TARGETS)
+
 
 
 if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
   add_library(${This} SHARED)
 else()
-  add_library(${This} STATIC)
+  add_library(${This} STATIC )
 endif()
 
-target_sources(${This}
-  PRIVATE
-    src/cxx_plugins.cpp
-  PUBLIC
-    include/cxx_plugins/vtable.hpp
-    include/cxx_plugins/cxx_plugins.hpp
-    include/cxx_plugins/function_traits.hpp
-    include/cxx_plugins/function_traits.ipp
-    include/cxx_plugins/type_traits.hpp
-    include/cxx_plugins/tuple.hpp
-    include/cxx_plugins/definitions.hpp
-    include/cxx_plugins/polymorphic.hpp
-    include/cxx_plugins/polymorphic_traits.hpp
-)
+set(CONAN_SYSTEM_INCLUDE ON)
+if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
+else ()
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+endif ()
+conan_basic_setup(TARGETS)
 
+target_sources(${This}
+        PRIVATE
+        src/cxx_plugins.cpp
+        PUBLIC
+        include/cxx_plugins/vtable.hpp
+        include/cxx_plugins/cxx_plugins.hpp
+        include/cxx_plugins/function_traits.hpp
+        include/cxx_plugins/function_traits.ipp
+        include/cxx_plugins/type_traits.hpp
+        include/cxx_plugins/definitions.hpp
+        include/cxx_plugins/polymorphic.hpp
+        include/cxx_plugins/polymorphic_traits.hpp
+        include/tuple/tuple_map.hpp
+
+        include/sequence/size.hpp
+        include/sequence/partial_sum.hpp
+        include/sequence/exclusive_scan.hpp
+        include/sequence/inclusive_scan.hpp
+        include/sequence/operators.hpp
+        include/sequence/map.hpp
+
+        include/tuple/tuple.hpp
+        include/tuple/tuple_cat.hpp
+        include/tuple/tuple_declarations.hpp
+        include/tuple/tuple_helpers.hpp
+        include/tuple/forward.hpp
+        include/tuple/tuple_storage.hpp
+        include/tuple/tuple_impl.hpp
+
+        )
 
 target_include_directories(${This} PRIVATE src)
+target_link_libraries(${This} INTERFACE CONAN_PKG::boost)
 
 # We determine dev / no dev by checking if tests are enabled
 # We need different configurations, so warnings from our library
@@ -79,6 +98,7 @@ endif()
 
 
 if(CXX_PLUGINS_BUILD_TESTS)
+  #add_subdirectory(example_plugin)
   add_subdirectory(tests)
 endif()
 if(CXX_PLUGINS_BUILD_DOCUMENTATION)

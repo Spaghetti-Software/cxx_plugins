@@ -5,12 +5,27 @@
  * https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
  *************************************************************************************************/
 /*!
- * \file    polymorphic.hpp
+ * \file    size.hpp
  * \author  Andrey Ponomarev
- * \date    21 May 2020
+ * \date    08 Jun 2020
  * \brief
  * $BRIEF$
  */
 #pragma once
 
-#include "cxx_plugins/vtable.hpp"
+#include <utility>
+
+namespace Sequence {
+
+template<typename S>
+struct Size;
+
+template<typename T, T... vals>
+struct Size<std::integer_sequence<T,vals...>> {
+  static constexpr std::size_t value = sizeof...(vals);
+};
+
+template<typename S>
+static constexpr std::size_t size_v = Size<S>::value;
+
+} // namespace Sequence

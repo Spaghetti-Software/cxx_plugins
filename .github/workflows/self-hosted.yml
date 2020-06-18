@@ -127,10 +127,10 @@ jobs:
     - name: Clear build
       if:   matrix.config.os == 'Linux'
       run:  |
-        rm -rf '${{env.build_dir}}/*'
+        rm -rf '${{env.build_dir}}'
     - name: Clear build
       if:   matrix.config.os == 'Windows'
-      run:  Get-ChildItem -Path '${{env.build_dir}}/*' -Include *.* -File -Recurse | foreach { $_.Delete()}
+      run:  Get-ChildItem -Path '${{env.build_dir}}' -Include *.* -File -Recurse | foreach { $_.Delete()}
     
 
 

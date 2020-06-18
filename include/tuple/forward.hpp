@@ -5,12 +5,18 @@
  * https://github.com/Spaghetti-Software/cxx_plugins/blob/master/LICENSE
  *************************************************************************************************/
 /*!
- * \file    polymorphic.hpp
+ * \file    forward.hpp
  * \author  Andrey Ponomarev
- * \date    21 May 2020
+ * \date    10 Jun 2020
  * \brief
  * $BRIEF$
  */
 #pragma once
 
-#include "cxx_plugins/vtable.hpp"
+namespace CxxPlugins {
+
+//template<typename... Args>
+//auto forwardAsTuple(Args&&...args);
+
+
+} // namespace CxxPlugins
