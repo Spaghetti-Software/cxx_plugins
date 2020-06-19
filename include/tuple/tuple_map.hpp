@@ -67,6 +67,16 @@ auto makeTaggedValue(Tag && /*unused*/, T &&val) {
   return TaggedValue<std::decay_t<Tag>, std::decay_t<T>>(std::forward<T>(val));
 }
 
+template<typename T>
+struct IsTaggedValue : public std::false_type {};
+
+template<typename TagT, typename ValueT>
+struct IsTaggedValue<TaggedValue<TagT,ValueT>> : public std::true_type{};
+
+template<typename T>
+static constexpr bool is_tagged_value_v = IsTaggedValue<T>::value;
+
+
 /*!
  * \brief  Gets TupleMap value type(Use TupleMapElementType for simplicity)
  * \tparam Tag  Tag to get the value type of

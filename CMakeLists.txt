@@ -72,6 +72,7 @@ target_sources(${This}
         include/sequence/inclusive_scan.hpp
         include/sequence/operators.hpp
         include/sequence/map.hpp
+        include/sequence/conversion.hpp
 
         include/tuple/tuple.hpp
         include/tuple/tuple_cat.hpp

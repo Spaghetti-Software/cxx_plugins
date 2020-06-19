@@ -16,31 +16,42 @@
 
 #include <gtest/gtest.h>
 
-struct add{};
+struct add {};
+struct multiply {};
 
-template<typename T>
-constexpr void polymorphicExtend(CxxPlugins::Tag<add> /*unused*/, T& obj, int val) {
+template <> struct CxxPlugins::PolymorphicTagSignature<add> {
+  using Type = void(int);
+};
+template <> struct CxxPlugins::PolymorphicTagSignature<multiply> {
+  using Type = void(int);
+};
+
+template <typename T>
+constexpr void polymorphicExtend(add /*unused*/, T &obj, int val) {
   obj.add(val);
 }
 
+template <typename T>
+constexpr void polymorphicExtend(multiply /*unused*/, T &obj, int val) {
+  obj.multiply(val);
+}
+
 struct foo {
-  void add(int i) {
-    i_m += i;
-  }
+  void add(int i) { i_m += i; }
+  void multiply(int i) { i_m *= i; }
 
   int i_m = 0;
 };
-
-
-
 
 TEST(PolymorphicRef, SimpleTests) {
 
   using namespace CxxPlugins;
   foo obj0;
 
-  PolymorphicRef<TaggedValue<Tag<add>,void(int)>> simple_poly(obj0);
+  PolymorphicRef<Tag<add>, Tag<multiply>> simple_poly(obj0);
   simple_poly[tag<add>](4);
   EXPECT_EQ(obj0.i_m, 4);
+  simple_poly[tag<multiply>](4);
+  EXPECT_EQ(obj0.i_m, 16);
 
 }

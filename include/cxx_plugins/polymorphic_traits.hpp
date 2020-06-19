@@ -13,7 +13,22 @@
  */
 #pragma once
 
+#include "tuple/tuple_map.hpp"
+
+#include <type_traits>
+
 namespace CxxPlugins {
+
+template <typename T>
+/*!
+ * \brief
+ * This trait exists to disable implicit conversions to/from your type with
+ * Tag<Type>.
+ */
+struct TagTraits {
+  static constexpr bool allow_implicit_conversion_ctor = true;
+  static constexpr bool allow_implicit_conversion_operator = true;
+};
 
 template <typename TagType>
 /*!
@@ -33,103 +48,82 @@ template <typename TagType>
  * ```
  *
  */
-struct Tag {};
+struct Tag {
+  constexpr Tag() noexcept = default;
+  template <typename U,
+            typename = std::enable_if_t<
+                std::is_same_v<std::decay_t<U>, TagType> &&
+                TagTraits<std::decay_t<U>>::allow_implicit_conversion_ctor>>
+  constexpr Tag(U && /*unused*/) noexcept {}
+
+  template <typename U, typename = std::enable_if_t<
+                            std::is_same_v<U, TagType> &&
+                            TagTraits<U>::allow_implicit_conversion_operator>>
+  constexpr operator U() const noexcept {
+    return TagType{};
+  }
+};
 
 template <typename TagType> static constexpr Tag<TagType> tag = {};
 
 template <typename TagT>
 /*!
  * \brief
- * PolymorphicFunction is a trait that simplifies creation of polymorphic
- * templates. It allows to bind certain tag to specific function type.
+ * PolymorphicTagSignature is a trait that can be specialized to specify
+ * Signature for a specific tag
+ *
  * \details
- * For example you want your tag `add` be associated with signature
- * `void(obj, int)`.
- * \attention
- * First parameter to your function should always be `void*` or `void const*`
- * \details
+ * This trait simplifies creation of PolymorphicRef and Polymorphic.
+ * Instead of providing signature manually every time like this:
  * ```cpp
- * struct add {};
- * }
+ * struct add{};
+ *
+ * void foo(PolymorphicRef<TaggedValue<add, void(int)>> ref);
+ *
+ * void bar(PolymorphicRef<TaggedValue<add, void(int)>> lhs,
+ *          PolymorphicRef<TaggedValue<add, void(int)>> rhs );
+ * //...
+ * ```
+ * You can do this instead:
+ * ```cpp
+ * struct add{};
  *
  * template<>
- * struct CxxPlugins::PolymorphicFunction<add> {
- *      using Type = void (*)(void*, int);
+ * struct PolymorphicTagSignature<add> {
+ *  using Type = void(int);
  * };
  *
- * // now we can declare our polymorphic like this:
- * using poly = polymorphic<add>;
+ * void foo(PolymorphicRef<add> ref);
+ *
+ * void bar(PolymorphicRef<add> lhs, PolymorphicRef<add> rhs);
+ *
  * ```
+ *
  * \note
- * PolymorphicFunction has partial specialization for
- * PolymorphicFunction<Tag<T>> that uses Type of PolymorphicFunction<T>
+ * By default `PolymorphicTagSignature<Tag<TagType>>::Type` references
+ * `PolymorphicTagSignature<TagType>::Type`. This is done, so you can define
+ * trait just for your type and then use `Tag<Type>`:
  *
- *
- * \attention READ THIS TIMUR!!!
- * Delete this section after reading.
- * Idk how you implemented polymorphic so far. But my assumption is that it
- * looks like this:
+ * \details
  * ```cpp
- * template<typename... Ts>
- * class polymorphic;
- *
- * template<typename... Tags, typename... FunctionTypes>
- * class polymorphic<TaggedValue<Tags,FunctionTypes>...> {
- *  //...
+ * struct add{};
+ * template<>
+ * struct CxxPlugins::PolymorphicTagSignature<add> {
+ *      using Type = void(int);
  * };
  * ```
- * In order to support this trait you don't need to change above code(almost)
- * you only need to add this:
- *
- * 1. tuple_map.hpp (You don't have this file on the branch yet, MERGE!!!)
- * ```cpp
- * // After definition of TaggedValue
- * template<typename T>
- * struct IsTaggedValue : public std::false_type {};
- * template<typename Tag, typename ValueT>
- * struct IsTaggedValue<TaggedValue<Tag,ValueT>> : public std::true_type {};
- *
- * template<typename T>
- * static constexpr bool is_tagged_value_v = IsTaggedValue<T>::value;
- * ```
- *
- * 2. polymorphic.hpp
- * ```cpp
- * // rename polymorphic to PolymorphicImpl
- * namespace impl {
- * template<typename...>
- * class PolymorphicImpl<...> {};
- * }
- *
- * // Creating conditional alias
- * template<typename... Ts>
- * // fold expression bellow checks if all Ts are TaggedValues
- * // with empty parameter pack will return true
- * //                                               ▼
- * using Polymorphic = std::conditional_t<(is_tagged_value_v<Ts>... &&),
- *  impl::PolymorphicImpl<Ts...>,
- *  impl::PolymorphicImpl<TaggedValue<Ts, PolymorphicFunctionT<Tags>>...>
- *  >;
- *
- * ```
- * You can instead add 2 partial template specializations where one inherits
- * from another, but I think this approach is better as it creates less types,
- * which leads to smaller executable size.
- *
- *
- *
  */
-struct PolymorphicFunction {
-  static_assert(sizeof(TagT) == 0,
-                "PolymorphicFunction is not specialized for given Tag");
-  using Type = void (*)(void *obj_p, int arg);
+struct PolymorphicTagSignature;
+
+template <typename TagT> struct PolymorphicTagSignature<Tag<TagT>> {
+  using Type = typename PolymorphicTagSignature<TagT>::Type;
 };
-template <typename TagT> struct PolymorphicFunction<Tag<TagT>> {
-  using Type = typename PolymorphicFunction<TagT>::Type;
+template <typename TagT, typename ValueT>
+struct PolymorphicTagSignature<TaggedValue<TagT,ValueT>> {
+  using Type = ValueT;
 };
 
 template <typename TagT>
-using PolymorphicFunctionT = typename PolymorphicFunction<TagT>::Type;
-
+using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 
 } // namespace CxxPlugins

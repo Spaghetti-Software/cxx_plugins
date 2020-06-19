@@ -18,13 +18,23 @@
 
 namespace CxxPlugins {
 
-template <typename... Tags> class PolymorphicRef;
+namespace impl {
+template <typename... TaggedSignatures> class PolymorphicRef;
+} // namespace impl
+
+template <typename... Ts>
+using PolymorphicRef = std::conditional_t<
+    (is_tagged_value_v<Ts> && ...), impl::PolymorphicRef<Ts...>,
+    impl::PolymorphicRef<TaggedValue<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+
+namespace impl {
+template <typename... TaggedSignatures> class PolymorphicRef;
 
 template <typename... Tags, typename... FunctionSignatures>
 class PolymorphicRef<TaggedValue<Tags, FunctionSignatures>...> {
 private:
   template <typename U>
-  static constexpr bool is_same =
+  static constexpr bool is_self =
       std::is_same_v<std::decay_t<U>, PolymorphicRef>;
 
   static constexpr bool is_const =
@@ -56,32 +66,30 @@ public:
   constexpr auto operator=(PolymorphicRef &&) noexcept
       -> PolymorphicRef & = default;
 
-  template <typename T, typename = std::enable_if_t<!is_same<T>>>
+  template <typename T, typename = std::enable_if_t<!is_self<T>>>
   constexpr PolymorphicRef(T &&obj) noexcept
-      : function_table_p_m(&vtable_v<underlying_t<decltype(obj)>,
-                                     TaggedValue<Tags, FunctionSignatures>...>),
-        data_p_m(&obj) {}
+      : function_table_m(std::in_place_type_t<T>{}), data_p_m(&obj) {}
 
-  template <typename T, typename = std::enable_if_t<!is_same<T>>>
+  template <typename T, typename = std::enable_if_t<!is_self<T>>>
   constexpr PolymorphicRef &operator=(T &&obj) noexcept {
-    function_table_p_m = &vtable_v<underlying_t<decltype(obj)>,
-                                   TaggedValue<Tags, FunctionSignatures>...>;
+    function_table_m = std::in_place_type_t<T>{};
     data_p_m = &obj;
+    return *this;
   }
 
-  template <typename TagT> constexpr auto operator[](TagT&& t) noexcept {
-    return FunctionProxy((*function_table_p_m)[std::forward<TagT>(t)], data_p_m);
+  template <typename TagT> constexpr auto operator[](TagT &&t) noexcept {
+    return FunctionProxy(function_table_m[std::forward<TagT>(t)], data_p_m);
   }
 
-  template <typename TagT> constexpr auto operator[](TagT&& t) const noexcept {
-    return FunctionProxy((*function_table_p_m)[std::forward<TagT>(t)],
+  template <typename TagT> constexpr auto operator[](TagT &&t) const noexcept {
+    return FunctionProxy(function_table_m[std::forward<TagT>(t)],
                          const_cast<void const *>(data_p_m));
   }
 
 private:
-  VTableT<TaggedValue<Tags, FunctionSignatures>...> *function_table_p_m =
-      nullptr;
+  ActualVTable<TaggedValue<Tags, FunctionSignatures>...> function_table_m;
   std::conditional_t<is_const, void const *, void *> data_p_m = nullptr;
 };
+} // namespace impl
 
 } // namespace CxxPlugins
