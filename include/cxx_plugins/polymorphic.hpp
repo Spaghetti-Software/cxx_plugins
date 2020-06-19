@@ -23,7 +23,7 @@ namespace CxxPlugins {
   template<typename Allocator, typename... Tags, typename... FunctionSignatures>
   class Polymorphic {
     template <typename U>
-    static constexpr bool is_same = std::is_same_v<std::decay_t<U>, PolymorphicRef>;
+    static constexpr bool is_same = std::is_same_v<std::decay_t<U>, Polymorphic>;
 
     static constexpr bool is_const = (utility::FunctionTraits<FunctionSignatures>::is_const && ...);
 
@@ -44,7 +44,7 @@ namespace CxxPlugins {
   
     template <typename T> using underlying_t = typename underlying<T>::type;
     
-    VtableT<TaggedValue<Tags, FunctionSignatures>...> *function_table_p_m = nullptr;
+    VTableT<TaggedValue<Tags, FunctionSignatures>...> *function_table_p_m = nullptr;
     Allocator allocator_m;
     std::conditional_t<is_const, void const*, void*> obj_m;
   public:
@@ -60,12 +60,12 @@ namespace CxxPlugins {
     }
     
     template <typename TagT> constexpr auto operator[](TagT&& t) noexcept {
-      return FunctionProxy((*function_table_p_m)[std::forward<TagT>(t)], data_p_m);
+      return FunctionProxy((*function_table_p_m)[std::forward<TagT>(t)], obj_m);
     }
 
     template <typename TagT> constexpr auto operator[](TagT&& t) const noexcept {
       return FunctionProxy((*function_table_p_m)[std::forward<TagT>(t)],
-                         const_cast<void const *>(data_p_m));
+                           const_cast<void const *>(obj_m));
     }
   };
   
