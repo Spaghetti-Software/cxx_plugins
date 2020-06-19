@@ -26,9 +26,7 @@
 
 namespace CxxPlugins {
 
-template <typename T, typename... Ts> struct VTable;
-template <typename T, typename... Ts>
-static inline auto vtable_v = VTable<T, Ts...>::value;
+
 
 namespace impl {
 
@@ -99,24 +97,11 @@ template <typename Tag, typename T, typename Signature>
 static constexpr auto polymorphic_trampoline_v =
     &PolymorphicTrampoline<Tag, T, Signature>::call;
 
-template <typename... Ts> struct VTableType;
 
-template <typename... Tags, typename... FunctionSignatures>
-struct VTableType<TaggedValue<Tags, FunctionSignatures>...> {
-  using type = TupleMap<
-      TaggedValue<Tags, PolymorphicTrampolineTypeT<FunctionSignatures>>...>;
-};
 
 } // namespace impl
 
-template <typename T, typename... Tags, typename... FunctionSignatures>
-struct VTable<T, TaggedValue<Tags, FunctionSignatures>...> {
-  static inline auto value = TupleMap(TaggedValue(
-      Tags{}, impl::polymorphic_trampoline_v<Tags, T, FunctionSignatures>)...);
-};
 
-template <typename... TaggedValues>
-using VTableT = typename impl::VTableType<TaggedValues...>::type;
 
 template <typename Signature>
 using PolymorphicTrampolineT =
@@ -136,18 +121,10 @@ struct VTableStorage<T, TaggedValue<Tags, Signatures>...> {
           impl::polymorphic_trampoline_v<Tags, T, Signatures>)...};
 };
 
-template <typename... TaggedValues> struct ActualVTable;
-// cannot initialize a member subobject of type
-//    'CxxPlugins::ActualVTable<TaggedValue<type-parameter-0-0,
-//    type-parameter-0-1>...>::FunctionTablePtrT' (aka 'const
-//    CxxPlugins::ActualVTable<TaggedValue<type-parameter-0-0,
-//    type-parameter-0-1>...>::FunctionPointerT const (*)[]')
-//
-//    with an rvalue of type 'CxxPlugins::VTableStorage<foo>::FunctionTableType
-//    *' (aka 'const CxxPlugins::VTableStorage<foo>::FunctionPtrT (*)[1]')
+template <typename... TaggedValues> struct VTable;
 
 template <typename... Tags, typename... Signatures>
-struct ActualVTable<TaggedValue<Tags, Signatures>...> {
+struct VTable<TaggedValue<Tags, Signatures>...> {
 public:
   template <typename TagT>
   using FunctionTypeAt =
@@ -162,15 +139,15 @@ public:
                 "std::conditional_t<size < max, uint8_t, uint16_t>");
 
   // All tables should be friends for easier construction
-  template <typename... Us> friend struct ActualVTable;
+  template <typename... Us> friend struct VTable;
 
   static_assert(utility::are_unique_v<Tags...>, "All tags should be unique");
 
-  constexpr ActualVTable() noexcept = default;
-  constexpr ActualVTable(ActualVTable const &) noexcept = default;
-  constexpr ActualVTable(ActualVTable &&) noexcept = default;
-  constexpr ActualVTable &operator=(ActualVTable const &) noexcept = default;
-  constexpr ActualVTable &operator=(ActualVTable &&) noexcept = default;
+  constexpr VTable() noexcept = default;
+  constexpr VTable(VTable const &) noexcept = default;
+  constexpr VTable(VTable &&) noexcept = default;
+  constexpr VTable &operator=(VTable const &) noexcept = default;
+  constexpr VTable &operator=(VTable &&) noexcept = default;
 
   constexpr bool isEmpty() const noexcept {
     return function_table_p_m == nullptr;
@@ -179,7 +156,7 @@ public:
   void reset() noexcept { function_table_p_m = nullptr; }
 
   template <typename T>
-  constexpr explicit ActualVTable(std::in_place_type_t<T> /*unused*/) noexcept
+  constexpr explicit VTable(std::in_place_type_t<T> /*unused*/) noexcept
       : function_table_p_m{
             VTableStorage<std::decay_t<T>,
                            TaggedValue<Tags, Signatures>...>::value} {
@@ -200,11 +177,11 @@ public:
       (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
       // Every tag from `this` should have the same function type as in rhs
       (std::is_same_v<FunctionTypeAt<Tags>,
-                      ActualVTable<TaggedValue<OtherTags, OtherSignatures>>::
+                            VTable<TaggedValue<OtherTags, OtherSignatures>>::
                           template FunctionTypeAt<Tags>> &&...),
       std::enable_if_t<constraints, int> = 0>
-  constexpr ActualVTable(
-      ActualVTable<TaggedValue<OtherTags, OtherSignatures>...> const
+  constexpr VTable(
+      VTable<TaggedValue<OtherTags, OtherSignatures>...> const
           &rhs) noexcept
       : function_table_p_m{rhs.function_table_m} {
     constexpr auto input = Sequence::AsArray<
@@ -213,7 +190,7 @@ public:
   }
 
   template <typename T>
-  constexpr ActualVTable &
+  constexpr VTable &
   operator=(std::in_place_type_t<T> /*unused*/) noexcept {
     function_table_p_m = VTableStorage<std::decay_t<T>,
         TaggedValue<Tags, Signatures>...>::value;
@@ -235,11 +212,12 @@ public:
       (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
       // Every tag from `this` should have the same function type as in rhs
       (std::is_same_v<FunctionTypeAt<Tags>,
-                      ActualVTable<TaggedValue<OtherTags, OtherSignatures>>::
+                            VTable<TaggedValue<OtherTags, OtherSignatures>>::
                           template FunctionTypeAt<Tags>> &&...),
       std::enable_if_t<constraints, int> = 0>
-  constexpr ActualVTable &
-  operator=(ActualVTable<TaggedValue<OtherTags, OtherSignatures>...> const
+  constexpr VTable &
+  operator=(
+      VTable<TaggedValue<OtherTags, OtherSignatures>...> const
                 &rhs) noexcept {
     function_table_p_m = rhs.function_table_m;
     constexpr auto input = Sequence::AsArray<

@@ -87,7 +87,7 @@ public:
   }
 
 private:
-  ActualVTable<TaggedValue<Tags, FunctionSignatures>...> function_table_m;
+  VTable<TaggedValue<Tags, FunctionSignatures>...> function_table_m;
   std::conditional_t<is_const, void const *, void *> data_p_m = nullptr;
 };
 } // namespace impl
