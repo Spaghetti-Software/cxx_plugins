@@ -32,15 +32,18 @@ using PolymorphicRef = std::conditional_t<
 namespace impl {
 template <typename... TaggedSignatures> class PolymorphicRef;
 
-template <typename T> struct IsPolymorphicRef : public std::false_type {};
+/*!
+ * \brief
+ * PolymorphicRef is a pointer-like wrapper for polymorphic objects.
+ */
+#ifdef DOXYGEN
 template <typename... TaggedSignatures>
-struct IsPolymorphicRef<PolymorphicRef<TaggedSignatures...>>
-    : public std::true_type {};
-template <typename T>
-static constexpr bool is_polymorphic_ref = IsPolymorphicRef<T>::value;
-
+class PolymorphicRef
+#else
 template <typename... Tags, typename... FunctionSignatures>
-class PolymorphicRef<TaggedValue<Tags, FunctionSignatures>...> {
+class PolymorphicRef<TaggedValue<Tags, FunctionSignatures>...>
+#endif
+{
 private:
   template <typename U>
   static constexpr bool is_self =
@@ -78,9 +81,16 @@ public:
       -> PolymorphicRef & = default;
 
   template <typename T,
-            typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>>>>
+            typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> &&
+                                        !is_polymorphic<std::decay_t<T>>>>
+  /*!
+   * \brief
+   * Main constructor for PolymorphicRef.
+   * It gets object of any type stores pointer to it and forms a function table.
+   *
+   */
   constexpr PolymorphicRef(T &&obj) noexcept
-      : function_table_m(std::in_place_type_t<T>{}), data_p_m(&obj) {}
+      : data_p_m{&obj}, function_table_m{std::in_place_type_t<T>{}} {}
 
   template <typename... OtherTags, typename... OtherFunctions,
             bool constraints =
@@ -90,32 +100,12 @@ public:
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) < sizeof...(OtherTags)) && !is_const,
             std::enable_if_t<constraints, int> = 0>
+  /*!
+   * \brief This constructor allows `upcasting` from bigger PolymorphicRef.
+   */
   constexpr PolymorphicRef(
       PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept
-      : function_table_m{rhs.functionTable()}, data_p_m{rhs.data()} {}
-  template <typename... OtherTags, typename... OtherFunctions,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy assignment operator should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) && is_const,
-            std::enable_if_t<constraints, unsigned> = 0>
-  constexpr PolymorphicRef(
-      PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept
-      : function_table_m{rhs.functionTable()}, data_p_m{rhs.data()} {}
-
-  template <typename... OtherTags, typename... OtherFunctions,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy assignment operator should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) && !is_const,
-            std::enable_if_t<constraints, int> = 0>
-  constexpr PolymorphicRef(
-      Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept
-      : function_table_m{rhs.functionTable()}, data_p_m{rhs.data()} {}
+      : data_p_m{rhs.data()}, function_table_m{rhs.functionTable()} {}
 
   template <typename... OtherTags, typename... OtherFunctions,
             bool constraints =
@@ -126,11 +116,47 @@ public:
             (sizeof...(Tags) < sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
   constexpr PolymorphicRef(
+      PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> const
+          &rhs) noexcept
+      : data_p_m{rhs.data()},function_table_m{rhs.functionTable()} {}
+
+  template <typename... OtherTags, typename... OtherFunctions,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be less or equal then rhs
+            (sizeof...(Tags) <= sizeof...(OtherTags)) && !is_const,
+            std::enable_if_t<constraints, int> = 0>
+  /*!
+   * \brief
+   * This constructor allows `upcasting` from bigger Polymorphic or convertion
+   * from Polymorphic to PolymorphicRef
+   */
+  constexpr PolymorphicRef(
       Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept
-      : function_table_m{rhs.functionTable()}, data_p_m{rhs.data()} {}
+      : data_p_m{rhs.data()},function_table_m{rhs.functionTable()} {}
+
+  template <typename... OtherTags, typename... OtherFunctions,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy assignment operator should be called instead
+            (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
+            std::enable_if_t<constraints, unsigned> = 0>
+  constexpr PolymorphicRef(
+      Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> const
+          &rhs) noexcept
+      : data_p_m{rhs.data()},function_table_m{rhs.functionTable()} {}
 
   template <typename T,
-            typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>>>>
+            typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> &&
+                                        !is_polymorphic<std::decay_t<T>>>>
+  /*!
+   * \brief Main assignment operator for PolymorphicRef.
+   * It gets object of any type stores pointer to it and forms a function table.
+   *
+   */
   constexpr PolymorphicRef &operator=(T &&obj) noexcept {
     function_table_m = std::in_place_type_t<T>{};
     data_p_m = &obj;
@@ -145,37 +171,12 @@ public:
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) < sizeof...(OtherTags)) && !is_const,
             std::enable_if_t<constraints, int> = 0>
+  /*!
+   * \brief This assignment operator allows `upcasting` from bigger
+   * PolymorphicRef.
+   */
   constexpr PolymorphicRef &operator=(
       PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept {
-    function_table_m = rhs.functionTable();
-    data_p_m = rhs.data();
-    return *this;
-  }
-  template <typename... OtherTags, typename... OtherFunctions,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy assignment operator should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) && is_const,
-            std::enable_if_t<constraints, unsigned> = 0>
-  constexpr PolymorphicRef &operator=(
-      PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept {
-    function_table_m = rhs.functionTable();
-    data_p_m = rhs.data();
-    return *this;
-  }
-
-  template <typename... OtherTags, typename... OtherFunctions,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy assignment operator should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) && !is_const,
-            std::enable_if_t<constraints, int> = 0>
-  constexpr PolymorphicRef &operator=(
-      Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept {
     function_table_m = rhs.functionTable();
     data_p_m = rhs.data();
     return *this;
@@ -189,6 +190,40 @@ public:
             (sizeof...(Tags) < sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
   constexpr PolymorphicRef &
+  operator=(PolymorphicRef<TaggedValue<OtherTags, OtherFunctions>...> const
+                &rhs) noexcept {
+    function_table_m = rhs.functionTable();
+    data_p_m = rhs.data();
+    return *this;
+  }
+
+  template <typename... OtherTags, typename... OtherFunctions,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy assignment operator should be called instead
+            (sizeof...(Tags) <= sizeof...(OtherTags)) && !is_const,
+            std::enable_if_t<constraints, int> = 0>
+  /*!
+   * \brief This assignment operator allows `upcasting` from bigger
+   * Polymorphic and conversion of Polymorphic to PolymorphicRef.
+   */
+  constexpr PolymorphicRef &operator=(
+      Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> &rhs) noexcept {
+    function_table_m = rhs.functionTable();
+    data_p_m = rhs.data();
+    return *this;
+  }
+  template <typename... OtherTags, typename... OtherFunctions,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy assignment operator should be called instead
+            (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
+            std::enable_if_t<constraints, unsigned> = 0>
+  constexpr PolymorphicRef &
   operator=(Polymorphic<TaggedValue<OtherTags, OtherFunctions>...> const
                 &rhs) noexcept {
     function_table_m = rhs.functionTable();
@@ -196,6 +231,7 @@ public:
     return *this;
   }
 
+  //! \brief Returns proxy object to call function
   template <typename TagT> constexpr auto operator[](TagT &&t) noexcept {
     return FunctionProxy(function_table_m[std::forward<TagT>(t)], data_p_m);
   }
@@ -206,27 +242,37 @@ public:
   }
 
   template <typename TagT, typename... Us>
+  //! \brief Calls function with given parameters
   constexpr decltype(auto) call(Us &&... parameters) {
     return function_table_m[TagT{}](data_p_m, std::forward<Us>(parameters)...);
   }
 
   template <typename TagT, typename... Us>
-  constexpr decltype(auto) call(Us &&... parameters) const noexcept {
+  constexpr decltype(auto) call(Us &&... parameters) const {
     return function_table_m[TagT{}](const_cast<void const *>(data_p_m),
                                     std::forward<Us>(parameters)...);
   }
 
-  PointerT data() noexcept { return data_p_m; }
-  constexpr auto data() const noexcept -> void const * { return data_p_m; }
+  [[nodiscard]] auto data() noexcept -> PointerT { return data_p_m; }
+  [[nodiscard]] constexpr auto data() const noexcept -> void const * {
+    return data_p_m;
+  }
 
-  constexpr auto functionTable() const noexcept
+  [[nodiscard]] constexpr auto functionTable() const noexcept
       -> VTable<TaggedValue<Tags, FunctionSignatures>...> const & {
     return function_table_m;
   }
 
 private:
-  VTable<TaggedValue<Tags, FunctionSignatures>...> function_table_m;
+  /*
+   * Order of members is important.
+   * Function table is aligned the same way as void*, but it ends with array
+   * of uint8_t which means that if we swap these to members there are gonna be
+   * padding bytes between members and size of these padding bytes can differ
+   * on different compilers.
+   */
   PointerT data_p_m = nullptr;
+  VTable<TaggedValue<Tags, FunctionSignatures>...> function_table_m;
 };
 } // namespace impl
 

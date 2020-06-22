@@ -76,7 +76,6 @@ TEST(PolymorphicRef, SimpleTests) {
   static_assert(std::is_same_v<void const *, decltype(constant_poly.data())>,
                 "Constant objects should give void const*");
   complex_poly0.call<Tag<add>>(1);
-  EXPECT_EQ(std::to_string(obj0.i_m), constant_poly[tag<stringify>]());
+  EXPECT_EQ(std::to_string(obj0.i_m), constant_poly.call<Tag<stringify>>());
   constant_poly = complex_poly0;
-
 }

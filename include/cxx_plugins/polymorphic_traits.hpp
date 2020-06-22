@@ -126,4 +126,26 @@ struct PolymorphicTagSignature<TaggedValue<TagT,ValueT>> {
 template <typename TagT>
 using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 
+
+namespace impl {
+  template<typename... TaggedSignatures>
+  class PolymorphicRef;
+} // namespace impl
+
+template <typename T> struct IsPolymorphicRef : public std::false_type {};
+template <typename... TaggedSignatures>
+struct IsPolymorphicRef<impl::PolymorphicRef<TaggedSignatures...>>
+: public std::true_type {};
+template <typename T>
+static constexpr bool is_polymorphic_ref = IsPolymorphicRef<T>::value;
+
+
+template<typename T>
+struct IsPolymorphic : public std::false_type {};
+
+template<typename T>
+static constexpr bool is_polymorphic = IsPolymorphic<T>::value;
+
+
+
 } // namespace CxxPlugins
