@@ -26,8 +26,6 @@
 
 namespace CxxPlugins {
 
-
-
 namespace impl {
 
 template <typename Signature> struct PolymorphicTrampolineType;
@@ -97,11 +95,7 @@ template <typename Tag, typename T, typename Signature>
 static constexpr auto polymorphic_trampoline_v =
     &PolymorphicTrampoline<Tag, T, Signature>::call;
 
-
-
 } // namespace impl
-
-
 
 template <typename Signature>
 using PolymorphicTrampolineT =
@@ -157,72 +151,100 @@ public:
 
   template <typename T>
   constexpr explicit VTable(std::in_place_type_t<T> /*unused*/) noexcept
-      : function_table_p_m{
-            VTableStorage<std::decay_t<T>,
-                           TaggedValue<Tags, Signatures>...>::value} {
-    std::copy(std::begin(Sequence::AsArray<DefaultSequenceT>::value),
-              std::end(Sequence::AsArray<DefaultSequenceT>::value),
-              std::begin(permutations_m));
-  }
+      : function_table_p_m{VTableStorage<
+            std::decay_t<T>, TaggedValue<Tags, Signatures>...>::value},
+        permutations_m{Sequence::AsStdArray<DefaultSequenceT>::value} {}
 
-  template <
-      typename... OtherTags, typename... OtherSignatures,
-      bool constraints =
-          // Tags >= 1, because otherwise it is a default constructor
-      sizeof...(Tags) >= 1 &&
-      // Number of this tags should be strictly less then rhs
-      // if equal copy ctor should be called instead
-      (sizeof...(Tags) < sizeof...(OtherTags)) &&
-      // Every tag from `this` should be represented in rhs
-      (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
-      // Every tag from `this` should have the same function type as in rhs
-      (std::is_same_v<FunctionTypeAt<Tags>,
-                            VTable<TaggedValue<OtherTags, OtherSignatures>>::
-                          template FunctionTypeAt<Tags>> &&...),
-      std::enable_if_t<constraints, int> = 0>
+  template <typename... OtherTags, typename... OtherSignatures,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy ctor should be called instead
+            (sizeof...(Tags) < sizeof...(OtherTags)) &&
+            // Every tag from `this` should be represented in rhs
+            (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
+            // Every tag from `this` should have the same function type as in
+            // rhs
+            (std::is_same_v<
+                FunctionTypeAt<Tags>,
+                typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
+                    template FunctionTypeAt<Tags>> &&...),
+            std::enable_if_t<constraints, int> = 0>
   constexpr VTable(
-      VTable<TaggedValue<OtherTags, OtherSignatures>...> const
-          &rhs) noexcept
-      : function_table_p_m{rhs.function_table_m} {
-    constexpr auto input = Sequence::AsArray<
-        std::index_sequence<utility::index_of<Tags, OtherTags...>...>>::value;
-    std::copy(std::begin(input), std::end(input), std::begin(permutations_m));
+      VTable<TaggedValue<OtherTags, OtherSignatures>...> const &rhs) noexcept
+      : function_table_p_m{rhs.function_table_p_m},
+        permutations_m{Sequence::AsStdArray<std::integer_sequence<
+            std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value} {}
+
+  template <typename... OtherTags, typename... OtherSignatures,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy ctor should be called instead
+            (sizeof...(Tags) < sizeof...(OtherTags)) &&
+            // Every tag from `this` should be represented in rhs
+            // Every tag from `this` should be represented in rhs
+            (!(utility::is_in_the_pack_v<Tags, OtherTags...> &&...) ||
+            // Every tag from `this` should have the same function type as in
+            // rhs
+            !(std::is_same_v<
+                FunctionTypeAt<Tags>,
+                typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
+                template FunctionTypeAt<Tags>> &&...)),
+            std::enable_if_t<constraints, int> = 0>
+  // This constructor exists only for correct static_asserts
+  // Otherwise compiler will fail before static_assert with bad error messages
+  constexpr VTable(
+      VTable<TaggedValue<OtherTags, OtherSignatures>...> const & /*unused*/,
+      ...) noexcept {
+    static_assert((utility::is_in_the_pack_v<Tags, OtherTags...> && ...),
+                  "Every tag from `this` should be represented in rhs");
+    static_assert(
+        (std::is_same_v<FunctionTypeAt<Tags>,
+                        typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
+                            template FunctionTypeAt<Tags>> &&
+         ...),
+        "Every tag from `this` should have the same function signature as in "
+        "rhs");
+    static_assert(
+        sizeof(decltype(*this)) == 0,
+        "Please check previous messages. This assert exists to ensure that "
+        "implementation is correct and this constructor is never called.");
   }
 
   template <typename T>
-  constexpr VTable &
-  operator=(std::in_place_type_t<T> /*unused*/) noexcept {
-    function_table_p_m = VTableStorage<std::decay_t<T>,
-        TaggedValue<Tags, Signatures>...>::value;
-    constexpr auto input = Sequence::AsArray<DefaultSequenceT>::value;
-    std::copy(std::begin(input), std::end(input), std::begin(permutations_m));
+  constexpr VTable &operator=(std::in_place_type_t<T> /*unused*/) noexcept {
+    function_table_p_m =
+        VTableStorage<std::decay_t<T>, TaggedValue<Tags, Signatures>...>::value;
+    permutations_m = Sequence::AsStdArray<DefaultSequenceT>::value;
 
     return *this;
   }
 
-  template <
-      typename... OtherTags, typename... OtherSignatures,
-      bool constraints =
-          // Tags >= 1, because otherwise it is a default constructor
-      sizeof...(Tags) >= 1 &&
-      // Number of this tags should be strictly less then rhs
-      // if equal copy assignment operator should be called instead
-      (sizeof...(Tags) < sizeof...(OtherTags)) &&
-      // Every tag from `this` should be represented in rhs
-      (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
-      // Every tag from `this` should have the same function type as in rhs
-      (std::is_same_v<FunctionTypeAt<Tags>,
-                            VTable<TaggedValue<OtherTags, OtherSignatures>>::
-                          template FunctionTypeAt<Tags>> &&...),
-      std::enable_if_t<constraints, int> = 0>
-  constexpr VTable &
-  operator=(
-      VTable<TaggedValue<OtherTags, OtherSignatures>...> const
-                &rhs) noexcept {
-    function_table_p_m = rhs.function_table_m;
-    constexpr auto input = Sequence::AsArray<
-        std::index_sequence<utility::index_of<Tags, OtherTags...>...>>::value;
-    std::copy(std::begin(input), std::end(input), std::begin(permutations_m));
+  template <typename... OtherTags, typename... OtherSignatures,
+            bool constraints =
+                // Tags >= 1, because otherwise it is a default constructor
+            sizeof...(Tags) >= 1 &&
+            // Number of this tags should be strictly less then rhs
+            // if equal copy assignment operator should be called instead
+            (sizeof...(Tags) < sizeof...(OtherTags)),
+            std::enable_if_t<constraints, int> = 0>
+  constexpr VTable &operator=(
+      VTable<TaggedValue<OtherTags, OtherSignatures>...> const &rhs) noexcept {
+    static_assert((utility::is_in_the_pack_v<Tags, OtherTags...> && ...),
+                  "Every tag from `this` should be represented in rhs");
+    static_assert(
+        (std::is_same_v<FunctionTypeAt<Tags>,
+            typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
+            template FunctionTypeAt<Tags>> &&
+            ...),
+        "Every tag from `this` should have the same function signature as in "
+        "rhs");
+    function_table_p_m = rhs.function_table_p_m;
+    permutations_m = Sequence::AsStdArray<
+        std::integer_sequence<std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value;
     return *this;
   }
 
@@ -244,12 +266,12 @@ private:
   template <typename TagT>
   static constexpr unsigned index = utility::index_of<TagT, Tags...>;
 
-  using DefaultSequenceT = std::make_index_sequence<sizeof...(Tags)>;
+  using DefaultSequenceT = std::make_integer_sequence<uint8_t, sizeof...(Tags)>;
   static constexpr std::size_t perm_size =
       sizeof...(Tags) == 0 ? 1 : sizeof...(Tags);
 
   FunctionTablePtrT function_table_p_m = nullptr;
-  std::uint8_t permutations_m[perm_size] = {0};
+  std::array<std::uint8_t, sizeof...(Tags)> permutations_m = {0};
 }; // namespace CxxPlugins
 
 } // namespace CxxPlugins

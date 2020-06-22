@@ -14,6 +14,7 @@
 #pragma once
 
 #include <utility>
+#include <array>
 
 namespace Sequence {
 
@@ -42,6 +43,14 @@ struct AsArray;
 template<typename T, T... values>
 struct AsArray<std::integer_sequence<T,values...>> {
   static constexpr T value[sizeof...(values)] = {values...};
+};
+
+template<typename Seq>
+struct AsStdArray;
+
+template<typename T, T... values>
+struct AsStdArray<std::integer_sequence<T,values...>> {
+  static constexpr std::array<T,sizeof...(values)> value = {values...};
 };
 
 
