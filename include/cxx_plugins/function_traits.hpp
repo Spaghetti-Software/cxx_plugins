@@ -14,6 +14,8 @@
  */
 #pragma once
 
+#include "cxx_plugins/type_traits.hpp"
+
 #include <utility>
 
 /*!
@@ -193,8 +195,7 @@ constexpr auto functionPointerCast(FunctionPointer<Signature, Class> fn_ptr) {
  * ```
  *
  */
-template <auto function, typename InputT>
-constexpr auto generateTrampoline();
+template <auto function, typename InputT> constexpr auto generateTrampoline();
 
 /*!
  * \brief
@@ -225,8 +226,8 @@ template <typename Signature, typename Class,
           FunctionPointer<Signature, Class> method, typename InputT>
 constexpr auto generateTrampoline();
 
-template <typename Signature,
-    FunctionPointer<Signature> function, typename InputT>
+template <typename Signature, FunctionPointer<Signature> function,
+          typename InputT>
 constexpr auto generateTrampoline();
 
 /*!
@@ -292,6 +293,24 @@ constexpr auto castMethodToFunction();
  */
 template <typename T>
 static constexpr bool is_callable_v = impl::IsCallableImpl<T>::value;
+
+template <typename What, typename With, typename Signature>
+struct SignatureReplaceTypeWith;
+
+template <typename What, typename With, typename Return, typename... Args>
+struct SignatureReplaceTypeWith<What, With, Return(Args...)> {
+  using Type = ReplaceIfSameUnqualifiedT<Return, What, With>(
+      ReplaceIfSameUnqualifiedT<Args, What, With>...);
+};
+template <typename What, typename With, typename Return, typename... Args>
+struct SignatureReplaceTypeWith<What, With, Return(Args...)const> {
+  using Type = ReplaceIfSameUnqualifiedT<Return, What, With>(
+      ReplaceIfSameUnqualifiedT<Args, What, With>...)const;
+};
+
+template <typename What, typename With, typename Signature>
+using SignatureReplaceTypeWithT =
+    typename SignatureReplaceTypeWith<What, With, Signature>::Type;
 
 } // namespace CxxPlugins::utility
 

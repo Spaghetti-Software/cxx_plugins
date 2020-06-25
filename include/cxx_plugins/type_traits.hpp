@@ -169,4 +169,106 @@ struct RepeatingIndexSequence<start_with, std::index_sequence<indices...>> {
       std::make_index_sequence<sizeof...(indices)>>::Type;
 };
 
+template <typename T> struct RemoveAllQualifiers { using Type = T; };
+template <typename T>
+using RemoveAllQualifiersT = typename RemoveAllQualifiers<T>::Type;
+
+template <typename T> struct RemoveAllQualifiers<T const> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T volatile> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T const volatile> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T &> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T &&> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T *> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T> struct RemoveAllQualifiers<T[]> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+template <typename T, std::size_t size> struct RemoveAllQualifiers<T[size]> {
+  using Type = RemoveAllQualifiersT<T>;
+};
+
+template <typename From, typename To> struct SameQualifiersAs {
+  using Type = To;
+};
+template <typename From, typename To>
+using SameQualifiersAsT = typename SameQualifiersAs<From, To>::Type;
+
+template <typename From, typename To> struct SameQualifiersAs<From const, To> {
+  using Type = SameQualifiersAsT<From, To> const;
+};
+template <typename From, typename To>
+struct SameQualifiersAs<From volatile, To> {
+  using Type = SameQualifiersAsT<From, To> volatile;
+};
+template <typename From, typename To>
+struct SameQualifiersAs<From const volatile, To> {
+  using Type = SameQualifiersAsT<From, To> const volatile;
+};
+template <typename From, typename To> struct SameQualifiersAs<From &, To> {
+  using Type = SameQualifiersAsT<From, To> &;
+};
+template <typename From, typename To> struct SameQualifiersAs<From &&, To> {
+  using Type = SameQualifiersAsT<From, To> &&;
+};
+template <typename From, typename To> struct SameQualifiersAs<From *, To> {
+  using Type = SameQualifiersAsT<From, To> *;
+};
+template <typename From, typename To> struct SameQualifiersAs<From[], To> {
+  using Type = SameQualifiersAsT<From, To>[];
+};
+template <typename From, std::size_t size, typename To>
+struct SameQualifiersAs<From[size], To> {
+  using Type = SameQualifiersAsT<From, To>[size];
+};
+
+/*
+ * Qualifiers list:
+ * const
+ * volatile
+ * lvalue reference
+ * rvalue reference
+ * pointer
+ * array
+ */
+
+template <typename Input, typename From, typename To>
+/*!
+ * \brief   Checks if Input type with removed qualifers matches From type
+ *          and assigns same qualifiers to To type. Otherwise saves Input Type.
+ */
+struct ReplaceIfSameUnqualified {
+  static_assert(!std::is_const_v<From>, "From type should have no qualifiers");
+  static_assert(!std::is_const_v<To>, "To type should have no qualifiers");
+  static_assert(!std::is_volatile_v<From>,
+                "From type should have no qualifiers");
+  static_assert(!std::is_volatile_v<To>, "To type should have no qualifiers");
+  static_assert(!std::is_reference_v<From>,
+                "From type should have no qualifiers");
+  static_assert(!std::is_reference_v<To>, "To type should have no qualifiers");
+  static_assert(!std::is_pointer_v<From>,
+                "From type should have no qualifiers");
+  static_assert(!std::is_pointer_v<To>, "To type should have no qualifiers");
+  static_assert(!std::is_array_v<From>, "From type should have no qualifiers");
+  static_assert(!std::is_array_v<To>, "To type should have no qualifiers");
+
+  using Type =
+      std::conditional_t<std::is_same_v<RemoveAllQualifiersT<Input>, From>,
+                         SameQualifiersAsT<Input, To>, Input>;
+};
+
+template <typename Input, typename From, typename To>
+using ReplaceIfSameUnqualifiedT =
+    typename ReplaceIfSameUnqualified<Input, From, To>::Type;
+
 } // namespace CxxPlugins::utility

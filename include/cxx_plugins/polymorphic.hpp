@@ -79,8 +79,8 @@ namespace CxxPlugins {
      *
      */
     template<typename T,
-             typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> && 
-                                         !is_polymorphic<std::decay_t<T>>>>
+             typename = std::enable_if_t<!is_polymorphic_ref_v<std::decay_t<T>> &&
+                                         !is_polymorphic_v<std::decay_t<T>>>>
     constexpr Polymorphic(T&& t) noexcept :  function_table_p_m{std::in_place_t<T>{}} {
       allocateAndConstruct(t);    
     }
@@ -150,8 +150,8 @@ namespace CxxPlugins {
     }
     
       template <typename T,
-            typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> &&
-                                        !is_polymorphic<std::decay_t<T>>>>
+            typename = std::enable_if_t<!is_polymorphic_ref_v<std::decay_t<T>> &&
+                                        !is_polymorphic_v<std::decay_t<T>>>>
     /*!
      * \brief Main assignment operator for PolymorphicRef.
      * It gets object of any type stores pointer to it and forms a function table.

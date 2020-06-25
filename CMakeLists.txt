@@ -65,6 +65,7 @@ target_sources(${This}
         include/cxx_plugins/polymorphic_traits.hpp
         include/cxx_plugins/polymorphic_ref.hpp
         include/cxx_plugins/function_proxy.hpp
+        include/cxx_plugins/polymorphic_allocator.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp

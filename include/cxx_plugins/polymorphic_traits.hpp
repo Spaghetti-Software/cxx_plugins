@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include "cxx_plugins/function_traits.hpp"
 #include "tuple/tuple_map.hpp"
 
 #include <type_traits>
@@ -119,33 +120,44 @@ template <typename TagT> struct PolymorphicTagSignature<Tag<TagT>> {
   using Type = typename PolymorphicTagSignature<TagT>::Type;
 };
 template <typename TagT, typename ValueT>
-struct PolymorphicTagSignature<TaggedValue<TagT,ValueT>> {
+struct PolymorphicTagSignature<TaggedValue<TagT, ValueT>> {
   using Type = ValueT;
 };
 
 template <typename TagT>
 using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 
-
 namespace impl {
-  template<typename... TaggedSignatures>
-  class PolymorphicRef;
+template <typename... TaggedSignatures> class PolymorphicRef;
 } // namespace impl
 
 template <typename T> struct IsPolymorphicRef : public std::false_type {};
 template <typename... TaggedSignatures>
 struct IsPolymorphicRef<impl::PolymorphicRef<TaggedSignatures...>>
-: public std::true_type {};
+    : public std::true_type {};
 template <typename T>
-static constexpr bool is_polymorphic_ref = IsPolymorphicRef<T>::value;
+static constexpr bool is_polymorphic_ref_v = IsPolymorphicRef<T>::value;
 
+template <typename T> struct IsPolymorphic : public std::false_type {};
 
-template<typename T>
-struct IsPolymorphic : public std::false_type {};
+template <typename T>
+static constexpr bool is_polymorphic_v = IsPolymorphic<T>::value;
 
-template<typename T>
-static constexpr bool is_polymorphic = IsPolymorphic<T>::value;
+/*!
+ * \brief
+ * Special type that can be declared in the signature of function
+ * of Polymorphic or PolymorphicRef, that needs to take an argument of the same
+ * Polymorphic or PolymorphicRef
+ */
+struct SelfType {};
 
-
+template <typename PolymorphicType, typename Signature>
+struct PolymorphicSignature {
+  using Type =
+      utility::SignatureReplaceTypeWithT<SelfType, PolymorphicType, Signature>;
+};
+template <typename PolymorphicType, typename Signature>
+using PolymorphicSignatureT =
+    typename PolymorphicSignature<PolymorphicType, Signature>::Type;
 
 } // namespace CxxPlugins
