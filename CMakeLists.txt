@@ -51,9 +51,15 @@ else ()
 endif ()
 conan_basic_setup(TARGETS)
 
+if (NOT CXX_PLUGINS_ENABLE_RTTI_TYPE_INDEX)
+    target_compile_definitions(${This} PUBLIC BOOST_TYPE_INDEX_FORCE_NO_RTTI_COMPATIBILITY)
+endif()
+
 target_sources(${This}
         PRIVATE
         src/cxx_plugins.cpp
+        src/polymorphic_allocator.cpp
+
         PUBLIC
         include/cxx_plugins/vtable.hpp
         include/cxx_plugins/cxx_plugins.hpp
@@ -66,6 +72,7 @@ target_sources(${This}
         include/cxx_plugins/polymorphic_ref.hpp
         include/cxx_plugins/function_proxy.hpp
         include/cxx_plugins/polymorphic_allocator.hpp
+        include/cxx_plugins/allocator_helpers.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp
@@ -86,8 +93,11 @@ target_sources(${This}
 
         )
 
+find_package(Threads REQUIRED)
+
 target_include_directories(${This} PRIVATE src)
-target_link_libraries(${This} INTERFACE CONAN_PKG::boost)
+target_link_libraries(${This} PUBLIC CONAN_PKG::boost)
+target_link_libraries(${This} PRIVATE Threads::Threads)
 
 # We determine dev / no dev by checking if tests are enabled
 # We need different configurations, so warnings from our library

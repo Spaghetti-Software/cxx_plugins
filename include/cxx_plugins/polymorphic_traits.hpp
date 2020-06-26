@@ -14,11 +14,50 @@
 #pragma once
 
 #include "cxx_plugins/function_traits.hpp"
-#include "tuple/tuple_map.hpp"
+#include "cxx_plugins/definitions.hpp"
 
 #include <type_traits>
 
 namespace CxxPlugins {
+
+
+template<typename TagT, typename Signature>
+struct TaggedSignature {
+  using TagType = TagT;
+  using SignatureType = Signature;
+  [[gnu::noinline]]
+  constexpr TaggedSignature() noexcept {
+    cxxPluginsUnreachable("This constructor should never be called");
+  }
+  [[gnu::noinline]]
+  TaggedSignature(TaggedSignature const&) noexcept {
+    cxxPluginsUnreachable("This constructor should never be called");
+  }
+  [[gnu::noinline]]
+  TaggedSignature(TaggedSignature &&) noexcept {
+    cxxPluginsUnreachable("This constructor should never be called");
+  }
+  [[gnu::noinline]]
+  TaggedSignature& operator=(TaggedSignature const&) noexcept {
+    cxxPluginsUnreachable("This constructor should never be called");
+  }
+  [[gnu::noinline]]
+  TaggedSignature& operator=(TaggedSignature&&) noexcept {
+    cxxPluginsUnreachable("This constructor should never be called");
+  }
+
+
+};
+
+template<typename T>
+struct IsTaggedSignature : public std::false_type {};
+
+template<typename Tag, typename Signature>
+struct IsTaggedSignature<TaggedSignature<Tag,Signature>> : public std::true_type {};
+
+template<typename T>
+static constexpr bool is_tagged_signature = IsTaggedSignature<T>::value;
+
 
 template <typename T>
 /*!
@@ -120,7 +159,7 @@ template <typename TagT> struct PolymorphicTagSignature<Tag<TagT>> {
   using Type = typename PolymorphicTagSignature<TagT>::Type;
 };
 template <typename TagT, typename ValueT>
-struct PolymorphicTagSignature<TaggedValue<TagT, ValueT>> {
+struct PolymorphicTagSignature<TaggedSignature<TagT, ValueT>> {
   using Type = ValueT;
 };
 
@@ -129,12 +168,17 @@ using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 
 namespace impl {
 template <typename... TaggedSignatures> class PolymorphicRef;
+template <typename... TaggedSignatures> class PrimitivePolymorphicRef;
 } // namespace impl
 
 template <typename T> struct IsPolymorphicRef : public std::false_type {};
 template <typename... TaggedSignatures>
 struct IsPolymorphicRef<impl::PolymorphicRef<TaggedSignatures...>>
     : public std::true_type {};
+template <typename... TaggedSignatures>
+struct IsPolymorphicRef<impl::PrimitivePolymorphicRef<TaggedSignatures...>>
+    : std::true_type {};
+
 template <typename T>
 static constexpr bool is_polymorphic_ref_v = IsPolymorphicRef<T>::value;
 

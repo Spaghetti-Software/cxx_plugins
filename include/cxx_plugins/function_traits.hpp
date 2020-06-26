@@ -312,6 +312,7 @@ template <typename What, typename With, typename Signature>
 using SignatureReplaceTypeWithT =
     typename SignatureReplaceTypeWith<What, With, Signature>::Type;
 
+
 } // namespace CxxPlugins::utility
 
 #include <cxx_plugins/function_traits.ipp>

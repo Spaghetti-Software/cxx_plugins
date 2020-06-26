@@ -13,7 +13,7 @@
  */
 
 #include <cxx_plugins/polymorphic_ref.hpp>
-
+#include <cxx_plugins/polymorphic_allocator.hpp>
 #include <gtest/gtest.h>
 
 struct add {};
@@ -128,20 +128,20 @@ TEST(PolymorphicRef, checkReferenceCorrectness) {
   using namespace CxxPlugins;
   Dummy obj;
 
-  PolymorphicRef<TaggedValue<Correctness, ReferenceType()>> lvalue_ref(obj);
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> lvalue_ref(obj);
   auto expected = ReferenceType::LValue;
   auto result = lvalue_ref.call<Correctness>();
   EXPECT_EQ(expected, result)
       << "Expected: " << expected << ", Result: " << result;
 
-  PolymorphicRef<TaggedValue<Correctness, ReferenceType() const>>
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
       lvalue_const_ref(obj);
   expected = ReferenceType::ConstLValue;
   result = lvalue_const_ref.call<Correctness>();
   EXPECT_EQ(expected, result)
       << "Expected: " << expected << ", Result: " << result;
 
-  PolymorphicRef<TaggedValue<Correctness, ReferenceType()>> rvalue_ref(
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> rvalue_ref(
       std::move(obj));
 
   expected = ReferenceType::RValue;
@@ -149,7 +149,7 @@ TEST(PolymorphicRef, checkReferenceCorrectness) {
   EXPECT_EQ(expected, result)
       << "Expected: " << expected << ", Result: " << result;
 
-  PolymorphicRef<TaggedValue<Correctness, ReferenceType() const>>
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
       const_rvalue_ref(static_cast<Dummy const &&>((std::move(obj))));
 
   expected = ReferenceType::ConstRValue;
