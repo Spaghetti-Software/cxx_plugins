@@ -83,6 +83,7 @@ TEST(PolymorphicAllocator, MonotonicBufferTests) {
                                                std::size(buffer));
   std::vector<Foo, PolymorphicAllocator<Foo>> vec(&resource);
 
+
   for (unsigned i = 1; i < max_size; ++i) {
     vec.resize(i + 1);
     vec[i] = i;
@@ -90,13 +91,6 @@ TEST(PolymorphicAllocator, MonotonicBufferTests) {
       EXPECT_NE(buffer, old_buffer)
           << "Buffers should have different data each iteration "
              "if total number of allocated bytes is less then the size of the "
-             "buffer.\n"
-             "Test failed at i = "
-          << i;
-    } else {
-      EXPECT_EQ(buffer, old_buffer)
-          << "Buffers should have same data each iteration "
-             "if total number of allocated bytes is more then the size of the "
              "buffer.\n"
              "Test failed at i = "
           << i;
