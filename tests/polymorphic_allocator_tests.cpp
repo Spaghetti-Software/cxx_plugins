@@ -29,7 +29,7 @@ TEST(PolymorphicAllocator, SimpleTests) {
 
 TEST(PolymorphicAllocator, VectorIntTests) {
   using namespace CxxPlugins;
-  std::vector<int, PolymorphicAllocator<>> vec;
+  std::vector<int, PolymorphicAllocator<int>> vec;
   for (int i = 0; i < 10; ++i) {
     vec.resize(i + 1);
     vec[i] = i;
@@ -57,7 +57,7 @@ private:
 
 TEST(PolymorphicAllocator, VectorObjectTests) {
   using namespace CxxPlugins;
-  std::vector<Foo, PolymorphicAllocator<>> vec;
+  std::vector<Foo, PolymorphicAllocator<Foo>> vec;
   for (int i = 0; i < 10; ++i) {
     vec.resize(i + 1);
     vec[i] = i;
@@ -81,7 +81,7 @@ TEST(PolymorphicAllocator, MonotonicBufferTests) {
 
   std::pmr::monotonic_buffer_resource resource(std::data(buffer),
                                                std::size(buffer));
-  std::vector<Foo, PolymorphicAllocator<>> vec(&resource);
+  std::vector<Foo, PolymorphicAllocator<Foo>> vec(&resource);
 
   for (unsigned i = 1; i < max_size; ++i) {
     vec.resize(i + 1);
