@@ -36,7 +36,6 @@ constexpr auto polymorphicExtend(allocate /*unused*/, T &mem_resource,
                                  std::size_t bytes, std::size_t alignment)
     -> void * {
   return mem_resource.allocate(bytes, alignment);
-return nullptr;
 }
 
 template <typename T>
@@ -65,9 +64,9 @@ constexpr auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
   return false;
 }
 
-auto operator==(MemoryResourceRef const &lhs, MemoryResourceRef const &rhs)
+inline auto operator==(MemoryResourceRef const &lhs, MemoryResourceRef const &rhs)
     -> bool {
-  return lhs.call<isEqual>(rhs);
+  return lhs.call<CxxPlugins::isEqual>(rhs);
 }
 
 // By default evaluates to std::pmr::get_default_resource()
@@ -99,6 +98,12 @@ public:
   // constructors
   PolymorphicAllocator() noexcept = default;
   PolymorphicAllocator(MemoryResourceRef r) noexcept : resource_m(r) {}
+  PolymorphicAllocator(std::pmr::memory_resource* resource) noexcept :
+    resource_m(resource)
+  {}
+  PolymorphicAllocator(std::pmr::memory_resource& resource) noexcept :
+      resource_m(resource)
+  {}
 
   PolymorphicAllocator(const PolymorphicAllocator &other) = default;
 
@@ -115,20 +120,20 @@ public:
     }
 
     return static_cast<Tp *>(
-        resource_m.call<allocate>(n * sizeof(Tp), alignof(Tp)));
+        resource_m.call<CxxPlugins::allocate>(n * sizeof(Tp), alignof(Tp)));
   }
   void deallocate(Tp *p, size_t n) noexcept {
-    resource_m.call<deallocate>(p, n * sizeof(Tp), alignof(Tp));
+    resource_m.call<CxxPlugins::deallocate>(p, n * sizeof(Tp), alignof(Tp));
   }
 
   [[nodiscard]] auto allocate_bytes(size_t nbytes,
                                     size_t alignment = alignof(max_align_t))
       -> void * {
-    return resource_m.call<allocate>(nbytes, alignment);
+    return resource_m.call<CxxPlugins::allocate>(nbytes, alignment);
   }
   void deallocate_bytes(void *p, size_t nbytes,
                         size_t alignment = alignof(max_align_t)) {
-    resource_m.call<deallocate>(p, nbytes, alignment);
+    resource_m.call<CxxPlugins::deallocate>(p, nbytes, alignment);
   }
   template <typename U>[[nodiscard]] auto allocate_object(size_t n = 1) -> U * {
     if (n > std::numeric_limits<std::size_t>::max() / sizeof(U)) {
