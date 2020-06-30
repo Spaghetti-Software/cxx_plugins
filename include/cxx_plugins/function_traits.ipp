@@ -6,6 +6,15 @@ struct FunctionTraits<Return(Args...)> {
   using ReturnType = Return;
   using ArgsTuple = std::tuple<Args...>;
   static constexpr bool is_method = false;
+  static constexpr bool is_const = false;
+};
+
+template <typename Return, typename... Args>
+struct FunctionTraits<Return(Args...)const> {
+  using ReturnType = Return;
+  using ArgsTuple = std::tuple<Args...>;
+  static constexpr bool is_method = false;
+  static constexpr bool is_const = true;
 };
 
 template <typename Return, typename... Args>
@@ -51,31 +60,69 @@ struct SignatureToFunctionPointerImpl<Return(Args...) const, Class> {
   using type = Return (Class::*)(Args...) const;
 };
 
-template <auto method, typename InputT> struct TrampolineGeneratorImpl;
+template <auto function, typename InputT> struct TrampolineGeneratorImpl;
 
 template <typename Class, typename Return, typename... Args,
-          Return (Class::*ptr)(Args...), typename InputT>
-struct TrampolineGeneratorImpl<ptr, InputT> {
+          Return (Class::*method)(Args...), typename InputT>
+struct TrampolineGeneratorImpl<method, InputT> {
 
   static constexpr Return fnImpl(InputT *input_p, Args... args) {
     auto obj_p = static_cast<Class *>(input_p);
-    return (obj_p->*ptr)(std::forward<Args>(args)...);
+    return (obj_p->*method)(std::forward<Args>(args)...);
   }
 
   static constexpr auto value = &fnImpl;
 };
 
 template <typename Class, typename Return, typename... Args,
-          Return (Class::*ptr)(Args...) const, typename InputT>
-struct TrampolineGeneratorImpl<ptr, InputT> {
+          Return (Class::*method)(Args...) const, typename InputT>
+struct TrampolineGeneratorImpl<method, InputT> {
 
   static constexpr Return fnImpl(const InputT *input_p, Args... args) {
     const auto *obj_p = static_cast<const Class *>(input_p);
-    return (obj_p->*ptr)(std::forward<Args>(args)...);
+    return (obj_p->*method)(std::forward<Args>(args)...);
   }
 
   static constexpr auto value = &fnImpl;
 };
+
+template <typename Class, typename Return, typename... Args,
+    Return(*fn)(Class*, Args...), typename InputT>
+struct TrampolineGeneratorImpl<fn, InputT> {
+
+  static constexpr Return fnImpl(InputT *input_p, Args... args) {
+    auto obj_p = static_cast<Class *>(input_p);
+    return fn(obj_p, std::forward<Args>(args)...);
+  }
+
+  static constexpr auto value = &fnImpl;
+};
+
+template <typename Class, typename Return, typename... Args,
+    Return (*fn)(Class const*, Args...), typename InputT>
+struct TrampolineGeneratorImpl<fn, InputT> {
+
+  static constexpr Return fnImpl(const InputT *input_p, Args... args) {
+    auto obj_p = static_cast<const Class *>(input_p);
+    return fn(obj_p, std::forward<Args>(args)...);
+  }
+
+  static constexpr auto value = &fnImpl;
+};
+
+template <typename Class, typename Return, typename... Args,
+    Return(*fn)(Class*, Args...)>
+struct TrampolineGeneratorImpl<fn, Class> {
+
+  static constexpr auto value = fn;
+};
+
+template <typename Class, typename Return, typename... Args,
+    Return (*fn)(Class const*, Args...)>
+struct TrampolineGeneratorImpl<fn, Class> {
+  static constexpr auto value = fn;
+};
+
 
 
 template <typename T, bool IsClass> struct IsCallableImpl;
@@ -130,16 +177,20 @@ constexpr auto castMethodToFunction() {
   return generateTrampoline<method, Class>();
 }
 
-template <auto method, typename InputT> constexpr auto generateTrampoline() {
-  using Traits = FunctionTraits<decltype(method)>;
-  static_assert(Traits::is_method, "Variable passed in should be a method");
-  return impl::TrampolineGeneratorImpl<method, InputT>::value;
+template <auto function, typename InputT> constexpr auto generateTrampoline() {
+  return impl::TrampolineGeneratorImpl<function, InputT>::value;
 }
 
-template <typename Signature, typename Class,
-          FunctionPointer<Signature, Class> method, typename InputT>
+//template <typename Signature, typename Class,
+//          FunctionPointer<Signature, Class> method, typename InputT>
+//constexpr auto generateTrampoline() {
+//  return generateTrampoline<method, InputT>();
+//}
+
+template <typename Signature,
+    FunctionPointer<Signature,void> function, typename InputT>
 constexpr auto generateTrampoline() {
-  return generateTrampoline<method, InputT>();
+  return generateTrampoline<function, InputT>();
 }
 
 } // namespace CxxPlugins::utility

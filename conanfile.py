@@ -12,6 +12,7 @@ class CxxPlugins(ConanFile):
 
     options = {"shared": [True, False], "enable_tests": [True, False], "enable_documentation": [True, False]}
     default_options = {"shared": False, "enable_tests": False, "enable_documentation": False}
+    requires = ["boost/1.73.0"]
 
     def package_id(self):
         del self.info.options.enable_tests
