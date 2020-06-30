@@ -73,6 +73,10 @@ target_sources(${This}
         include/cxx_plugins/function_proxy.hpp
         include/cxx_plugins/polymorphic_allocator.hpp
         include/cxx_plugins/allocator_helpers.hpp
+        
+        include/cxx_plugins/memory/stack_allocator.hpp
+        include/cxx_plugins/memory/mallocator.hpp
+        include/cxx_plugins/memory/memory_common.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp
