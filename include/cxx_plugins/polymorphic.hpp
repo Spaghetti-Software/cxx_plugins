@@ -94,8 +94,8 @@ namespace CxxPlugins {
      *
      */
     template<typename T,
-             typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> && 
-                                         !is_polymorphic<std::decay_t<T>>>>
+             typename = std::enable_if_t<!is_polymorphic_ref_v<std::decay_t<T>> &&
+                                         !is_polymorphic_v<std::decay_t<T>>>>
     constexpr Polymorphic(T&& t) noexcept :  function_table_p_m{std::in_place_t<T>{}} {
       allocateAndConstructFromObject(t);
     }
@@ -105,6 +105,7 @@ namespace CxxPlugins {
       data_p_m = nullptr;
     }
     
+
     template <typename T,
               typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> &&
                                           !is_polymorphic<std::decay_t<T>>>>

@@ -13,7 +13,7 @@
  */
 
 #include <cxx_plugins/polymorphic_ref.hpp>
-
+#include <cxx_plugins/polymorphic_allocator.hpp>
 #include <gtest/gtest.h>
 
 struct add {};
@@ -78,4 +78,106 @@ TEST(PolymorphicRef, SimpleTests) {
   complex_poly0.call<Tag<add>>(1);
   EXPECT_EQ(std::to_string(obj0.i_m), constant_poly.call<Tag<stringify>>());
   constant_poly = complex_poly0;
+}
+
+enum class ReferenceType { LValue, ConstLValue, RValue, ConstRValue };
+std::ostream &operator<<(std::ostream &os, ReferenceType ref_type) {
+  const char *str = nullptr;
+  switch (ref_type) {
+  case ReferenceType::LValue:
+    str = "LValue";
+    break;
+  case ReferenceType::ConstLValue:
+    str = "ConstLValue";
+    break;
+  case ReferenceType::RValue:
+    str = "RValue";
+    break;
+  case ReferenceType::ConstRValue:
+    str = "ConstRValue";
+    break;
+  }
+  os << str;
+  return os;
+}
+struct Correctness {};
+struct CorrectnessConst {
+  CorrectnessConst(Correctness) {}
+};
+
+struct Dummy {};
+
+constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy & /*unused*/)
+    -> ReferenceType {
+  return ReferenceType::LValue;
+}
+constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &
+                                 /*unused*/) -> ReferenceType {
+  return ReferenceType::ConstLValue;
+}
+constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy && /*unused*/)
+    -> ReferenceType {
+  return ReferenceType::RValue;
+}
+constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &&
+                                 /*unused*/) -> ReferenceType {
+  return ReferenceType::ConstRValue;
+}
+
+TEST(PolymorphicRef, checkReferenceCorrectness) {
+  using namespace CxxPlugins;
+  Dummy obj;
+
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> lvalue_ref(obj);
+  auto expected = ReferenceType::LValue;
+  auto result = lvalue_ref.call<Correctness>();
+  EXPECT_EQ(expected, result)
+      << "Expected: " << expected << ", Result: " << result;
+
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
+      lvalue_const_ref(obj);
+  expected = ReferenceType::ConstLValue;
+  result = lvalue_const_ref.call<Correctness>();
+  EXPECT_EQ(expected, result)
+      << "Expected: " << expected << ", Result: " << result;
+
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> rvalue_ref(
+      std::move(obj));
+
+  expected = ReferenceType::RValue;
+  result = rvalue_ref.call<Correctness>();
+  EXPECT_EQ(expected, result)
+      << "Expected: " << expected << ", Result: " << result;
+
+  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
+      const_rvalue_ref(static_cast<Dummy const &&>((std::move(obj))));
+
+  expected = ReferenceType::ConstRValue;
+  result = const_rvalue_ref.call<Correctness>();
+  EXPECT_EQ(expected, result)
+      << "Expected: " << expected << ", Result: " << result;
+}
+
+
+TEST(PolymorphicRef, DefaultConstructor) {
+  using namespace CxxPlugins;
+  [[maybe_unused]] PolymorphicRef<> default_empty;
+  [[maybe_unused]] PolymorphicRef<add> default_single_arg;
+  [[maybe_unused]] PolymorphicRef<add,multiply,stringify> default_multi_arg;
+
+  EXPECT_TRUE(default_empty.isEmpty());
+  EXPECT_TRUE(default_single_arg.isEmpty());
+  EXPECT_TRUE(default_multi_arg.isEmpty());
+}
+
+
+TEST(PolymorphicRef, Reorder) {
+  using namespace CxxPlugins;
+  foo obj0;
+  PolymorphicRef<add,multiply> ref0(obj0);
+  PolymorphicRef<multiply,add> ref1(ref0);
+  ref0.call<add>(20);
+  EXPECT_EQ(obj0.i_m, 20);
+  ref1.call<add>(20);
+  EXPECT_EQ(obj0.i_m, 40);
 }

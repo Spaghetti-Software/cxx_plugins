@@ -22,7 +22,8 @@
 #include "cxx_plugins/type_traits.hpp"
 #include "sequence/conversion.hpp"
 #include "sequence/map.hpp"
-#include "tuple/tuple_map.hpp"
+
+#include <limits>
 
 namespace CxxPlugins {
 
@@ -48,6 +49,7 @@ struct PolymorphicTrampoline;
 
 template <typename Tag, typename T, typename Return, typename... Args>
 struct PolymorphicTrampoline<Tag, T, Return(Args...)> {
+
   static constexpr Return call(void *obj_p, Args... args) {
 
     using underlying_t = std::remove_reference_t<T>;
@@ -67,6 +69,8 @@ struct PolymorphicTrampoline<Tag, T, Return(Args...)> {
       }
     }
   }
+
+  static constexpr Return (*value)(void *, Args... args) = &call;
 };
 
 template <typename Tag, typename T, typename Return, typename... Args>
@@ -89,11 +93,12 @@ struct PolymorphicTrampoline<Tag, T, Return(Args...) const> {
                                std::forward<Args>(args)...);
     }
   }
+  static constexpr Return (*value)(void const *, Args... args) = &call;
 };
 
 template <typename Tag, typename T, typename Signature>
 static constexpr auto polymorphic_trampoline_v =
-    &PolymorphicTrampoline<Tag, T, Signature>::call;
+    PolymorphicTrampoline<Tag, T, Signature>::value;
 
 } // namespace impl
 
@@ -104,7 +109,7 @@ using PolymorphicTrampolineT =
 template <typename T, typename... TaggedValues> struct VTableStorage;
 
 template <typename T, typename... Tags, typename... Signatures>
-struct VTableStorage<T, TaggedValue<Tags, Signatures>...> {
+struct VTableStorage<T, TaggedSignature<Tags, Signatures>...> {
   static constexpr std::size_t size =
       sizeof...(Tags) == 0 ? 1 : sizeof...(Tags);
 
@@ -118,7 +123,7 @@ struct VTableStorage<T, TaggedValue<Tags, Signatures>...> {
 template <typename... TaggedValues> struct VTable;
 
 template <typename... Tags, typename... Signatures>
-struct VTable<TaggedValue<Tags, Signatures>...> {
+struct VTable<TaggedSignature<Tags, Signatures>...> {
 public:
   template <typename TagT>
   using FunctionTypeAt =
@@ -152,59 +157,116 @@ public:
   template <typename T>
   constexpr explicit VTable(std::in_place_type_t<T> /*unused*/) noexcept
       : function_table_p_m{VTableStorage<
-            std::decay_t<T>, TaggedValue<Tags, Signatures>...>::value},
+            T, TaggedSignature<Tags, Signatures>...>::value},
         permutations_m{Sequence::AsStdArray<DefaultSequenceT>::value} {}
 
-  template <typename... OtherTags, typename... OtherSignatures,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy ctor should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) &&
-            // Every tag from `this` should be represented in rhs
-            (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
-            // Every tag from `this` should have the same function type as in
-            // rhs
-            (std::is_same_v<
-                FunctionTypeAt<Tags>,
-                typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
-                    template FunctionTypeAt<Tags>> &&...),
-            std::enable_if_t<constraints, int> = 0>
-  constexpr VTable(
-      VTable<TaggedValue<OtherTags, OtherSignatures>...> const &rhs) noexcept
+  template <
+      typename... OtherTags, typename... OtherSignatures,
+      bool size_constraint = sizeof...(Tags) >= 1 &&
+                             sizeof...(Tags) < sizeof...(OtherTags),
+      std::enable_if_t<size_constraint, int> = 0,
+      bool other_constraints =
+          // Every tag from `this` should be represented in rhs
+      (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
+      // Every tag from `this` should have the same function type as in
+      // rhs
+      (std::is_same_v<
+          FunctionTypeAt<Tags>,
+          typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+              template FunctionTypeAt<Tags>> &&...),
+      std::enable_if_t<other_constraints, int> = 0>
+  constexpr VTable(VTable<TaggedSignature<OtherTags, OtherSignatures>...> const
+                       &rhs) noexcept
       : function_table_p_m{rhs.function_table_p_m},
         permutations_m{Sequence::AsStdArray<std::integer_sequence<
             std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value} {}
 
-  template <typename... OtherTags, typename... OtherSignatures,
-            bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
-            // Number of this tags should be strictly less then rhs
-            // if equal copy ctor should be called instead
-            (sizeof...(Tags) < sizeof...(OtherTags)) &&
-            // Every tag from `this` should be represented in rhs
-            // Every tag from `this` should be represented in rhs
-            (!(utility::is_in_the_pack_v<Tags, OtherTags...> &&...) ||
-            // Every tag from `this` should have the same function type as in
-            // rhs
-            !(std::is_same_v<
-                FunctionTypeAt<Tags>,
-                typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
-                template FunctionTypeAt<Tags>> &&...)),
-            std::enable_if_t<constraints, int> = 0>
-  // This constructor exists only for correct static_asserts
-  // Otherwise compiler will fail before static_assert with bad error messages
-  constexpr VTable(
-      VTable<TaggedValue<OtherTags, OtherSignatures>...> const & /*unused*/,
-      ...) noexcept {
+  template <
+      typename... OtherTags, typename... OtherSignatures,
+      bool size_constraint = sizeof...(Tags) >= 1 &&
+                             sizeof...(Tags) < sizeof...(OtherTags),
+      std::enable_if_t<size_constraint, int> = 0,
+      bool other_constraints =
+          // Every tag from `this` should be represented in rhs
+      (!utility::is_in_the_pack_v<Tags, OtherTags...> || ...) ||
+      // Every tag from `this` should have the same function type as in
+      // rhs
+      (!std::is_same_v<
+           FunctionTypeAt<Tags>,
+           typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+               template FunctionTypeAt<Tags>> ||
+       ...),
+      std::enable_if_t<other_constraints, unsigned> = 0>
+  constexpr VTable(VTable<TaggedSignature<OtherTags, OtherSignatures>...> const
+                       & /*unused*/) noexcept {
+
     static_assert((utility::is_in_the_pack_v<Tags, OtherTags...> && ...),
                   "Every tag from `this` should be represented in rhs");
     static_assert(
-        (std::is_same_v<FunctionTypeAt<Tags>,
-                        typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
-                            template FunctionTypeAt<Tags>> &&
+        (std::is_same_v<
+             FunctionTypeAt<Tags>,
+             typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+                 template FunctionTypeAt<Tags>> &&
+         ...),
+        "Every tag from `this` should have the same function signature as in "
+        "rhs");
+    static_assert(
+        sizeof(decltype(*this)) == 0,
+        "Please check previous messages. This assert exists to ensure that "
+        "implementation is correct and this constructor is never called.");
+  }
+
+  template <
+      typename... OtherTags, typename... OtherSignatures,
+      bool size_constraint = sizeof...(Tags) >= 1 &&
+                             sizeof...(Tags) == sizeof...(OtherTags),
+      std::enable_if_t<size_constraint, unsigned> = 0,
+      bool other_constraints =
+          // tags should have different order
+      (!std::is_same_v<Tags, OtherTags> || ...) &&
+      // Every tag from `this` should be represented in rhs
+      (utility::is_in_the_pack_v<Tags, OtherTags...> &&...) &&
+      // Every tag from `this` should have the same function type as in
+      // rhs
+      (std::is_same_v<
+          FunctionTypeAt<Tags>,
+          typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+              template FunctionTypeAt<Tags>> &&...),
+      std::enable_if_t<other_constraints, int> = 0>
+  constexpr VTable(VTable<TaggedSignature<OtherTags, OtherSignatures>...> const
+                       &rhs) noexcept
+      : function_table_p_m{rhs.function_table_p_m},
+        permutations_m{Sequence::AsStdArray<std::integer_sequence<
+            std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value} {}
+
+  template <
+      typename... OtherTags, typename... OtherSignatures,
+      bool size_constraint = sizeof...(Tags) >= 1 &&
+                             sizeof...(Tags) == sizeof...(OtherTags),
+      std::enable_if_t<size_constraint, unsigned> = 0,
+      bool other_constraints =
+          // tags should have different order
+      (!std::is_same_v<Tags, OtherTags> || ...) &&
+      (
+          // Every tag from `this` should be represented in rhs
+          (!utility::is_in_the_pack_v<Tags, OtherTags...> || ...) ||
+          // Every tag from `this` should have the same function type as in
+          // rhs
+          (!std::is_same_v<
+               FunctionTypeAt<Tags>,
+               typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+                   template FunctionTypeAt<Tags>> ||
+           ...)),
+      std::enable_if_t<other_constraints, unsigned> = 0>
+  constexpr VTable(VTable<TaggedSignature<OtherTags, OtherSignatures>...> const
+                       & /*unused*/) noexcept {
+    static_assert((utility::is_in_the_pack_v<Tags, OtherTags...> && ...),
+                  "Every tag from `this` should be represented in rhs");
+    static_assert(
+        (std::is_same_v<
+             FunctionTypeAt<Tags>,
+             typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+                 template FunctionTypeAt<Tags>> &&
          ...),
         "Every tag from `this` should have the same function signature as in "
         "rhs");
@@ -217,7 +279,7 @@ public:
   template <typename T>
   constexpr VTable &operator=(std::in_place_type_t<T> /*unused*/) noexcept {
     function_table_p_m =
-        VTableStorage<std::decay_t<T>, TaggedValue<Tags, Signatures>...>::value;
+        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value;
     permutations_m = Sequence::AsStdArray<DefaultSequenceT>::value;
 
     return *this;
@@ -231,20 +293,22 @@ public:
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) < sizeof...(OtherTags)),
             std::enable_if_t<constraints, int> = 0>
-  constexpr VTable &operator=(
-      VTable<TaggedValue<OtherTags, OtherSignatures>...> const &rhs) noexcept {
+  constexpr VTable &
+  operator=(VTable<TaggedSignature<OtherTags, OtherSignatures>...> const
+                &rhs) noexcept {
     static_assert((utility::is_in_the_pack_v<Tags, OtherTags...> && ...),
                   "Every tag from `this` should be represented in rhs");
     static_assert(
-        (std::is_same_v<FunctionTypeAt<Tags>,
-            typename VTable<TaggedValue<OtherTags, OtherSignatures>...>::
-            template FunctionTypeAt<Tags>> &&
-            ...),
+        (std::is_same_v<
+             FunctionTypeAt<Tags>,
+             typename VTable<TaggedSignature<OtherTags, OtherSignatures>...>::
+                 template FunctionTypeAt<Tags>> &&
+         ...),
         "Every tag from `this` should have the same function signature as in "
         "rhs");
     function_table_p_m = rhs.function_table_p_m;
-    permutations_m = Sequence::AsStdArray<
-        std::integer_sequence<std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value;
+    permutations_m = Sequence::AsStdArray<std::integer_sequence<
+        std::uint8_t, utility::index_of<Tags, OtherTags...>...>>::value;
     return *this;
   }
 
@@ -271,7 +335,83 @@ private:
       sizeof...(Tags) == 0 ? 1 : sizeof...(Tags);
 
   FunctionTablePtrT function_table_p_m = nullptr;
-  std::array<std::uint8_t, sizeof...(Tags)> permutations_m = {0};
-}; // namespace CxxPlugins
+  std::array<std::uint8_t, sizeof...(Tags)> permutations_m = {};
+};
+
+template <typename... TaggedSignatures> struct PrimitiveVTable;
+
+template <typename... Tags, typename... Signatures>
+/*!
+ * \brief
+ * SimpleVtable is the same thing as VTable, but it doesn't allow upcasting,
+ * because it doesn't have permutation tables.
+ */
+struct PrimitiveVTable<TaggedSignature<Tags, Signatures>...> {
+public:
+  template <typename TagT>
+  using FunctionTypeAt =
+      utility::ElementType<utility::index_of<TagT, Tags...>,
+                           impl::PolymorphicTrampolineTypeT<Signatures>...>;
+  using FunctionTablePtrT = utility::FunctionPointer<void()> const *;
+
+  static_assert(sizeof...(Signatures) <=
+                    std::numeric_limits<std::uint8_t>::max(),
+                "Too many functions. VTable supports up to 256 functions only."
+                "Implementation can be changed to support more with "
+                "std::conditional_t<size < max, uint8_t, uint16_t>");
+
+  static_assert(utility::are_unique_v<Tags...>, "All tags should be unique");
+
+  constexpr PrimitiveVTable() noexcept = default;
+  constexpr PrimitiveVTable(PrimitiveVTable const &) noexcept = default;
+  constexpr PrimitiveVTable(PrimitiveVTable &&) noexcept = default;
+  constexpr PrimitiveVTable &
+  operator=(PrimitiveVTable const &) noexcept = default;
+  constexpr PrimitiveVTable &operator=(PrimitiveVTable &&) noexcept = default;
+
+  constexpr bool isEmpty() const noexcept {
+    return function_table_p_m == nullptr;
+  }
+
+  void reset() noexcept { function_table_p_m = nullptr; }
+
+  template <typename T>
+  constexpr explicit PrimitiveVTable(
+      std::in_place_type_t<T> /*unused*/) noexcept
+      : function_table_p_m{
+            VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value} {}
+
+  template <typename T>
+  constexpr PrimitiveVTable &
+  operator=(std::in_place_type_t<T> /*unused*/) noexcept {
+    function_table_p_m =
+        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value;
+    return *this;
+  }
+
+  template <typename TagT>
+  inline auto operator[](TagT && /*unused*/) const noexcept
+      -> FunctionTypeAt<std::decay_t<TagT>> {
+
+    cxxPluginsAssert(!isEmpty(), "Trying to get function for empty VTable");
+
+    using tag_t = std::decay_t<TagT>;
+    static_assert(utility::is_in_the_pack_v<tag_t, Tags...>,
+                  "Tag should be in the pack");
+    constexpr auto index = utility::index_of<tag_t, Tags...>;
+    return reinterpret_cast<FunctionTypeAt<tag_t> const>(
+        function_table_p_m[index]);
+  }
+
+private:
+  template <typename TagT>
+  static constexpr unsigned index = utility::index_of<TagT, Tags...>;
+
+  using DefaultSequenceT = std::make_integer_sequence<uint8_t, sizeof...(Tags)>;
+  static constexpr std::size_t perm_size =
+      sizeof...(Tags) == 0 ? 1 : sizeof...(Tags);
+
+  FunctionTablePtrT function_table_p_m = nullptr;
+};
 
 } // namespace CxxPlugins

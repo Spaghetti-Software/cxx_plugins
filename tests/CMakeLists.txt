@@ -24,6 +24,7 @@ target_sources(${This}
     example_api.cpp
     example_api.hpp
     polymorphic_ref_tests.cpp
+    polymorphic_allocator_tests.cpp
 )
 
 
