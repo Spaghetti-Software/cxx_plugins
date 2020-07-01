@@ -122,5 +122,3 @@ endif()
 if(CXX_PLUGINS_BUILD_DOCUMENTATION)
   add_subdirectory(docs)
 endif()
-
-
