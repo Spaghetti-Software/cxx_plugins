@@ -68,6 +68,7 @@ target_sources(${This}
         include/cxx_plugins/type_traits.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
+        include/cxx_plugins/parser.hpp
         include/cxx_plugins/polymorphic_traits.hpp
         include/cxx_plugins/polymorphic_ref.hpp
         include/cxx_plugins/function_proxy.hpp
@@ -100,7 +101,7 @@ target_sources(${This}
 find_package(Threads REQUIRED)
 
 target_include_directories(${This} PRIVATE src)
-target_link_libraries(${This} PUBLIC CONAN_PKG::boost)
+target_link_libraries(${This} PUBLIC CONAN_PKG::boost CONAN_PKG::rapidjson CONAN_PKG::fmt)
 target_link_libraries(${This} PRIVATE Threads::Threads)
 
 # We determine dev / no dev by checking if tests are enabled

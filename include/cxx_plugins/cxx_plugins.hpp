@@ -17,86 +17,109 @@
  */
 #pragma once
 
-#include "cxx_plugins/vtable.hpp"
+#include "cxx_plugins/function_traits.hpp"
 #include "tuple/tuple_map.hpp"
 
-#include <any>
-#include <string>
+#include <fmt/format.h>
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#include <rapidjson/rapidjson.h>
+
+#include <filesystem>
+#include <fstream>
 
 //! \brief Main namespace for CXX Plugins project
 namespace CxxPlugins {
 
-enum class VTableStorage { SharedPointer, Member };
+template <typename Signature, bool Required> struct GlobalFunction;
 
-enum class Requirement { Required, Optional };
+template <typename Return, typename... Args, bool Required>
+struct GlobalFunction<Return(Args...), Required> {
+  static constexpr bool is_required = Required;
+  using Signature = Return(Args...);
 
-template <typename APIElementType,
-          Requirement requirement_v = Requirement::Required>
-struct APIElement {
-  static constexpr Requirement requirement = requirement_v;
-  APIElementType element_m;
+  constexpr GlobalFunction() noexcept = default;
+  constexpr GlobalFunction(Return (*fn_p)(Args...)) noexcept
+      : function_m(fn_p) {}
+
+  Return (*function_m)(Args...) = nullptr;
 };
 
-template <typename Signature> struct GlobalFunction;
 
-template <typename Return, typename... Args>
-struct GlobalFunction<Return(Args...)> {
-  constexpr explicit GlobalFunction(Return (*fn_p)(Args...)) noexcept
-      : fn_m(fn_p) {}
-  Return (*fn_m)(Args...) = nullptr;
+
+template <typename... TaggedValues> class Plugin {
+
+  template <typename TagT, typename Signature, bool Required = false>
+  constexpr Plugin<TaggedValues...,
+                   TaggedValue<TagT, GlobalFunction<Signature, Required>>>
+  addGlobalFunction() noexcept {
+    return tupleCat(
+        elements_m,
+        TupleMap(TaggedValue{TagT(), GlobalFunction<Signature, Required>{}}));
+  };
+
+  void load(const char *plugin_config_file);
+
+private:
+  TupleMap<TaggedValues...> elements_m;
 };
 
-template <typename Return, typename... Args>
-GlobalFunction(Return (*)(Args...)) -> GlobalFunction<Return(Args...)>;
-
-template <typename Class, typename Creators, typename Destroyers>
-struct RegularClass {
-  static_assert(std::is_class_v<Class>,
-                "Class template parameter should be a class");
-  template <typename T, typename U,
-            typename = std::enable_if_t<!std::is_same_v<
-                std::decay_t<T>,
-                RegularClass>>> // disabling hiding move/copy constructors
-  constexpr explicit RegularClass(T &&creators, U &&destroyers = U())
-      : creators_m(std::forward<T>(creators)),
-        destroyers_m(std::forward<U>(destroyers)) {}
-
-  Creators creators_m;
-  Destroyers destroyers_m;
-};
-
-template <typename Class, typename Creators, typename Destroyers>
-auto makeRegularClass(Creators &&creators, Destroyers &&destroyers) {
-  return RegularClass<Class, std::decay_t<Creators>, std::decay_t<Destroyers>>(
-      std::forward<Creators>(creators), std::forward<Destroyers>(destroyers));
+namespace impl {
+[[noreturn]] void reportError(const char *message) {
+  throw std::runtime_error(message);
+}
+[[noreturn]] void reportError(std::string const &message) {
+  throw std::runtime_error(message);
 }
 
-template <typename Functions, typename Classes, typename Polymorphics>
-struct Plugin {
-private:
-public:
-  Functions functions_m;
-  Classes classes_m;
-  Polymorphics polymorphics_m;
+} // namespace impl
+
+struct GeneralPluginInfo {
+  Version version_m;
+  std::string name_m;
 };
 
-template <typename... APIElements> class PluginAPIBuilder {
-public:
-  template <typename Tag, Requirement requirement_v = Requirement::Required,
-            typename FunctionT>
-  auto addGlobalFunction(FunctionT &&default_value) {}
+template <typename... TaggedValues>
+void Plugin<TaggedValues...>::load(char const *plugin_config_file_p) {
+  namespace fs = std::filesystem;
 
-  template <typename Tag, Requirement requirement_v = Requirement::Required,
-            typename Class>
-  auto addClass() {}
+  if (!fs::exists(plugin_config_file_p)) {
+    impl::reportError(
+        fmt::format("Plugin config file '{}' not found.", plugin_config_file_p));
+    return;
+  }
 
-  template <typename Tag, Requirement requirement_v = Requirement::Required,
-            typename VTableT,
-            VTableStorage storage = VTableStorage::SharedPointer,
-            size_t stackReserve = sizeof(void *)>
-  auto addPolymorphic() {}
+  std::ifstream file(plugin_config_file_p);
+  if (!file.is_open()) {
+    impl::reportError(
+        fmt::format("Can't open config file '{}'.", plugin_config_file_p));
+    return;
+  }
 
-private:
-  Tuple<APIElements...> elements_;
-};
+  std::string file_content;
+
+  file.seekg(0, std::ios::end);
+  file_content.reserve(file.tellg());
+  file.seekg(0, std::ios::beg);
+
+  file_content.assign(std::istreambuf_iterator<char>{file},
+                      std::istreambuf_iterator<char>{});
+  file.close();
+
+  rapidjson::Document doc;
+  doc.Parse(file_content.c_str(), file_content.size());
+
+  if (doc.HasParseError()) {
+    impl::reportError(
+        fmt::format("Error occurred during parsing of '{}': {}",
+                    plugin_config_file_p,
+                    rapidjson::GetParseError_En(doc.GetParseError())));
+    return;
+  }
+
+
+
+
+}
+
 } // namespace CxxPlugins

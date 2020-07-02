@@ -16,7 +16,7 @@
 #include <cxx_plugins/type_traits.hpp>
 
 #include <cstdint>
-
+#include <array>
 
 namespace CxxPlugins {
 template <typename T> struct TupleSize;
@@ -25,6 +25,12 @@ template <template <typename...> class TupleTemplate, typename... Ts>
 struct TupleSize<TupleTemplate<Ts...>> {
   static constexpr std::size_t value = sizeof...(Ts);
 };
+
+template<typename T, std::size_t size>
+struct TupleSize<std::array<T,size>> {
+  static constexpr std::size_t value = size;
+};
+
 
 template <typename T>
 static constexpr std::size_t tuple_size_v = TupleSize<T>::value;
@@ -35,6 +41,11 @@ template <std::size_t I, template <typename...> class TupleTemplate,
           typename... Ts>
 struct TupleElement<I, TupleTemplate<Ts...>> {
   using Type = utility::ElementType<I,Ts...>;
+};
+
+template <std::size_t I, typename T, std::size_t size>
+struct TupleElement<I, std::array<T,size>> {
+  using Type = T;
 };
 
 template <std::size_t I, typename TupleT>
