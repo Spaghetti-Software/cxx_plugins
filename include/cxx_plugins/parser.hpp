@@ -32,13 +32,11 @@
 
 namespace CxxPlugins {
 
-template<typename T>
-struct IsOptional : std::false_type {};
+template <typename T> struct IsOptional : std::false_type {};
 
-template<typename T>
-struct IsOptional<std::optional<T>> : std::true_type {};
+template <typename T> struct IsOptional<std::optional<T>> : std::true_type {};
 
-template<typename T>
+template <typename T>
 static constexpr bool is_optional_v = IsOptional<T>::value;
 
 struct Version {
@@ -569,6 +567,24 @@ void deserializeValue(
   }
 }
 
+namespace impl {
+inline void replaceAll(std::string &input, std::string const &substr,
+                       std::string const &with) {
+  auto pos = input.find(substr);
+  while (pos != std::string::npos) {
+    input.replace(pos, substr.size(), with);
+    pos = input.find(substr);
+  }
+}
+
+inline std::string prettyNameFormat(std::string const &str) {
+  std::string out = str;
+  replaceAll(out, "struct ", "");
+  replaceAll(out, "class ", "");
+  return out;
+}
+} // namespace impl
+
 template <typename... Keys, typename... Values, typename Encoding,
           typename JSONAllocator>
 void deserializeValue(
@@ -584,10 +600,10 @@ void deserializeValue(
   if (json_value.IsObject()) {
 
     json_object_t const &json_object = json_value.GetObject();
-    static const std::array key_names = {
-        boost::typeindex::type_id<Keys>().pretty_name()...};
+    static const std::array key_names = {impl::prettyNameFormat(
+        boost::typeindex::type_id<Keys>().pretty_name())...};
 
-    static constexpr bool has_optionals = (is_optional_v<Values> ||...);
+    static constexpr bool has_optionals = (is_optional_v<Values> || ...);
     if constexpr (!has_optionals) {
       if (json_object.MemberCount() != map_size) {
         throw ObjectSizeMismatch(
@@ -618,8 +634,6 @@ void deserializeValue(
                   boost::typeindex::type_id<map_t>().pretty_name(), key_name));
             }
           }
-
-
         },
         map, key_names);
 
