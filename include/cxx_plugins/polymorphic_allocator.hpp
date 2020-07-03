@@ -55,7 +55,7 @@ constexpr auto polymorphicExtend(isEqual /*unused*/, T const &mem_resource,
   return mem_resource.is_equal(rhs);
 }
 
-constexpr auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
+inline auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
                                  MemoryResourceRef const &rhs) {
   if (rhs.isA<std::pmr::memory_resource>()) {
     return lhs.is_equal(
