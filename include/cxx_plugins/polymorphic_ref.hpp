@@ -15,8 +15,8 @@
 
 #include "cxx_plugins/function_proxy.hpp"
 #include "cxx_plugins/vtable.hpp"
+#include "cxx_plugins/type_index.hpp"
 
-#include <boost/type_index.hpp>
 
 namespace CxxPlugins {
 
@@ -88,7 +88,7 @@ public:
    *
    */
   constexpr PolymorphicRef(T &&obj) noexcept
-      : type_index_m{boost::typeindex::type_id<T>()}, data_p_m{&obj},
+      : type_index_m{type_id<T>()}, data_p_m{&obj},
         function_table_m{std::in_place_type_t<decltype(obj)>{}} {}
 
   template <typename T, typename = std::enable_if_t<
@@ -201,7 +201,7 @@ public:
    *
    */
   constexpr PolymorphicRef &operator=(T &&obj) noexcept {
-    type_index_m = boost::typeindex::type_id<T>();
+    type_index_m = type_id<T>();
     function_table_m = std::in_place_type_t<decltype(obj)>{};
     data_p_m = &obj;
     return *this;
@@ -364,17 +364,17 @@ public:
     return data_p_m == nullptr;
   }
   void reset() noexcept {
-    type_index_m = boost::typeindex::type_id<void>();
+    type_index_m = type_id<void>();
     data_p_m = nullptr;
     function_table_m.reset();
   }
 
-  template <typename T> constexpr auto isA() const noexcept -> bool {
-    return boost::typeindex::type_id<T> == type_index_m;
+  template <typename T> inline auto isA() const noexcept -> bool {
+    return type_id<T> == type_index_m;
   }
 
-  constexpr auto typeIndex() const noexcept
-      -> boost::typeindex::type_index const & {
+  inline auto typeIndex() const noexcept
+      -> type_index const & {
     return type_index_m;
   }
 
@@ -386,7 +386,7 @@ private:
    * padding bytes between members and size of these padding bytes can differ
    * on different compilers.
    */
-  boost::typeindex::type_index type_index_m = {};
+  type_index type_index_m = {};
   PointerT data_p_m = nullptr;
   FunctionTableT function_table_m;
 };
@@ -439,7 +439,7 @@ public:
    *
    */
   constexpr PrimitivePolymorphicRef(T &&obj) noexcept
-      : type_index_m{boost::typeindex::type_id<T>()}, data_p_m{&obj},
+      : type_index_m{type_id<T>()}, data_p_m{&obj},
         function_table_m{std::in_place_type_t<decltype(obj)>{}} {
   }
 
@@ -464,7 +464,7 @@ public:
    *
    */
   constexpr PrimitivePolymorphicRef &operator=(T &&obj) noexcept {
-    type_index_m = boost::typeindex::type_id<T>();
+    type_index_m = type_id<T>();
     function_table_m = std::in_place_type_t<decltype(obj)>{};
     data_p_m = &obj;
     return *this;
@@ -520,22 +520,22 @@ public:
     return data_p_m == nullptr;
   }
   void reset() noexcept {
-    type_index_m = boost::typeindex::type_id<void>();
+    type_index_m = type_id<void>();
     data_p_m = nullptr;
     function_table_m.reset();
   }
 
-  template <typename T> constexpr auto isA() const noexcept -> bool {
-    return boost::typeindex::type_id<T>() == type_index_m;
+  template <typename T> inline auto isA() const noexcept -> bool {
+    return type_id<T>() == type_index_m;
   }
 
-  constexpr auto typeIndex() const noexcept
-      -> boost::typeindex::type_index const & {
+  inline auto typeIndex() const noexcept
+      -> type_index const & {
     return type_index_m;
   }
 
 private:
-  boost::typeindex::type_index type_index_m = {};
+  type_index type_index_m = {};
   PointerT data_p_m = nullptr;
   FunctionTableT function_table_m;
 };

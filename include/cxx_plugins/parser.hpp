@@ -16,6 +16,7 @@
 #include "sequence/conversion.hpp"
 #include "tuple/tuple.hpp"
 #include "tuple/tuple_map.hpp"
+#include "type_index.hpp"
 
 #include <rapidjson/document.h>
 
@@ -272,7 +273,7 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<Int>().pretty_name(),
+        type_id<Int>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -288,7 +289,7 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<Float>().pretty_name(),
+        type_id<Float>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -307,7 +308,7 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<string_type>().pretty_name(),
+        type_id<string_type>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -332,13 +333,13 @@ void deserializeValue(
       } catch (...) {
         impl::parsingLippincott(fmt::format(
             "{} at index {}",
-            boost::typeindex::type_id<vector_t>().pretty_name(), i));
+            type_id<vector_t>().pretty_name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<vector_t>().pretty_name(),
+        type_id<vector_t>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -369,13 +370,13 @@ void deserializeValue(
       } catch (...) {
         impl::parsingLippincott(
             fmt::format("{} at index {}",
-                        boost::typeindex::type_id<array_t>().pretty_name(), i));
+                        type_id<array_t>().pretty_name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<array_t>().pretty_name(),
+        type_id<array_t>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -397,7 +398,7 @@ void deserializeValue(
     if (json_array.Size() != Size) {
       throw ArraySizeMismatch(fmt::format(
           "Size of json array({}) doesn't match size of {}.", json_array.Size(),
-          boost::typeindex::type_id<array_t>().pretty_name()));
+          type_id<array_t>().pretty_name()));
     }
 
     for (unsigned i = 0; i < array.size(); ++i) {
@@ -406,13 +407,13 @@ void deserializeValue(
       } catch (...) {
         impl::parsingLippincott(
             fmt::format("{} at index {}",
-                        boost::typeindex::type_id<array_t>().pretty_name(), i));
+                        type_id<array_t>().pretty_name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<array_t>().pretty_name(),
+        type_id<array_t>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -446,7 +447,7 @@ void deserializeMapImpl(
         deserializeValue(json_member.value, value);
       } catch (...) {
         impl::parsingLippincott(fmt::format(
-            "{}", boost::typeindex::type_id<map_t>().pretty_name()));
+            "{}", type_id<map_t>().pretty_name()));
       }
       map.emplace(std::move(key), std::move(value));
     }
@@ -454,7 +455,7 @@ void deserializeMapImpl(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        boost::typeindex::type_id<map_t>().pretty_name(),
+        type_id<map_t>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -514,7 +515,7 @@ void deserializeTupleImpl(
     if (json_array.Size() != tuple_size) {
       throw ArraySizeMismatch(fmt::format(
           "Size of json array({}) doesn't match size of {}.", json_array.Size(),
-          boost::typeindex::type_id<tuple_t>().pretty_name()));
+          type_id<tuple_t>().pretty_name()));
     }
     tupleForEach(
         [&json_array](auto &tuple_val, std::size_t const index) {
@@ -523,7 +524,7 @@ void deserializeTupleImpl(
           } catch (...) {
             impl::parsingLippincott(fmt::format(
                 "{} at index {}",
-                boost::typeindex::type_id<tuple_t>().pretty_name(), index));
+                type_id<tuple_t>().pretty_name(), index));
           }
         },
         tuple, index_array);
@@ -532,7 +533,7 @@ void deserializeTupleImpl(
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: "
         "{}.(Note: tuples should be represented as lists in json)",
-        boost::typeindex::type_id<tuple_t>().pretty_name(),
+        type_id<tuple_t>().pretty_name(),
         getTypeFlagsAsString(json_value)));
   }
 }
@@ -601,7 +602,7 @@ void deserializeValue(
 
     json_object_t const &json_object = json_value.GetObject();
     static const std::array key_names = {impl::prettyNameFormat(
-        boost::typeindex::type_id<Keys>().pretty_name())...};
+        type_id<Keys>().pretty_name())...};
 
     static constexpr bool has_optionals = (is_optional_v<Values> || ...);
     if constexpr (!has_optionals) {
@@ -609,7 +610,7 @@ void deserializeValue(
         throw ObjectSizeMismatch(
             fmt::format("Size of json object({}) doesn't match size of {}.",
                         json_object.MemberCount(),
-                        boost::typeindex::type_id<map_t>().pretty_name()));
+                        type_id<map_t>().name()));
       }
     }
 
@@ -623,7 +624,7 @@ void deserializeValue(
             } else {
               throw ObjectMemberMissing(fmt::format(
                   "Couldn't find member {} for {}", key_name,
-                  boost::typeindex::type_id<map_t>().pretty_name()));
+                  type_id<map_t>().name()));
             }
           } else {
             try {
@@ -631,7 +632,7 @@ void deserializeValue(
             } catch (...) {
               impl::parsingLippincott(fmt::format(
                   "{} at key {}",
-                  boost::typeindex::type_id<map_t>().pretty_name(), key_name));
+                  type_id<map_t>().name(), key_name));
             }
           }
         },
@@ -641,7 +642,7 @@ void deserializeValue(
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: "
         "{}.(Note: TupleMap should be represented as Object in json)",
-        boost::typeindex::type_id<map_t>().pretty_name(),
+        type_id<map_t>().name(),
         getTypeFlagsAsString(json_value)));
   }
 }

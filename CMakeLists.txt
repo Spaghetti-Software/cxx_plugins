@@ -23,25 +23,23 @@ set(VERSION 0.0.1)
 set(This cxx_plugins)
 
 
-project( ${This}
-  VERSION ${VERSION}
-  DESCRIPTION     "Create/manage external libraries with plugin manager"
-  HOMEPAGE_URL    "https://github.com/Spaghetti-Software/cxx_plugins"
-  LANGUAGES       C CXX
-)
+project(${This}
+        VERSION ${VERSION}
+        DESCRIPTION "Create/manage external libraries with plugin manager"
+        HOMEPAGE_URL "https://github.com/Spaghetti-Software/cxx_plugins"
+        LANGUAGES C CXX
+        )
 
 
 include(cxx_plugins_options)
 include(common_flags)
 
 
-
-
 if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
-  add_library(${This} SHARED)
-else()
-  add_library(${This} STATIC )
-endif()
+    add_library(${This} SHARED)
+else ()
+    add_library(${This} STATIC)
+endif ()
 
 set(CONAN_SYSTEM_INCLUDE ON)
 if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
@@ -51,9 +49,15 @@ else ()
 endif ()
 conan_basic_setup(TARGETS)
 
-if (NOT CXX_PLUGINS_ENABLE_RTTI_TYPE_INDEX)
-    target_compile_definitions(${This} PUBLIC BOOST_TYPE_INDEX_FORCE_NO_RTTI_COMPATIBILITY)
-endif()
+#file(RELATIVE_PATH type_index_relative
+#        ${CONAN_INCLUDE_DIRS_BOOST}
+#        ${CMAKE_CURRENT_SOURCE_DIR}/include/cxx_plugins/type_index.hpp)
+#
+#
+#target_compile_definitions(
+#        ${This} PUBLIC
+#        BOOST_TYPE_INDEX_USER_TYPEINDEX="boost/../${type_index_relative}>"
+#)
 
 target_sources(${This}
         PRIVATE
@@ -74,7 +78,8 @@ target_sources(${This}
         include/cxx_plugins/function_proxy.hpp
         include/cxx_plugins/polymorphic_allocator.hpp
         include/cxx_plugins/allocator_helpers.hpp
-        
+        include/cxx_plugins/type_index.hpp
+
         include/cxx_plugins/memory/stack_allocator.hpp
         include/cxx_plugins/memory/mallocator.hpp
         include/cxx_plugins/memory/memory_common.hpp
@@ -108,18 +113,17 @@ target_link_libraries(${This} PRIVATE Threads::Threads)
 # We need different configurations, so warnings from our library
 # are not seen from users compilation
 if (CXX_PLUGINS_BUILD_TESTS)
-  target_include_directories(${This} PUBLIC include)
-else()
-  target_include_directories(${This} INTERFACE SYSTEM include)
-  target_include_directories(${This} PRIVATE include)
-endif()
+    target_include_directories(${This} PUBLIC include)
+else ()
+    target_include_directories(${This} INTERFACE SYSTEM include)
+    target_include_directories(${This} PRIVATE include)
+endif ()
 
 
-
-if(CXX_PLUGINS_BUILD_TESTS)
-  #add_subdirectory(example_plugin)
-  add_subdirectory(tests)
-endif()
-if(CXX_PLUGINS_BUILD_DOCUMENTATION)
-  add_subdirectory(docs)
-endif()
+if (CXX_PLUGINS_BUILD_TESTS)
+    #add_subdirectory(example_plugin)
+    add_subdirectory(tests)
+endif ()
+if (CXX_PLUGINS_BUILD_DOCUMENTATION)
+    add_subdirectory(docs)
+endif ()
