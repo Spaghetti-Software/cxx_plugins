@@ -20,8 +20,6 @@
 #include <cstdint>
 #include <new>
 
-namespace utility {
-
 template <std::size_t S>
 class StackAllocator {
 public:
@@ -64,5 +62,3 @@ private:
   char stack_m[S];
   char *p_m;
 };
-
-} // namespace utility
