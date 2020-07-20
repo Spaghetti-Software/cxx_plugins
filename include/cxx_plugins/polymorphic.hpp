@@ -16,76 +16,103 @@
 
 #include "cxx_plugins/vtable.hpp"
 #include "cxx_plugins/function_proxy.hpp"
-#include "cxx_plugins/polymorphic_traits.hpp"
+#include "cxx_plugins/polymorphic_allocator.hpp"
+#include "cxx_plugins/memory/stack_allocator.hpp"
 
 namespace CxxPlugins {
   
-  template <typename... TaggedSignatures> class PolymorphicRef;
-  
   namespace impl {
-    template <typename Allocator, typename... TaggedSignatures> class Polymorphic;
+    template <std::size_t size, typename... TaggedSignatures> class GenericPolymorphic;
+    template <typename... TaggedSignatures> class PolymorphicRef;
   } // namespace impl
   
-  template <typename Allocator, typename... Ts>
+  template <typename... Ts>
   using Polymorphic = std::conditional_t<
-    (is_tagged_value_v<Ts> && ...), impl::Polymorphic<Allocator, Ts...>,
-    impl::Polymorphic<Allocator, TaggedValue<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+      (is_tagged_signature<Ts> && ...), impl::GenericPolymorphic<64, Ts...>,
+      impl::GenericPolymorphic<
+          64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
   
   namespace impl { 
   // Type for storing a function pointer to the polymorphic object's dtor in the vtable
   struct obj_dtor_tag {};
   struct obj_copy_ctor_tag {};  
-  
+
+  template <std::size_t size, typename... TaggedSignatures> class GenericPolymorphic;
+
   class PrivateFunctions {
   private:
-    template<typename Allocator, typename... Ts>
-    friend class Polymorphic;
+    template <std::size_t size, typename... Ts>
+    friend class GenericPolymorphic;
     template<typename... Ts>
     friend class PolymorphicRef;
     
     struct obj_copy_ctor_tag {};
-    template<typename T, typename Allocator>
-    friend void* polyExtend(obj_copy_ctor_tag, T const&, Allocator&);
+    template<typename T>
+    friend void *polymorphicExtend(obj_copy_ctor_tag, T const &, void*);
   };
   
   
-  template<typename Allocator, typename... Tags, typename... FunctionSignatures>
-  class Polymorphic<Allocator, TaggedValue<Tags, FunctionSignatures>...> {
+  template<std::size_t size, typename... Tags, typename... FunctionSignatures>
+  class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
     template <typename U>
-    static constexpr bool is_self = std::is_same_v<std::decay_t<U>, Polymorphic>;
+    static constexpr bool is_self =
+        std::is_same_v<std::decay_t<U>, GenericPolymorphic>;
 
     static constexpr bool is_const = (utility::FunctionTraits<FunctionSignatures>::is_const && ...);
   public:
-    constexpr Polymorphic() noexcept = default;
-    constexpr Polymorphic(Polymorphic const & other) noexcept 
-      : function_table_p_m{other.functionTable()} {
-      data_p_m = other.call<PrivateFunctions::obj_copy_ctor_tag>(allocator_m);
+    constexpr GenericPolymorphic() noexcept : function_table_m() {
+      setState(State::empty);
     }
-    constexpr Polymorphic(Polymorphic && other) noexcept 
-      : allocator_m{std::move(other.allocator_m)}, function_table_p_m{std::move(other.functionTable())}, data_p_m{other.data()} {
-      other.data_p_m = nullptr;
+    constexpr GenericPolymorphic(GenericPolymorphic const &other) noexcept 
+      : function_table_m{other.functionTable()} {
+      auto other_state = other.getState();
+      if (other_state == State::fallback_allocated)
+        new (data_m) FallbackAllocData();
+      other.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(other_state));
     }
-    constexpr auto operator=(Polymorphic const & rhs) noexcept
-        -> Polymorphic & {
+    constexpr GenericPolymorphic(GenericPolymorphic &&other) noexcept 
+      : function_table_m{std::move(other.functionTable())} {
+      std::memcpy(data_m, other.data_m, size);
+      auto other_state = other.getState();
+      if (other_state == State::fallback_allocated) {
+        // change state to empty for now to prevent from deallocating/destructing in destructor,
+        // might have to change the object pointer in other to nullptr instead if this doesn't work
+        other.setState(State::empty);
+      }
+    }
+    constexpr auto operator=(GenericPolymorphic const &rhs) noexcept
+        -> GenericPolymorphic & {
       if (this == &rhs)
         return *this;
         
       destructAndDeallocate();
         
       function_table_m = rhs.functionTable();
-      data_p_m = other.call<PrivateFunctions::obj_copy_ctor_tag>(allocator_m);
+      auto rhs_state = rhs.getState();
+      if (rhs_state == State::fallback_allocated)
+        new (data_m) FallbackAllocData();
+      rhs.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(rhs_state));
+
+      return *this;
     }
-    constexpr auto operator=(Polymorphic && rhs) noexcept
-        -> Polymorphic & {
+    constexpr auto operator=(GenericPolymorphic &&rhs) noexcept
+        -> GenericPolymorphic & {
       if (this == &rhs) 
         return *this;
       
       destructAndDeallocate();
       
-      allocator_m = std::move(rhs.allocator_m);
+      std::memcpy(data_m, rhs.data_m, size);
+      auto rhs_state = rhs.getState();
+      if (rhs_state == State::fallback_allocated) {
+        // change state to empty for now to prevent from
+        // deallocating/destructing in destructor, might have to change the
+        // object pointer in other to nullptr instead if this doesn't work
+        rhs.setState(State::empty);
+      }
       function_table_m = std::move(rhs.functionTable());
-      data_p_m = rhs.data();
-      rhs.data_p_m = nullptr;
+
+      return *this;
     }
     /*!
      * \brief
@@ -96,100 +123,191 @@ namespace CxxPlugins {
     template<typename T,
              typename = std::enable_if_t<!is_polymorphic_ref_v<std::decay_t<T>> &&
                                          !is_polymorphic_v<std::decay_t<T>>>>
-    constexpr Polymorphic(T&& t) noexcept :  function_table_p_m{std::in_place_t<T>{}} {
-      allocateAndConstructFromObject(t);
+    constexpr GenericPolymorphic(T &&t) noexcept
+        : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}} {
+      State state;
+      if (sizeof(T) <= size - 1)
+        state = State::stack_allocated;
+      else {
+        state = State::fallback_allocated;
+        new (data_m) FallbackAllocData();
+      }
+      new (allocateBasedOnState(state, sizeof(T), alignof(T))) std::decay_t<T>(std::forward<T>(t));
     }
     
-    ~Polymorphic() {
+    ~GenericPolymorphic() {
       destructAndDeallocate();
-      data_p_m = nullptr;
     }
     
 
     template <typename T,
-              typename = std::enable_if_t<!is_polymorphic_ref<std::decay_t<T>> &&
-                                          !is_polymorphic<std::decay_t<T>>>>
+              typename = std::enable_if_t<!is_polymorphic_ref_v<std::decay_t<T>> &&
+                                          !is_polymorphic_v<std::decay_t<T>>>>
     /*!
      * \brief Main assignment operator for Polymorphic.
      * It gets object of any type, copies or moves it into a new object and forms a function table.
      *
      */
-    constexpr Polymorphic &operator=(T &&obj) noexcept {
-      if (this == &rhs) 
-        return *this;
-      
+    constexpr GenericPolymorphic &operator=(T &&obj) noexcept {
       destructAndDeallocate();
       
-      function_table_m = std::in_place_type_t<T>{};
-      allocateAndConstructFromObject(obj);
+      function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
+      State state;
+      if (sizeof(T) <= size - 1)
+        state = State::stack_allocated;
+      else {
+        state = State::fallback_allocated;
+        new (data_m) FallbackAllocData();
+      }
+      new (allocateBasedOnState(state, sizeof(T), alignof(T))) std::decay_t<T>(std::forward<T>(obj));
+
       return *this;
     }    
     
     //! \brief Returns proxy object to call function
     template <typename TagT> constexpr auto operator[](TagT &&t) noexcept {
-      return FunctionProxy(function_table_m[std::forward<TagT>(t)], data_p_m);
+      return FunctionProxy(function_table_m[std::forward<TagT>(t)], data());
     }
   
     template <typename TagT> constexpr auto operator[](TagT &&t) const noexcept {
       return FunctionProxy(function_table_m[std::forward<TagT>(t)],
-                           const_cast<void const *>(data_p_m));
+                           const_cast<void const *>(data()));
     }
   
     template <typename TagT, typename... Us>
     //! \brief Calls function with given parameters
     constexpr decltype(auto) call(Us &&... parameters) {
-      return function_table_m[TagT{}](data_p_m, std::forward<Us>(parameters)...);
+      return function_table_m[TagT{}](data(), std::forward<Us>(parameters)...);
     }
   
     template <typename TagT, typename... Us>
     constexpr decltype(auto) call(Us &&... parameters) const {
-      return function_table_m[TagT{}](const_cast<void const *>(data_p_m),
+      return function_table_m[TagT{}](const_cast<void const *>(data()),
                                       std::forward<Us>(parameters)...);
     }
   
-    [[nodiscard]] auto data() noexcept -> void* { return data_p_m; }
+    [[nodiscard]] auto data() noexcept -> void * { return getData(); }
     [[nodiscard]] constexpr auto data() const noexcept -> void const * {
-      return data_p_m;
+      // copy-pasted from getData. I don't know how to not do this with the const function
+      auto state = getState();
+      switch (state) {
+      case State::empty: {
+        return nullptr;
+      }
+      case State::stack_allocated: {
+        return data_m;
+      }
+      case State::fallback_allocated: {
+        auto data = reinterpret_cast<const FallbackAllocData *>(data_m);
+        return data->obj_p;
+      }
+      }
     }
   
     [[nodiscard]] constexpr auto functionTable() const noexcept
-        -> VTable<TaggedValue<obj_dtor_tag, void()>, TaggedValue<Tags, FunctionSignatures>...> const & {
+        -> VTable<TaggedSignature<obj_dtor_tag, void()>,
+                  TaggedSignature<Tags, FunctionSignatures>...> const & {
       return function_table_m;
     }
   private:
-    template<typename T>
-    void allocateAndConstructFromObject(T&& t) {
-      data_p_m = allocator_m.allocate(sizeof(T)).ptr;
-      new (data_p_m) std::decay_t<T>(std::forward<T>(t));
+    enum class State : unsigned char {
+      empty,
+      stack_allocated,
+      fallback_allocated
+    };
+
+    struct FallbackAllocData {
+      FallbackAllocData()
+          : allocator(), obj_p(nullptr), alloc_size(0), alloc_alignment(0) {}
+      PolymorphicAllocator<std::byte> allocator;
+      void *obj_p;
+      unsigned alloc_size;
+      unsigned alloc_alignment;
+    };
+
+    void setState(State state) { data_m[size - 1] = static_cast<char>(state); }
+
+    State getState() const { return static_cast<State>(data_m[size - 1]); }
+
+    void *getData() {
+      auto state = getState();
+      switch (state) {
+      case State::empty: {
+        return nullptr;
+      }
+      case State::stack_allocated: {
+        return data_m;
+      }
+      case State::fallback_allocated: {
+        auto data = reinterpret_cast<FallbackAllocData *>(data_m);
+        return data->obj_p;
+      }
+      }
+    }
+
+    void *allocateBasedOnState(State state, std::size_t bytes, std::size_t alignment) {
+      void *ret = nullptr;
+      switch (state) {
+      case State::empty:
+        ret = nullptr;
+        break;
+      case State::stack_allocated:
+        ret = data_m;
+        break;
+      case State::fallback_allocated: {
+        auto alloc_data = reinterpret_cast<FallbackAllocData *>(data_m);
+        ret = alloc_data->allocator.allocate_bytes(bytes, alignment);
+        alloc_data->obj_p = ret;
+        alloc_data->alloc_size = bytes;
+        alloc_data->alloc_alignment = alignment;
+        break;
+      }
+      }
+
+      setState(state);
+      return ret;
     }
     
     void destructAndDeallocate() {
-      if (data_p_m != nullptr) {
-        call<obj_dtor_tag>();
-        allocator_m.deallocate(data_p_m);
+      auto state = getState();
+      if (state == State::empty)
+        return;
+
+      call<obj_dtor_tag>();
+
+      
+      switch (state) {
+      case State::fallback_allocated: {
+        auto alloc_data = reinterpret_cast<FallbackAllocData *>(data_m);
+        alloc_data->allocator.deallocate_bytes(alloc_data->obj_p,
+                                               alloc_data->alloc_size,
+                                               alloc_data->alloc_alignment);
+        alloc_data->obj_p = nullptr;
+      } break;
+      default:
+        break;
       }
+      setState(State::empty);
     }
   private:
-    Allocator allocator_m;
-    void* data_p_m;
-    VTableT<
-      TaggedValue<PrivateFunctions::obj_copy_ctor_tag, void*()>,
-      TaggedValue<obj_dtor_tag, void()>, 
-      TaggedValue<Tags, FunctionSignatures>...
+    char data_m[size];
+    VTable<TaggedSignature<PrivateFunctions::obj_copy_ctor_tag, void *(void*)>,
+           TaggedSignature<obj_dtor_tag, void()>, 
+           TaggedSignature<Tags, FunctionSignatures>...
     > function_table_m;
   };
-  
-  template<typename T, typename Allocator>
-  void* polyExtend(impl::PrivateFunctions::obj_copy_ctor_tag /*unused*/, T const& obj, Allocator &allocator) {
-    auto ptr = allocator.allocate(sizeof(std::decay_t<T>));
+
+  template<typename T>
+  void *polymorphicExtend(PrivateFunctions::obj_copy_ctor_tag /*unused*/,
+                          T const &obj, void* ptr) {
     return new (ptr) T(obj);
   }
   
   template<typename T>
-  void polyExtend(impl::obj_dtor_tag /*unused*/, T& obj) {
+  void polymorphicExtend(obj_dtor_tag /*unused*/, T &obj) {
     obj.~T();
   }
   
   } // namespace impl
-  
+
 } // namespace CxxPlugins
