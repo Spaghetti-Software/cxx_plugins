@@ -24,6 +24,7 @@ target_sources(${This}
     tuple_map_tests.cpp
     example_api.cpp
     example_api.hpp
+    polymorphic_tests.cpp
     polymorphic_ref_tests.cpp
     polymorphic_allocator_tests.cpp
 )

@@ -68,7 +68,7 @@ namespace CxxPlugins {
       auto other_state = other.getState();
       if (other_state == State::fallback_allocated)
         new (data_m) FallbackAllocData();
-      other.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(other_state));
+      other.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(other_state, other.getSize(), other.getAlignment()));
     }
     constexpr GenericPolymorphic(GenericPolymorphic &&other) noexcept 
       : function_table_m{std::move(other.functionTable())} {
@@ -91,7 +91,7 @@ namespace CxxPlugins {
       auto rhs_state = rhs.getState();
       if (rhs_state == State::fallback_allocated)
         new (data_m) FallbackAllocData();
-      rhs.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(rhs_state));
+      rhs.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(rhs_state, rhs.getSize(), rhs.getAlignment()));
 
       return *this;
     }
@@ -126,7 +126,7 @@ namespace CxxPlugins {
     constexpr GenericPolymorphic(T &&t) noexcept
         : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}} {
       State state;
-      if (sizeof(T) <= size - 1)
+      if (sizeof(T) <= size - 3)
         state = State::stack_allocated;
       else {
         state = State::fallback_allocated;
@@ -153,7 +153,7 @@ namespace CxxPlugins {
       
       function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
       State state;
-      if (sizeof(T) <= size - 1)
+      if (sizeof(T) <= size - 3)
         state = State::stack_allocated;
       else {
         state = State::fallback_allocated;
@@ -205,7 +205,8 @@ namespace CxxPlugins {
     }
   
     [[nodiscard]] constexpr auto functionTable() const noexcept
-        -> VTable<TaggedSignature<obj_dtor_tag, void()>,
+        -> VTable<TaggedSignature<PrivateFunctions::obj_copy_ctor_tag, void *(void*)>,
+                  TaggedSignature<obj_dtor_tag, void()>,
                   TaggedSignature<Tags, FunctionSignatures>...> const & {
       return function_table_m;
     }
@@ -218,16 +219,48 @@ namespace CxxPlugins {
 
     struct FallbackAllocData {
       FallbackAllocData()
-          : allocator(), obj_p(nullptr), alloc_size(0), alloc_alignment(0) {}
+          : obj_p(nullptr), alloc_size(0), alloc_alignment(0) {}
       PolymorphicAllocator<std::byte> allocator;
       void *obj_p;
-      unsigned alloc_size;
-      unsigned alloc_alignment;
+      std::size_t alloc_size;
+      std::size_t alloc_alignment;
     };
 
     void setState(State state) { data_m[size - 1] = static_cast<char>(state); }
 
     State getState() const { return static_cast<State>(data_m[size - 1]); }
+
+    std::size_t getSize() const {
+      auto state = getState();
+      switch (state) {
+      case State::empty: {
+        return 0;
+      }
+      case State::stack_allocated: {
+        return static_cast<std::size_t>(data_m[size - 2]);
+      }
+      case State::fallback_allocated: {
+        auto data = reinterpret_cast<FallbackAllocData *>(data_m);
+        return data->alloc_size;
+      }
+      }
+    }
+
+    std::size_t getAlignment() const {
+      auto state = getState();
+      switch (state) {
+      case State::empty: {
+        return 0;
+      }
+      case State::stack_allocated: {
+        return static_cast<std::size_t>(data_m[size - 3]);
+      }
+      case State::fallback_allocated: {
+        auto data = reinterpret_cast<FallbackAllocData *>(data_m);
+        return data->alloc_alignment;
+      }
+      }
+    }
 
     void *getData() {
       auto state = getState();
@@ -253,6 +286,8 @@ namespace CxxPlugins {
         break;
       case State::stack_allocated:
         ret = data_m;
+        data_m[size - 2] = static_cast<char>(bytes);
+        data_m[size - 3] = static_cast<char>(alignment);
         break;
       case State::fallback_allocated: {
         auto alloc_data = reinterpret_cast<FallbackAllocData *>(data_m);
