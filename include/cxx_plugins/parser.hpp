@@ -25,6 +25,7 @@
 #include <boost/type_index.hpp>
 
 #include <array>
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <string>
@@ -39,53 +40,6 @@ template <typename T> struct IsOptional<std::optional<T>> : std::true_type {};
 
 template <typename T>
 static constexpr bool is_optional_v = IsOptional<T>::value;
-
-struct Version {
-  constexpr Version() noexcept = default;
-  constexpr Version(Version const &) noexcept = default;
-  constexpr Version(Version &&) noexcept = default;
-  constexpr Version &operator=(Version const &) noexcept = default;
-  constexpr Version &operator=(Version &&) noexcept = default;
-
-  std::size_t major = 0;
-  std::size_t minor = 0;
-  std::size_t patch = 0;
-};
-
-constexpr auto operator==(Version const &lhs, Version const &rhs) -> bool {
-  return lhs.major == rhs.major && lhs.minor == rhs.minor &&
-         lhs.patch == rhs.patch;
-}
-constexpr auto operator!=(Version const &lhs, Version const &rhs) -> bool {
-  return !(lhs == rhs);
-}
-constexpr auto operator<(Version const &lhs, Version const &rhs) -> bool {
-  std::array<std::size_t, 3> lhs_arr = {lhs.major, lhs.minor, lhs.patch};
-  std::array<std::size_t, 3> rhs_arr = {rhs.major, rhs.minor, rhs.patch};
-
-  for (unsigned i = 0; i < 3; ++i) {
-    if (lhs_arr[i] < rhs_arr[i]) {
-      return true;
-    }
-    if (rhs_arr[i] < lhs_arr[i]) {
-      return false;
-    }
-  }
-  return false;
-}
-constexpr auto operator<=(Version const &lhs, Version const &rhs) -> bool {
-  return !(rhs < lhs);
-}
-constexpr auto operator>(Version const &lhs, Version const &rhs) -> bool {
-  return rhs < lhs;
-}
-constexpr auto operator>=(Version const &lhs, Version const &rhs) -> bool {
-  return !(lhs < rhs);
-}
-
-struct GeneralInfo {
-  std::string name_m;
-};
 
 namespace JSON {
 
@@ -143,37 +97,7 @@ auto getTypeFlagsAsString(
 }
 
 namespace impl {
-[[noreturn]] void parsingLippincott(std::string_view type_description) {
-  try {
-    throw;
-  } catch (TypeMismatch const &type_mismatch) {
-    throw TypeMismatch(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, type_mismatch.what()));
-  } catch (ArraySizeMismatch const &array_size_mismatch) {
-    throw ArraySizeMismatch(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, array_size_mismatch.what()));
-  } catch (ObjectSizeMismatch const &object_size_mismatch) {
-    throw ObjectSizeMismatch(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, object_size_mismatch.what()));
-  } catch (ObjectMemberMissing const &object_member_missing) {
-    throw ObjectMemberMissing(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, object_member_missing.what()));
-  } catch (ParsingError const &parsing_error) {
-    throw ParsingError(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, parsing_error.what()));
-  } catch (std::runtime_error const &re) {
-    throw std::runtime_error(
-        fmt::format("Exception thrown during parsing {}, message\n: {}",
-                    type_description, re.what()));
-  } catch (...) {
-    throw;
-  }
-}
+[[noreturn]] void parsingLippincott(std::string_view type_description);
 } // namespace impl
 
 template <typename Int, typename Encoding, typename JSONAllocator,
@@ -193,6 +117,11 @@ template <typename Ch, typename ChTraits, typename Allocator, typename Encoding,
 void deserializeValue(
     rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
     std::basic_string<Ch, ChTraits, Allocator> &string);
+
+template <typename Encoding, typename JSONAllocator>
+void deserializeValue(
+    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+    std::filesystem::path &path);
 
 template <typename T, typename Allocator, typename Encoding,
           typename JSONAllocator>
@@ -273,8 +202,7 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<Int>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<Int>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -289,8 +217,7 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<Float>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<Float>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -308,9 +235,18 @@ void deserializeValue(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<string_type>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<string_type>().name(), getTypeFlagsAsString(json_value)));
   }
+}
+
+template <typename Encoding, typename JSONAllocator>
+void deserializeValue(
+    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+    std::filesystem::path &path) {
+  std::string path_name;
+  path_name.reserve(256);
+  deserializeValue(json_value, path_name);
+  path.assign(std::move(path_name));
 }
 
 template <typename T, typename Allocator, typename Encoding,
@@ -331,16 +267,14 @@ void deserializeValue(
       try {
         deserializeValue(array[i], vec[i]);
       } catch (...) {
-        impl::parsingLippincott(fmt::format(
-            "{} at index {}",
-            type_id<vector_t>().pretty_name(), i));
+        impl::parsingLippincott(
+            fmt::format("{} at index {}", type_id<vector_t>().name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<vector_t>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<vector_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -369,15 +303,13 @@ void deserializeValue(
         deserializeValue(json_array[i], array[i]);
       } catch (...) {
         impl::parsingLippincott(
-            fmt::format("{} at index {}",
-                        type_id<array_t>().pretty_name(), i));
+            fmt::format("{} at index {}", type_id<array_t>().name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<array_t>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<array_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -396,9 +328,9 @@ void deserializeValue(
     json_array_t const &json_array = json_value.GetArray();
 
     if (json_array.Size() != Size) {
-      throw ArraySizeMismatch(fmt::format(
-          "Size of json array({}) doesn't match size of {}.", json_array.Size(),
-          type_id<array_t>().pretty_name()));
+      throw ArraySizeMismatch(
+          fmt::format("Size of json array({}) doesn't match size of {}.",
+                      json_array.Size(), type_id<array_t>().name()));
     }
 
     for (unsigned i = 0; i < array.size(); ++i) {
@@ -406,15 +338,13 @@ void deserializeValue(
         deserializeValue(json_array[i], array[i]);
       } catch (...) {
         impl::parsingLippincott(
-            fmt::format("{} at index {}",
-                        type_id<array_t>().pretty_name(), i));
+            fmt::format("{} at index {}", type_id<array_t>().name(), i));
       }
     }
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<array_t>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<array_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -447,7 +377,7 @@ void deserializeMapImpl(
         deserializeValue(json_member.value, value);
       } catch (...) {
         impl::parsingLippincott(fmt::format(
-            "{}", type_id<map_t>().pretty_name()));
+            "{} at key {}", type_id<map_t>().name(), type_id<key_t>().name()));
       }
       map.emplace(std::move(key), std::move(value));
     }
@@ -455,8 +385,7 @@ void deserializeMapImpl(
   } else {
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: {}.",
-        type_id<map_t>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<map_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 } // namespace impl
@@ -513,9 +442,9 @@ void deserializeTupleImpl(
     json_array_t const &json_array = json_value.GetArray();
 
     if (json_array.Size() != tuple_size) {
-      throw ArraySizeMismatch(fmt::format(
-          "Size of json array({}) doesn't match size of {}.", json_array.Size(),
-          type_id<tuple_t>().pretty_name()));
+      throw ArraySizeMismatch(
+          fmt::format("Size of json array({}) doesn't match size of {}.",
+                      json_array.Size(), type_id<tuple_t>().name()));
     }
     tupleForEach(
         [&json_array](auto &tuple_val, std::size_t const index) {
@@ -523,8 +452,7 @@ void deserializeTupleImpl(
             deserializeValue(json_array[index], tuple_val);
           } catch (...) {
             impl::parsingLippincott(fmt::format(
-                "{} at index {}",
-                type_id<tuple_t>().pretty_name(), index));
+                "{} at index {}", type_id<tuple_t>().name(), index));
           }
         },
         tuple, index_array);
@@ -533,8 +461,7 @@ void deserializeTupleImpl(
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: "
         "{}.(Note: tuples should be represented as lists in json)",
-        type_id<tuple_t>().pretty_name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<tuple_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 
@@ -568,24 +495,6 @@ void deserializeValue(
   }
 }
 
-namespace impl {
-inline void replaceAll(std::string &input, std::string const &substr,
-                       std::string const &with) {
-  auto pos = input.find(substr);
-  while (pos != std::string::npos) {
-    input.replace(pos, substr.size(), with);
-    pos = input.find(substr);
-  }
-}
-
-inline std::string prettyNameFormat(std::string const &str) {
-  std::string out = str;
-  replaceAll(out, "struct ", "");
-  replaceAll(out, "class ", "");
-  return out;
-}
-} // namespace impl
-
 template <typename... Keys, typename... Values, typename Encoding,
           typename JSONAllocator>
 void deserializeValue(
@@ -601,38 +510,36 @@ void deserializeValue(
   if (json_value.IsObject()) {
 
     json_object_t const &json_object = json_value.GetObject();
-    static const std::array key_names = {impl::prettyNameFormat(
-        type_id<Keys>().pretty_name())...};
+    static const std::array<char const *, sizeof...(Keys)> key_names = {
+        type_id<Keys>().name()...};
 
     static constexpr bool has_optionals = (is_optional_v<Values> || ...);
     if constexpr (!has_optionals) {
       if (json_object.MemberCount() != map_size) {
         throw ObjectSizeMismatch(
             fmt::format("Size of json object({}) doesn't match size of {}.",
-                        json_object.MemberCount(),
-                        type_id<map_t>().name()));
+                        json_object.MemberCount(), type_id<map_t>().name()));
       }
     }
 
     tupleForEach(
-        [&json_object](auto &tuple_val, std::string const &key_name) {
-          auto iter = json_object.FindMember(key_name.c_str());
+        [&json_object](auto &tuple_val, char const *key_name_p) {
+          auto iter = json_object.FindMember(key_name_p);
 
           if (iter == json_object.end()) {
             if constexpr (is_optional_v<std::decay_t<decltype(tuple_val)>>) {
               tuple_val = std::nullopt;
             } else {
-              throw ObjectMemberMissing(fmt::format(
-                  "Couldn't find member {} for {}", key_name,
-                  type_id<map_t>().name()));
+              throw ObjectMemberMissing(
+                  fmt::format("Couldn't find member {} for {}", key_name_p,
+                              type_id<map_t>().name()));
             }
           } else {
             try {
               deserializeValue(iter->value, tuple_val);
             } catch (...) {
               impl::parsingLippincott(fmt::format(
-                  "{} at key {}",
-                  type_id<map_t>().name(), key_name));
+                  "{} at key {}", type_id<map_t>().name(), key_name_p));
             }
           }
         },
@@ -642,8 +549,7 @@ void deserializeValue(
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: "
         "{}.(Note: TupleMap should be represented as Object in json)",
-        type_id<map_t>().name(),
-        getTypeFlagsAsString(json_value)));
+        type_id<map_t>().name(), getTypeFlagsAsString(json_value)));
   }
 }
 

@@ -702,19 +702,44 @@ get(Tuple<Us...> const &tuple) noexcept {
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementT<I, Tuple<Us...>> &get(Tuple<Us...> &tuple) noexcept {
+constexpr auto get(Tuple<Us...> &tuple) noexcept
+    -> TupleElementT<I, Tuple<Us...>> & {
   return get<I>(static_cast<TupleStorage<Us...> &>(tuple));
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementT<I, Tuple<Us...>> &&get(Tuple<Us...> &&tuple) noexcept {
+constexpr auto get(Tuple<Us...> &&tuple) noexcept
+    -> TupleElementT<I, Tuple<Us...>> && {
   return get<I>(static_cast<TupleStorage<Us...> &&>(tuple));
 }
 
 template <std::size_t I, typename... Us>
-constexpr TupleElementT<I, Tuple<Us...>> const &&
-get(Tuple<Us...> const &&tuple) noexcept {
+constexpr auto get(Tuple<Us...> const &&tuple) noexcept
+    -> TupleElementT<I, Tuple<Us...>> const && {
   return get<I>(static_cast<TupleStorage<Us...> const &&>(tuple));
+}
+
+template <std::size_t FirstI, std::size_t SecondI, std::size_t... RestI,
+          typename... Us>
+constexpr decltype(auto) get(Tuple<Us...> &tuple) noexcept {
+  return get<FirstI>(get<SecondI, RestI...>(tuple));
+}
+template <std::size_t FirstI, std::size_t SecondI, std::size_t... RestI,
+          typename... Us>
+constexpr decltype(auto) get(Tuple<Us...> const &tuple) noexcept {
+  return get<FirstI>(get<SecondI, RestI...>(tuple));
+}
+template <std::size_t FirstI, std::size_t SecondI, std::size_t... RestI,
+          typename... Us>
+constexpr decltype(auto) get(Tuple<Us...> &&tuple) noexcept {
+  return get<FirstI>(
+      get<SecondI, RestI...>(std::forward<decltype(tuple)>(tuple)));
+}
+template <std::size_t FirstI, std::size_t SecondI, std::size_t... RestI,
+          typename... Us>
+constexpr decltype(auto) get(Tuple<Us...> const &&tuple) noexcept {
+  return get<FirstI>(
+      get<SecondI, RestI...>(std::forward<decltype(tuple)>(tuple)));
 }
 
 //! \todo Test three-way comparison when compilers will be more feature complete

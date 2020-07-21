@@ -303,15 +303,86 @@ struct SignatureReplaceTypeWith<What, With, Return(Args...)> {
       ReplaceIfSameUnqualifiedT<Args, What, With>...);
 };
 template <typename What, typename With, typename Return, typename... Args>
-struct SignatureReplaceTypeWith<What, With, Return(Args...)const> {
+struct SignatureReplaceTypeWith<What, With, Return(Args...) const> {
   using Type = ReplaceIfSameUnqualifiedT<Return, What, With>(
-      ReplaceIfSameUnqualifiedT<Args, What, With>...)const;
+      ReplaceIfSameUnqualifiedT<Args, What, With>...) const;
 };
 
 template <typename What, typename With, typename Signature>
 using SignatureReplaceTypeWithT =
     typename SignatureReplaceTypeWith<What, With, Signature>::Type;
 
+template <typename T> struct IsFunctionPointer : public std::false_type {};
+template <typename Return, typename... Args>
+struct IsFunctionPointer<Return (*)(Args...)> : public std::true_type {};
+template <typename T>
+static constexpr bool is_function_pointer_v = IsFunctionPointer<T>::value;
+
+template <typename T>
+struct IsMemberFunctionPointer : public std::is_member_function_pointer<T> {};
+template <typename T>
+static constexpr bool is_member_function_pointer_v =
+    IsMemberFunctionPointer<T>::value;
+
+template <typename T>
+struct IsAnyFunctionPointer
+    : public std::conditional_t<is_function_pointer_v<T> ||
+                                    is_member_function_pointer_v<T>,
+                                std::true_type, std::false_type> {};
+template <typename T>
+static constexpr bool is_any_function_pointer_v =
+    IsAnyFunctionPointer<T>::value;
+
+template <typename T> struct SignatureOf;
+
+template <typename T> using SignatureOfT = typename SignatureOf<T>::Type;
+
+template <typename Return, typename... Args>
+struct SignatureOf<Return(Args...)> {
+  using Type = Return(Args...);
+};
+
+template <typename Return, typename... Args>
+struct SignatureOf<Return(Args...) const> {
+  using Type = Return(Args...) const;
+};
+
+template <typename Return, typename... Args>
+struct SignatureOf<Return (*)(Args...)> {
+  using Type = Return(Args...);
+};
+
+template <typename Class, typename Return, typename... Args>
+struct SignatureOf<Return (Class::*)(Args...)> {
+  using Type = Return(Args...);
+};
+
+template <typename Class, typename Return, typename... Args>
+struct SignatureOf<Return (Class::*)(Args...) const> {
+  using Type = Return(Args...) const;
+};
+
+template <typename Class> struct SignatureOf {
+  static_assert(std::is_class_v<Class>,
+                "Template parameter should be either function pointer type, "
+                "pointer to member function or class.");
+  using Type = SignatureOfT<decltype(&Class::operator())>;
+};
+
+template <typename T> struct SignatureRemoveConst;
+
+template <typename T>
+using SignatureRemoveConstT = typename SignatureRemoveConst<T>::Type;
+
+template <typename Return, typename... Args>
+struct SignatureRemoveConst<Return(Args...)> {
+  using Type = Return(Args...);
+};
+
+template <typename Return, typename... Args>
+struct SignatureRemoveConst<Return(Args...) const> {
+  using Type = Return(Args...);
+};
 
 } // namespace CxxPlugins::utility
 

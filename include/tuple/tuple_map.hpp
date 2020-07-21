@@ -67,15 +67,13 @@ auto makeTaggedValue(Tag && /*unused*/, T &&val) {
   return TaggedValue<std::decay_t<Tag>, std::decay_t<T>>(std::forward<T>(val));
 }
 
-template<typename T>
-struct IsTaggedValue : public std::false_type {};
+template <typename T> struct IsTaggedValue : public std::false_type {};
 
-template<typename TagT, typename ValueT>
-struct IsTaggedValue<TaggedValue<TagT,ValueT>> : public std::true_type{};
+template <typename TagT, typename ValueT>
+struct IsTaggedValue<TaggedValue<TagT, ValueT>> : public std::true_type {};
 
-template<typename T>
+template <typename T>
 static constexpr bool is_tagged_value_v = IsTaggedValue<T>::value;
-
 
 /*!
  * \brief  Gets TupleMap value type(Use TupleMapElementType for simplicity)
@@ -165,22 +163,22 @@ public:
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const &
-  get(TupleMap<TaggedValue<UTags, UArgs>...> const &map);
+  get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept ;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<Tag,
                                        TupleMap<TaggedValue<UTags, UArgs>...>> &
-  get(TupleMap<TaggedValue<UTags, UArgs>...> &map);
+  get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept ;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> &&
-  get(TupleMap<TaggedValue<UTags, UArgs>...> &&map);
+  get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept ;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const &&
-  get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map);
+  get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept ;
 
   //! \brief Default constructor
   constexpr TupleMap() noexcept(
@@ -398,29 +396,54 @@ struct TupleMapElement<Tag, TupleMap<TaggedValue<Tags, Values>...>> {
 };
 
 template <typename Tag, typename... UTags, typename... UArgs>
-constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &map)
+constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const
         & {
   return get<utility::index_of<Tag, UTags...>>(map);
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
-constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &map)
+constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> & {
   return get<utility::index_of<Tag, UTags...>>(map);
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
-constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &&map)
+constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> && {
   return get<utility::index_of<Tag, UTags...>>(std::move(map));
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
-constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map)
+constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const
         && {
   get<utility::index_of<Tag, UTags...>>(std::move(map));
+}
+
+template <typename FirstTag, typename SecondTag, typename... RestTags,
+          typename... UTags, typename... UArgs>
+constexpr decltype(auto) get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept {
+  return get<FirstTag>(get<SecondTag, RestTags...>(map));
+}
+template <typename FirstTag, typename SecondTag, typename... RestTags,
+          typename... UTags, typename... UArgs>
+constexpr decltype(auto)
+get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept {
+  return get<FirstTag>(get<SecondTag, RestTags...>(map));
+}
+template <typename FirstTag, typename SecondTag, typename... RestTags,
+          typename... UTags, typename... UArgs>
+constexpr decltype(auto) get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept {
+  return get<FirstTag>(
+      get<SecondTag, RestTags...>(std::forward<decltype(map)>(map)));
+}
+template <typename FirstTag, typename SecondTag, typename... RestTags,
+          typename... UTags, typename... UArgs>
+constexpr decltype(auto)
+get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept {
+  return get<FirstTag>(
+      get<SecondTag, RestTags...>(std::forward<decltype(map)>(map)));
 }
 
 /*!

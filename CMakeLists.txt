@@ -49,27 +49,24 @@ else ()
 endif ()
 conan_basic_setup(TARGETS)
 
-#file(RELATIVE_PATH type_index_relative
-#        ${CONAN_INCLUDE_DIRS_BOOST}
-#        ${CMAKE_CURRENT_SOURCE_DIR}/include/cxx_plugins/type_index.hpp)
-#
-#
-#target_compile_definitions(
-#        ${This} PUBLIC
-#        BOOST_TYPE_INDEX_USER_TYPEINDEX="boost/../${type_index_relative}>"
-#)
-
 target_sources(${This}
         PRIVATE
         src/cxx_plugins.cpp
         src/polymorphic_allocator.cpp
+        src/parser.cpp
 
         PUBLIC
         include/cxx_plugins/vtable.hpp
         include/cxx_plugins/cxx_plugins.hpp
+        include/cxx_plugins/plugin_builder.hpp
+        include/cxx_plugins/plugin.hpp
+        include/cxx_plugins/variant.hpp
         include/cxx_plugins/function_traits.hpp
         include/cxx_plugins/function_traits.ipp
+        include/cxx_plugins/functionref.hpp
+        include/cxx_plugins/overload_set.hpp
         include/cxx_plugins/type_traits.hpp
+        include/cxx_plugins/arithmetic_wrapper.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/parser.hpp
