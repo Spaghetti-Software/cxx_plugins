@@ -250,7 +250,7 @@ private:
       return static_cast<std::size_t>(data_m[size - 2]);
     }
     case State::fallback_allocated: {
-      auto data = reinterpret_cast<FallbackAllocData *>(data_m);
+      auto data = reinterpret_cast<const FallbackAllocData *>(data_m);
       return data->alloc_size;
     }
     }
@@ -266,7 +266,7 @@ private:
       return static_cast<std::size_t>(data_m[size - 3]);
     }
     case State::fallback_allocated: {
-      auto data = reinterpret_cast<FallbackAllocData *>(data_m);
+      auto data = reinterpret_cast<const FallbackAllocData *>(data_m);
       return data->alloc_alignment;
     }
     }
