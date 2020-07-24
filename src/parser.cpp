@@ -14,7 +14,8 @@
 
 #include "cxx_plugins/parser.hpp"
 
-namespace CxxPlugins::JSON {
+namespace CxxPlugins {
+
 
 void impl::parsingLippincott(std::string_view type_description) {
   try {

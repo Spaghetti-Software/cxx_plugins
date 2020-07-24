@@ -81,7 +81,7 @@ TEST(PolymorphicRef, SimpleTests) {
 }
 
 enum class ReferenceType { LValue, ConstLValue, RValue, ConstRValue };
-std::ostream &operator<<(std::ostream &os, ReferenceType ref_type) {
+static std::ostream &operator<<(std::ostream &os, ReferenceType ref_type) {
   const char *str = nullptr;
   switch (ref_type) {
   case ReferenceType::LValue:

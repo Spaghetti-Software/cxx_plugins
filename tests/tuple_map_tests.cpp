@@ -51,11 +51,12 @@ TEST(TupleMapTests, Subscript) {
   using namespace CxxPlugins;
 
   TupleMap<TaggedValue<int, float>> map(0.5F);
-  float result = get<int>(map);
-  EXPECT_EQ(result, 0.5F);
-  [[maybe_unused]] const float &result_const = get<int>(std::as_const(map));
-  EXPECT_EQ(result, 0.5F);
-  [[maybe_unused]] float &&result_rvalue = get<int>(std::move(map));
+  TaggedValue<int, float> result = get<int>(map);
+  EXPECT_EQ(result.value_m, 0.5F);
+  [[maybe_unused]] const float &result_const =
+      get<int>(std::as_const(map)).value_m;
+  EXPECT_EQ(result.value_m, 0.5F);
+  [[maybe_unused]] float &&result_rvalue = get<int>(std::move(map)).value_m;
   EXPECT_EQ(result_rvalue, 0.5F);
 
   map = TupleMap<TaggedValue<int, float>>(0.5F);
@@ -97,8 +98,15 @@ TEST(TupleMapTests, Cat) {
 TEST(TupleMapTests, SubMap) {
   using namespace CxxPlugins;
   auto map = makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 2.0));
+  static_assert(
+      std::is_same_v<decltype(map), TupleMap<TaggedValue<Tag<Foo>, int>,
+                                             TaggedValue<Tag<Bar>, double>>>,
+      "Map has incorrect type");
   auto expected = makeTupleMap(TaggedValue(tag<Foo>, 5));
   auto result = tupleMapSubMap(map, tag<Foo>);
+  static_assert(
+      std::is_same_v<decltype(result), TupleMap<TaggedValue<Tag<Foo>, int>>>,
+      "result has incorrect type");
   EXPECT_TRUE(result == expected);
   EXPECT_EQ(expected, result);
   auto expected2 = makeTupleMap();

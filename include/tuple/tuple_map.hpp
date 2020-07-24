@@ -51,12 +51,75 @@ template <typename TagT, typename T> struct TaggedValue {
     value_m = std::move(rhs.value_m);
     return *this;
   }
+  constexpr TaggedValue &
+  operator=(T const &value) noexcept(std::is_nothrow_copy_assignable_v<T>) {
+    value_m = value;
+    return *this;
+  }
 
-  using Tag = TagT;
+  constexpr TaggedValue &
+  operator=(T &&value) noexcept(std::is_nothrow_move_assignable_v<T>) {
+    value_m = std::move(value);
+    return *this;
+  }
+
+  operator T&() noexcept {
+    return value_m;
+  }
+  operator T const&() const noexcept {
+    return value_m;
+  }
+  template<typename U, typename = std::enable_if_t<std::is_convertible_v<T,U>>>
+  operator U () const {
+    return value_m;
+  }
+  template<typename U, typename = std::enable_if_t<std::is_convertible_v<T&,U&>>>
+  operator U&() {
+    return value_m;
+  }
+  template<typename U, typename = std::enable_if_t<std::is_convertible_v<T const&,U const&>>>
+  operator U const &() const {
+    return value_m;
+  }
+
+  using TagType = TagT;
+  using ValueType = T;
   T value_m;
 };
 template <typename Tag, typename T>
 TaggedValue(Tag, T &&) -> TaggedValue<Tag, std::decay_t<T>>;
+
+template <typename TagT, typename T, typename U>
+constexpr bool operator==(TaggedValue<TagT, T> const &lhs,
+                          TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m == rhs.value_m;
+}
+template <typename TagT, typename T, typename U>
+constexpr bool operator!=(TaggedValue<TagT, T> const &lhs,
+                          TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m != rhs.value_m;
+}
+template <typename TagT, typename T, typename U>
+constexpr bool operator<(TaggedValue<TagT, T> const &lhs,
+                         TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m < rhs.value_m;
+}
+template <typename TagT, typename T, typename U>
+constexpr bool operator<=(TaggedValue<TagT, T> const &lhs,
+                          TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m <= rhs.value_m;
+}
+
+template <typename TagT, typename T, typename U>
+constexpr bool operator>(TaggedValue<TagT, T> const &lhs,
+                         TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m > rhs.value_m;
+}
+template <typename TagT, typename T, typename U>
+constexpr bool operator>=(TaggedValue<TagT, T> const &lhs,
+                          TaggedValue<TagT, U> const &rhs) {
+  return lhs.value_m >= rhs.value_m;
+}
 
 template <typename Tag, typename T> auto makeTaggedValue(T &&val) {
   return TaggedValue<Tag, std::decay_t<T>>(std::forward<T>(val));
@@ -137,12 +200,13 @@ template <typename... TaggedValues>
 struct TupleMap
 #else
 template <typename... Tags, typename... TValues>
-struct TupleMap<TaggedValue<Tags, TValues>...> : public Tuple<TValues...>
+struct TupleMap<TaggedValue<Tags, TValues>...>
+    : public Tuple<TaggedValue<Tags, TValues>...>
 #endif
 {
 
 private:
-  using Parent = Tuple<TValues...>;
+  using Parent = Tuple<TaggedValue<Tags, TValues>...>;
 
 public:
   using Parent::Parent;
@@ -163,22 +227,22 @@ public:
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const &
-  get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept ;
+  get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<Tag,
                                        TupleMap<TaggedValue<UTags, UArgs>...>> &
-  get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept ;
+  get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> &&
-  get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept ;
+  get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept;
 
   template <typename Tag, typename... UTags, typename... UArgs>
   friend constexpr TupleMapElementType<
       Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const &&
-  get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept ;
+  get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept;
 
   //! \brief Default constructor
   constexpr TupleMap() noexcept(
@@ -215,7 +279,7 @@ public:
                  (!std::is_same_v<TValues, UValues> && ...))>>
   explicit constexpr TupleMap(
       TupleMap<TaggedValue<UTags, UValues>...> const &rhs)
-      : Parent(get<Tags>(rhs)...) {}
+      : Parent(get<Tags>(rhs).value_m...) {}
 
   //! \overload
   template <typename... UTags, typename... UValues,
@@ -225,7 +289,7 @@ public:
                 ((!std::is_same_v<Tags, UTags> && ...) ||
                  (!std::is_same_v<TValues, UValues> && ...))>>
   explicit constexpr TupleMap(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
-      : Parent(std::move(get<Tags>(std::move(rhs)))...) {}
+      : Parent(std::move(get<Tags>(std::move(rhs))).value_m...) {}
 
   template <typename... UTags, typename... UVals,
             std::enable_if_t<sizeof...(UTags) != 0 &&
@@ -233,7 +297,7 @@ public:
                                  (std::is_same_v<UTags, Tags> && ...),
                              int> = 0>
   constexpr TupleMap(TaggedValue<UTags, UVals> const &... vals)
-      : Parent(vals.value_m...) {}
+      : Parent(vals...) {}
 
   template <typename... UTags, typename... UVals,
             std::enable_if_t<sizeof...(UTags) != 0 &&
@@ -241,7 +305,7 @@ public:
                                  (std::is_same_v<UTags, Tags> && ...),
                              int> = 0>
   constexpr TupleMap(TaggedValue<UTags, UVals> &&... vals)
-      : Parent(vals.value_m...) {}
+      : Parent(std::move(vals)...) {}
 
   /*!
    * \brief Copy assignment operator from TupleMap with another order of
@@ -254,7 +318,7 @@ public:
                 (!std::is_same_v<Tags, UTags> && ...)>>
   constexpr auto operator=(TupleMap<TaggedValue<UTags, UValues>...> const &rhs)
       -> TupleMap & {
-    ((get<Tags>(*this) = get<Tags>(rhs)), ...);
+    ((get<Tags>(*this) = get<Tags>(rhs).value_m), ...);
     return *this;
   }
 
@@ -266,7 +330,7 @@ public:
                  (!std::is_same_v<TValues, UValues> && ...))>>
   constexpr auto operator=(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
       -> TupleMap & {
-    ((get<Tags>(*this) = std::move(get<Tags>(std::move(rhs)))), ...);
+    ((get<Tags>(*this) = std::move(get<Tags>(std::move(rhs)).value_m)), ...);
     return *this;
   }
 
@@ -392,7 +456,8 @@ constexpr auto operator>=(TupleMap<Ts...> const &lhs,
 
 template <typename Tag, typename... Tags, typename... Values>
 struct TupleMapElement<Tag, TupleMap<TaggedValue<Tags, Values>...>> {
-  using Type = utility::ElementType<utility::index_of<Tag, Tags...>, Values...>;
+  using Type = utility::ElementType<utility::index_of<Tag, Tags...>,
+                                    TaggedValue<Tags, Values>...>;
 };
 
 template <typename Tag, typename... UTags, typename... UArgs>
@@ -423,27 +488,31 @@ constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept
 
 template <typename FirstTag, typename SecondTag, typename... RestTags,
           typename... UTags, typename... UArgs>
-constexpr decltype(auto) get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept {
-  return get<FirstTag>(get<SecondTag, RestTags...>(map));
+constexpr decltype(auto)
+get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept {
+  return get<SecondTag, RestTags...>(
+      get<FirstTag>(std::forward<decltype(map)>(map)).value_m);
 }
 template <typename FirstTag, typename SecondTag, typename... RestTags,
           typename... UTags, typename... UArgs>
 constexpr decltype(auto)
 get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept {
-  return get<FirstTag>(get<SecondTag, RestTags...>(map));
+  return get<SecondTag, RestTags...>(
+      get<FirstTag>(std::forward<decltype(map)>(map)).value_m);
 }
 template <typename FirstTag, typename SecondTag, typename... RestTags,
           typename... UTags, typename... UArgs>
-constexpr decltype(auto) get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept {
-  return get<FirstTag>(
-      get<SecondTag, RestTags...>(std::forward<decltype(map)>(map)));
+constexpr decltype(auto)
+get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept {
+  return get<SecondTag, RestTags...>(
+      get<FirstTag>(std::forward<decltype(map)>(map)).value_m);
 }
 template <typename FirstTag, typename SecondTag, typename... RestTags,
           typename... UTags, typename... UArgs>
 constexpr decltype(auto)
 get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept {
-  return get<FirstTag>(
-      get<SecondTag, RestTags...>(std::forward<decltype(map)>(map)));
+  return get<SecondTag, RestTags...>(
+      get<FirstTag>(std::forward<decltype(map)>(map)).value_m);
 }
 
 /*!
@@ -479,7 +548,8 @@ tupleMapSubMap(TupleMap<TaggedValue<Tags, Values>...> const &old_map,
   using OldType = std::decay_t<TupleMap<TaggedValue<Tags, Values>...>>;
   using NewType = TupleMap<
       TaggedValue<std::decay_t<SelectedTags>,
-                  TupleMapElementType<std::decay_t<SelectedTags>, OldType>>...>;
+                  typename TupleMapElementType<std::decay_t<SelectedTags>,
+                                               OldType>::ValueType>...>;
   return NewType(get<std::decay_t<SelectedTags>>(old_map)...);
 }
 /*!
@@ -496,9 +566,62 @@ constexpr auto tupleMapSubMap(TupleMap<TaggedValue<Tags, Values>...> &&old_map,
   using OldType = std::decay_t<TupleMap<TaggedValue<Tags, Values>...>>;
   using NewType = TupleMap<
       TaggedValue<std::decay_t<SelectedTags>,
-                  TupleMapElementType<std::decay_t<SelectedTags>, OldType>>...>;
+                  typename TupleMapElementType<std::decay_t<SelectedTags>,
+                                               OldType>::ValueType>...>;
   return NewType(
       std::move(get<std::decay_t<SelectedTags>>(std::move(old_map)))...);
+}
+
+namespace impl {
+
+struct depthFirstTraversalTupleImpl {
+  template <typename Visitor, typename Tuple>
+  constexpr void operator()(Visitor const &visitor, Tuple &&tuple) const {
+    tupleForEach(
+        [&visitor](auto &&member) {
+          depthFirstTraversal(visitor, std::forward<decltype(member)>(member));
+        },
+        std::forward<Tuple>(tuple));
+  }
+};
+
+} // namespace impl
+
+template <typename Visitor, typename... Tags, typename... Values>
+constexpr void
+depthFirstTraversal(Visitor const &visitor,
+                    TupleMap<TaggedValue<Tags, Values>...> &map) {
+  impl::depthFirstTraversalTupleImpl{}(visitor,
+                                       std::forward<decltype(map)>(map));
+}
+
+template <typename Visitor, typename... Tags, typename... Values>
+constexpr void
+depthFirstTraversal(Visitor const &visitor,
+                    TupleMap<TaggedValue<Tags, Values>...> const &map) {
+  impl::depthFirstTraversalTupleImpl{}(visitor,
+                                       std::forward<decltype(map)>(map));
+}
+
+template <typename Visitor, typename... Tags, typename... Values>
+constexpr void
+depthFirstTraversal(Visitor const &visitor,
+                    TupleMap<TaggedValue<Tags, Values>...> &&map) {
+  impl::depthFirstTraversalTupleImpl{}(visitor,
+                                       std::forward<decltype(map)>(map));
+}
+
+template <typename Visitor, typename... Tags, typename... Values>
+constexpr void
+depthFirstTraversal(Visitor const &visitor,
+                    TupleMap<TaggedValue<Tags, Values>...> const &&map) {
+  impl::depthFirstTraversalTupleImpl{}(visitor,
+                                       std::forward<decltype(map)>(map));
+}
+
+template <typename Visitor, typename T>
+constexpr void depthFirstTraversal(Visitor const &visitor, T &&value) {
+  visitor(std::forward<T>(value));
 }
 
 ///*!

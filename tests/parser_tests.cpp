@@ -33,45 +33,45 @@
 //  rapidjson::Document const &doc_f = doc_f_non_const;
 //
 //  unsigned uvar = 0;
-//  deserializeValue(doc_u, uvar);
+//  parse(doc_u, uvar);
 //  EXPECT_EQ(uvar, 4);
-//  EXPECT_THROW({ deserializeValue(doc_i, uvar); }, TypeMismatch);
-//  EXPECT_THROW({ deserializeValue(doc_f, uvar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_i, uvar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, uvar); }, TypeMismatch);
 //
 //  int ivar = 0;
-//  deserializeValue(doc_u, ivar);
+//  parse(doc_u, ivar);
 //  EXPECT_EQ(ivar, 4);
-//  deserializeValue(doc_i, ivar);
+//  parse(doc_i, ivar);
 //  EXPECT_EQ(ivar, -4);
-//  EXPECT_THROW({ deserializeValue(doc_f, ivar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, ivar); }, TypeMismatch);
 //
 //  std::uint64_t u64var = 0;
-//  deserializeValue(doc_u, u64var);
+//  parse(doc_u, u64var);
 //  EXPECT_EQ(u64var, 4);
-//  EXPECT_THROW({ deserializeValue(doc_i, u64var); }, TypeMismatch);
-//  EXPECT_THROW({ deserializeValue(doc_f, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_i, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, u64var); }, TypeMismatch);
 //
 //  std::int64_t i64var = 0;
-//  deserializeValue(doc_u, i64var);
+//  parse(doc_u, i64var);
 //  EXPECT_EQ(i64var, 4);
-//  deserializeValue(doc_i, i64var);
+//  parse(doc_i, i64var);
 //  EXPECT_EQ(i64var, -4);
-//  EXPECT_THROW({ deserializeValue(doc_f, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, u64var); }, TypeMismatch);
 //
 //  float f = 0;
-//  deserializeValue(doc_u, f);
+//  parse(doc_u, f);
 //  EXPECT_EQ(f, 4);
-//  deserializeValue(doc_i, f);
+//  parse(doc_i, f);
 //  EXPECT_EQ(f, -4);
-//  deserializeValue(doc_f, f);
+//  parse(doc_f, f);
 //  EXPECT_EQ(f, 4.5);
 //
 //  double d = 0;
-//  deserializeValue(doc_u, d);
+//  parse(doc_u, d);
 //  EXPECT_EQ(d, 4);
-//  deserializeValue(doc_i, d);
+//  parse(doc_i, d);
 //  EXPECT_EQ(d, -4);
-//  deserializeValue(doc_f, d);
+//  parse(doc_f, d);
 //  EXPECT_EQ(d, 4.5);
 //}
 //
@@ -99,57 +99,57 @@
 //  rapidjson::Document const &doc_null = doc_null_non_const;
 //
 //  std::optional<unsigned> uvar = 0;
-//  deserializeValue(doc_null, uvar);
+//  parse(doc_null, uvar);
 //  EXPECT_EQ(uvar, std::nullopt);
-//  deserializeValue(doc_u, uvar);
+//  parse(doc_u, uvar);
 //  EXPECT_EQ(uvar, 4);
-//  EXPECT_THROW({ deserializeValue(doc_i, uvar); }, TypeMismatch);
-//  EXPECT_THROW({ deserializeValue(doc_f, uvar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_i, uvar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, uvar); }, TypeMismatch);
 //
 //  std::optional<int> ivar = 0;
-//  deserializeValue(doc_null, ivar);
+//  parse(doc_null, ivar);
 //  EXPECT_EQ(ivar, std::nullopt);
-//  deserializeValue(doc_u, ivar);
+//  parse(doc_u, ivar);
 //  EXPECT_EQ(ivar, 4);
-//  deserializeValue(doc_i, ivar);
+//  parse(doc_i, ivar);
 //  EXPECT_EQ(ivar, -4);
-//  EXPECT_THROW({ deserializeValue(doc_f, ivar); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, ivar); }, TypeMismatch);
 //
 //  std::optional<std::uint64_t> u64var = 0;
-//  deserializeValue(doc_null, u64var);
+//  parse(doc_null, u64var);
 //  EXPECT_EQ(u64var, std::nullopt);
-//  deserializeValue(doc_u, u64var);
+//  parse(doc_u, u64var);
 //  EXPECT_EQ(u64var, 4);
-//  EXPECT_THROW({ deserializeValue(doc_i, u64var); }, TypeMismatch);
-//  EXPECT_THROW({ deserializeValue(doc_f, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_i, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, u64var); }, TypeMismatch);
 //
 //  std::optional<std::int64_t> i64var = 0;
-//  deserializeValue(doc_null, i64var);
+//  parse(doc_null, i64var);
 //  EXPECT_EQ(i64var, std::nullopt);
-//  deserializeValue(doc_u, i64var);
+//  parse(doc_u, i64var);
 //  EXPECT_EQ(i64var, 4);
-//  deserializeValue(doc_i, i64var);
+//  parse(doc_i, i64var);
 //  EXPECT_EQ(i64var, -4);
-//  EXPECT_THROW({ deserializeValue(doc_f, u64var); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_f, u64var); }, TypeMismatch);
 //
 //  std::optional<float> f = 0;
-//  deserializeValue(doc_null, f);
+//  parse(doc_null, f);
 //  EXPECT_EQ(f, std::nullopt);
-//  deserializeValue(doc_u, f);
+//  parse(doc_u, f);
 //  EXPECT_EQ(f, 4);
-//  deserializeValue(doc_i, f);
+//  parse(doc_i, f);
 //  EXPECT_EQ(f, -4);
-//  deserializeValue(doc_f, f);
+//  parse(doc_f, f);
 //  EXPECT_EQ(f, 4.5);
 //
 //  std::optional<double> d = 0;
-//  deserializeValue(doc_null, d);
+//  parse(doc_null, d);
 //  EXPECT_EQ(d, std::nullopt);
-//  deserializeValue(doc_u, d);
+//  parse(doc_u, d);
 //  EXPECT_EQ(d, 4);
-//  deserializeValue(doc_i, d);
+//  parse(doc_i, d);
 //  EXPECT_EQ(d, -4);
-//  deserializeValue(doc_f, d);
+//  parse(doc_f, d);
 //  EXPECT_EQ(d, 4.5);
 //}
 //
@@ -167,10 +167,10 @@
 //  rapidjson::Document const &doc_null = doc_null_non_const;
 //
 //  std::string str;
-//  deserializeValue(doc, str);
+//  parse(doc, str);
 //  EXPECT_EQ(str, "string");
 //
-//  EXPECT_THROW({ deserializeValue(doc_null, str); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_null, str); }, TypeMismatch);
 //}
 //
 //TEST(ParserTests, OptionalString) {
@@ -187,10 +187,10 @@
 //  rapidjson::Document const &doc_null = doc_null_non_const;
 //
 //  std::optional<std::string> str;
-//  deserializeValue(doc, str);
+//  parse(doc, str);
 //  EXPECT_EQ(str, "string");
 //
-//  deserializeValue(doc_null, str);
+//  parse(doc_null, str);
 //  EXPECT_EQ(str, std::nullopt);
 //}
 //
@@ -221,35 +221,35 @@
 //  rapidjson::Document const &doc_double = doc_double_non_const;
 //
 //  std::vector<unsigned> uvec;
-//  EXPECT_THROW({ deserializeValue(doc_null, uvec); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_null, uvec); }, TypeMismatch);
 //  std::optional<std::vector<unsigned>> uvec_opt;
-//  deserializeValue(doc_null, uvec_opt);
+//  parse(doc_null, uvec_opt);
 //  EXPECT_EQ(uvec_opt, std::nullopt);
-//  deserializeValue(doc_uint, uvec_opt);
+//  parse(doc_uint, uvec_opt);
 //  EXPECT_EQ(uvec_opt, expected_uint);
-//  EXPECT_THROW({ deserializeValue(doc_int, uvec_opt); },
+//  EXPECT_THROW({ parse(doc_int, uvec_opt); },
 //               TypeMismatch);
-//  EXPECT_THROW({ deserializeValue(doc_double, uvec_opt); },
+//  EXPECT_THROW({ parse(doc_double, uvec_opt); },
 //               TypeMismatch);
 //
 //  std::vector<int> ivec;
-//  EXPECT_THROW({ deserializeValue(doc_null, ivec); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_null, ivec); }, TypeMismatch);
 //  std::optional<std::vector<int>> ivec_opt;
-//  deserializeValue(doc_null, ivec_opt);
+//  parse(doc_null, ivec_opt);
 //  EXPECT_EQ(ivec_opt, std::nullopt);
 //
-//  deserializeValue(doc_int, ivec_opt);
+//  parse(doc_int, ivec_opt);
 //  EXPECT_EQ(ivec_opt.value(), expected_int);
-//  EXPECT_THROW({ deserializeValue(doc_double, ivec_opt); },
+//  EXPECT_THROW({ parse(doc_double, ivec_opt); },
 //               TypeMismatch);
 //
 //  std::vector<double> dvec;
-//  EXPECT_THROW({ deserializeValue(doc_null, dvec); }, TypeMismatch);
+//  EXPECT_THROW({ parse(doc_null, dvec); }, TypeMismatch);
 //  std::optional<std::vector<double>> dvec_opt;
-//  deserializeValue(doc_null, dvec_opt);
+//  parse(doc_null, dvec_opt);
 //  EXPECT_EQ(dvec_opt, std::nullopt);
 //
-//  deserializeValue(doc_double, dvec_opt);
+//  parse(doc_double, dvec_opt);
 //  EXPECT_EQ(expected_double, dvec_opt);
 //}
 //
@@ -270,7 +270,7 @@
 //  rapidjson::Document const &doc = doc_non_const;
 //
 //  std::map<std::string, int> result;
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //
 //  EXPECT_EQ(result, expected);
 //}
@@ -292,7 +292,7 @@
 //  doc.Parse(json.c_str(), json.size());
 //
 //  std::unordered_map<std::string, int> result;
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //
 //  EXPECT_EQ(result, expected);
 //}
@@ -309,7 +309,7 @@
 //  rapidjson::Document const &doc = doc_non_const;
 //
 //  Tuple<int, double, std::string, std::optional<std::string>> result;
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //  EXPECT_EQ(expected, result);
 //}
 //
@@ -325,7 +325,7 @@
 //  rapidjson::Document const &doc = doc_non_const;
 //
 //  std::tuple<int, double, std::string, std::optional<std::string>> result;
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //  EXPECT_EQ(expected, result);
 //}
 //
@@ -355,7 +355,7 @@
 //           TaggedValue<my_tag2, std::string>>
 //      result;
 //
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //  EXPECT_EQ(result, expected);
 //}
 //
@@ -374,7 +374,7 @@
 //           TaggedValue<my_tag2, std::string>>
 //      result;
 //
-//  EXPECT_THROW({ deserializeValue(doc, result); },
+//  EXPECT_THROW({ parse(doc, result); },
 //               ObjectSizeMismatch);
 //}
 //
@@ -394,7 +394,7 @@
 //           TaggedValue<my_tag2, std::string>>
 //      result;
 //
-//  EXPECT_THROW({ deserializeValue(doc, result); },
+//  EXPECT_THROW({ parse(doc, result); },
 //               ObjectMemberMissing);
 //}
 //
@@ -420,6 +420,6 @@
 //           TaggedValue<my_tag2, std::optional<std::string>>>
 //      result;
 //
-//  deserializeValue(doc, result);
+//  parse(doc, result);
 //  EXPECT_EQ(result, expected);
 //}

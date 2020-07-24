@@ -40,8 +40,8 @@ public:
   void some_function(int some_arg);
 };
 
-void foo([[maybe_unused]] int i,[[maybe_unused]] int j) {}
-void foo([[maybe_unused]]int i) {}
+[[maybe_unused]] static void foo([[maybe_unused]] int i,[[maybe_unused]] int j) {}
+[[maybe_unused]] static void foo([[maybe_unused]]int i) {}
 
 struct Bar {
   void baz([[maybe_unused]]int i) {}

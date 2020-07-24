@@ -34,14 +34,11 @@
 
 namespace CxxPlugins {
 
-template <typename T> struct IsOptional : std::false_type {};
-
-template <typename T> struct IsOptional<std::optional<T>> : std::true_type {};
-
+template <typename T> struct JsonName {
+  static inline char const *value = type_id<T>().name();
+};
 template <typename T>
-static constexpr bool is_optional_v = IsOptional<T>::value;
-
-namespace JSON {
+static inline char const *json_name_v = JsonName<T>::value;
 
 class ParsingError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -100,97 +97,115 @@ namespace impl {
 [[noreturn]] void parsingLippincott(std::string_view type_description);
 } // namespace impl
 
+namespace impl {
+template <typename T>
+static constexpr bool is_optional_v = std::is_convertible_v<std::nullopt_t, T>;
+template <typename T>
+static constexpr bool is_pointer_v = std::is_convertible_v<std::nullptr_t, T>;
+} // namespace impl
+
+
+
 template <typename Int, typename Encoding, typename JSONAllocator,
-          std::enable_if_t<std::is_integral_v<Int>, int> = 0>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Int &value);
+          std::enable_if_t<std::is_integral_v<Int>, int> = 0,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Int &value, AdditionalInfo &&additional_info = nullptr);
 
 template <typename Float, typename Encoding, typename JSONAllocator,
-          std::enable_if_t<std::is_floating_point_v<Float>, unsigned> = 0>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Float &value);
+          std::enable_if_t<std::is_floating_point_v<Float>, unsigned> = 0,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Float &value, AdditionalInfo &&additional_info = nullptr);
 
 template <typename Ch, typename ChTraits, typename Allocator, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::basic_string<Ch, ChTraits, Allocator> &string);
+          typename JSONAllocator, typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::basic_string<Ch, ChTraits, Allocator> &string,
+           AdditionalInfo &&additional_info = nullptr);
 
-template <typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::filesystem::path &path);
+template <typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::filesystem::path &path,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename T, typename Allocator, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::vector<T, Allocator> &vec);
+          typename JSONAllocator, typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::vector<T, Allocator> &vec,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename T, std::size_t Size, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::array<T, Size> &array);
+          typename JSONAllocator, typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::array<T, Size> &array,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename T, std::size_t Size, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    T (&array)[Size]);
+          typename JSONAllocator, typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           T (&array)[Size], AdditionalInfo &&additional_info = nullptr);
 
 template <typename Key, typename T, typename Hash, typename KeyEqual,
-          typename Allocator, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::unordered_map<Key, T, Hash, KeyEqual, Allocator> &map);
+          typename Allocator, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::unordered_map<Key, T, Hash, KeyEqual, Allocator> &map,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename Key, typename T, typename Hash, typename KeyEqual,
-          typename Allocator, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::unordered_multimap<Key, T, Hash, KeyEqual, Allocator> &map);
+          typename Allocator, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::unordered_multimap<Key, T, Hash, KeyEqual, Allocator> &map,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename Key, typename T, typename Compare, typename Allocator,
-          typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::map<Key, T, Compare, Allocator> &map);
+          typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::map<Key, T, Compare, Allocator> &map,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename Key, typename T, typename Compare, typename Allocator,
-          typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::multimap<Key, T, Compare, Allocator> &map);
+          typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::multimap<Key, T, Compare, Allocator> &map,
+           AdditionalInfo &&additional_info = nullptr);
 
-template <typename... Ts, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Tuple<Ts...> &tuple);
+template <typename... Ts, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Tuple<Ts...> &tuple, AdditionalInfo &&additional_info = nullptr);
 
-template <typename... Ts, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::tuple<Ts...> &tuple);
+template <typename... Ts, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::tuple<Ts...> &tuple);
 
-template <typename T, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::optional<T> &optional_value);
+template <typename T, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::optional<T> &optional_value,
+           AdditionalInfo &&additional_info = nullptr);
 
 template <typename... Keys, typename... Values, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map);
+          typename JSONAllocator, typename AdditionalInfo = void *>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map,
+           AdditionalInfo &&additional_info = nullptr);
+
+
+
+/// IMPLEMENTATION
 
 template <typename Int, typename Encoding, typename JSONAllocator,
-          std::enable_if_t<std::is_integral_v<Int>, int>>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Int &value) {
+    std::enable_if_t<std::is_integral_v<Int>, int>,
+    typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Int &value, [[maybe_unused]] AdditionalInfo &&additional_info) {
   static_assert(std::is_same_v<int, Int> || std::is_same_v<unsigned, Int> ||
                     std::is_same_v<std::int64_t, Int> ||
                     std::is_same_v<std::uint64_t, Int>,
@@ -207,10 +222,10 @@ void deserializeValue(
 }
 
 template <typename Float, typename Encoding, typename JSONAllocator,
-          std::enable_if_t<std::is_floating_point_v<Float>, unsigned>>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Float &value) {
+          std::enable_if_t<std::is_floating_point_v<Float>, unsigned>,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Float &value, [[maybe_unused]] AdditionalInfo &&additional_info) {
 
   if (json_value.IsNumber()) {
     value = json_value.template Get<Float>();
@@ -222,10 +237,10 @@ void deserializeValue(
 }
 
 template <typename Ch, typename ChTraits, typename Allocator, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::basic_string<Ch, ChTraits, Allocator> &string) {
+          typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::basic_string<Ch, ChTraits, Allocator> &string,
+           [[maybe_unused]] AdditionalInfo &&additional_info) {
 
   using string_type = std::basic_string<Ch, ChTraits, Allocator>;
 
@@ -239,21 +254,19 @@ void deserializeValue(
   }
 }
 
-template <typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::filesystem::path &path) {
+template <typename Encoding, typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::filesystem::path &path, [[maybe_unused]] AdditionalInfo &&additional_info) {
   std::string path_name;
   path_name.reserve(256);
-  deserializeValue(json_value, path_name);
+  parse(json_value, path_name);
   path.assign(std::move(path_name));
 }
 
 template <typename T, typename Allocator, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::vector<T, Allocator> &vec) {
+          typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::vector<T, Allocator> &vec, AdditionalInfo &&additional_info) {
 
   using json_value_t = rapidjson::GenericValue<Encoding, JSONAllocator>;
   using vector_t = std::vector<T, Allocator>;
@@ -265,7 +278,7 @@ void deserializeValue(
     vec.resize(array.Size());
     for (unsigned i = 0; i < vec.size(); ++i) {
       try {
-        deserializeValue(array[i], vec[i]);
+        parse(array[i], vec[i], std::forward<AdditionalInfo>(additional_info));
       } catch (...) {
         impl::parsingLippincott(
             fmt::format("{} at index {}", type_id<vector_t>().name(), i));
@@ -279,10 +292,10 @@ void deserializeValue(
 }
 
 template <typename T, std::size_t Size, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> &json_value,
-    std::array<T, Size> &array) {
+    typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::array<T, Size> &array,
+           AdditionalInfo &&additional_info) {
 
   using json_value_t = rapidjson::GenericValue<Encoding, JSONAllocator>;
   using array_t = std::array<T, Size>;
@@ -300,7 +313,8 @@ void deserializeValue(
 
     for (unsigned i = 0; i < array.size(); ++i) {
       try {
-        deserializeValue(json_array[i], array[i]);
+        parse(json_array[i], array[i],
+              std::forward<AdditionalInfo>(additional_info));
       } catch (...) {
         impl::parsingLippincott(
             fmt::format("{} at index {}", type_id<array_t>().name(), i));
@@ -314,10 +328,9 @@ void deserializeValue(
 }
 
 template <typename T, std::size_t Size, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> &json_value,
-    T (&array)[Size]) {
+          typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> &json_value,
+           T (&array)[Size], AdditionalInfo &&additional_info) {
 
   using json_value_t = rapidjson::GenericValue<Encoding, JSONAllocator>;
   using array_t = T[Size];
@@ -335,7 +348,8 @@ void deserializeValue(
 
     for (unsigned i = 0; i < array.size(); ++i) {
       try {
-        deserializeValue(json_array[i], array[i]);
+        parse(json_array[i], array[i],
+              std::forward<AdditionalInfo>(additional_info));
       } catch (...) {
         impl::parsingLippincott(
             fmt::format("{} at index {}", type_id<array_t>().name(), i));
@@ -350,10 +364,11 @@ void deserializeValue(
 
 namespace impl {
 
-template <typename MapT, typename Encoding, typename JSONAllocator>
+template <typename MapT, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
 void deserializeMapImpl(
     rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    MapT &map) {
+    MapT &map, AdditionalInfo &&additional_info) {
 
   using map_t = MapT;
   using value_t = typename map_t::mapped_type;
@@ -373,8 +388,10 @@ void deserializeMapImpl(
       value_t value{};
 
       try {
-        deserializeValue(json_member.name, key);
-        deserializeValue(json_member.value, value);
+        parse(json_member.name, key,
+              std::forward<AdditionalInfo>(additional_info));
+        parse(json_member.value, value,
+              std::forward<AdditionalInfo>(additional_info));
       } catch (...) {
         impl::parsingLippincott(fmt::format(
             "{} at key {}", type_id<map_t>().name(), type_id<key_t>().name()));
@@ -391,44 +408,51 @@ void deserializeMapImpl(
 } // namespace impl
 
 template <typename Key, typename T, typename Hash, typename KeyEqual,
-          typename Allocator, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::unordered_map<Key, T, Hash, KeyEqual, Allocator> &map) {
+          typename Allocator, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::unordered_map<Key, T, Hash, KeyEqual, Allocator> &map,
+           AdditionalInfo &&additional_info) {
 
-  impl::deserializeMapImpl(json_value, map);
+  impl::deserializeMapImpl(json_value, map,
+                           std::forward<AdditionalInfo>(additional_info));
 }
 
 template <typename Key, typename T, typename Hash, typename KeyEqual,
-          typename Allocator, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::unordered_multimap<Key, T, Hash, KeyEqual, Allocator> &map) {
-  impl::deserializeMapImpl(json_value, map);
+          typename Allocator, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::unordered_multimap<Key, T, Hash, KeyEqual, Allocator> &map,
+           AdditionalInfo &&additional_info) {
+  impl::deserializeMapImpl(json_value, map,
+                           std::forward<AdditionalInfo>(additional_info));
 }
 
 template <typename Key, typename T, typename Compare, typename Allocator,
-          typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::map<Key, T, Compare, Allocator> &map) {
-  impl::deserializeMapImpl(json_value, map);
+          typename Encoding, typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::map<Key, T, Compare, Allocator> &map,
+           AdditionalInfo &&additional_info) {
+  impl::deserializeMapImpl(json_value, map,
+                           std::forward<AdditionalInfo>(additional_info));
 }
 
 template <typename Key, typename T, typename Compare, typename Allocator,
-          typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::multimap<Key, T, Compare, Allocator> &map) {
-  impl::deserializeMapImpl(json_value, map);
+          typename Encoding, typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::multimap<Key, T, Compare, Allocator> &map,
+           AdditionalInfo &&additional_info) {
+  impl::deserializeMapImpl(json_value, map,
+                           std::forward<AdditionalInfo>(additional_info));
 }
 
 namespace impl {
 
-template <typename Tuple, typename Encoding, typename JSONAllocator>
+template <typename Tuple, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
 void deserializeTupleImpl(
     rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Tuple &tuple) {
+    Tuple &tuple, AdditionalInfo &&additional_info) {
   using tuple_t = Tuple;
   static constexpr std::size_t tuple_size = CxxPlugins::tuple_size_v<tuple_t>;
   static constexpr std::array<std::size_t, tuple_size> index_array =
@@ -447,9 +471,11 @@ void deserializeTupleImpl(
                       json_array.Size(), type_id<tuple_t>().name()));
     }
     tupleForEach(
-        [&json_array](auto &tuple_val, std::size_t const index) {
+        [&json_array, &additional_info](auto &tuple_val,
+                                        std::size_t const index) {
           try {
-            deserializeValue(json_array[index], tuple_val);
+            parse(json_array[index], tuple_val,
+                  std::forward<AdditionalInfo>(additional_info));
           } catch (...) {
             impl::parsingLippincott(fmt::format(
                 "{} at index {}", type_id<tuple_t>().name(), index));
@@ -467,92 +493,82 @@ void deserializeTupleImpl(
 
 } // namespace impl
 
-template <typename... Ts, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    Tuple<Ts...> &tuple) {
-  impl::deserializeTupleImpl(json_value, tuple);
+template <typename... Ts, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Tuple<Ts...> &tuple, AdditionalInfo &&additional_info) {
+  impl::deserializeTupleImpl(json_value, tuple,
+                             std::forward<AdditionalInfo>(additional_info));
 }
 
-template <typename... Ts, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::tuple<Ts...> &tuple) {
-  impl::deserializeTupleImpl(json_value, tuple);
+template <typename... Ts, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::tuple<Ts...> &tuple, AdditionalInfo &&additional_info) {
+  impl::deserializeTupleImpl(json_value, tuple,
+                             std::forward<AdditionalInfo>(additional_info));
 }
 
-template <typename T, typename Encoding, typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    std::optional<T> &optional_value) {
+template <typename T, typename Encoding, typename JSONAllocator,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           std::optional<T> &optional_value, AdditionalInfo &&additional_info) {
   if (json_value.IsNull()) {
-    optional_value.reset();
+    optional_value = std::nullopt;
   } else {
     if (!optional_value.has_value()) {
       optional_value.emplace();
     }
-    deserializeValue(json_value, optional_value.value());
+    parse(json_value, optional_value.value(),
+          std::forward<AdditionalInfo>(additional_info));
   }
 }
 
 template <typename... Keys, typename... Values, typename Encoding,
-          typename JSONAllocator>
-void deserializeValue(
-    rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-    CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map) {
+          typename JSONAllocator, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map,
+           AdditionalInfo &&additional_info) {
 
   using map_t = CxxPlugins::TupleMap<TaggedValue<Keys, Values>...>;
-  static constexpr std::size_t map_size = CxxPlugins::tuple_size_v<map_t>;
 
   using json_value_t = rapidjson::GenericValue<Encoding, JSONAllocator>;
   using json_object_t = typename json_value_t::ConstObject;
 
-  if (json_value.IsObject()) {
-
-    json_object_t const &json_object = json_value.GetObject();
-    static const std::array<char const *, sizeof...(Keys)> key_names = {
-        type_id<Keys>().name()...};
-
-    static constexpr bool has_optionals = (is_optional_v<Values> || ...);
-    if constexpr (!has_optionals) {
-      if (json_object.MemberCount() != map_size) {
-        throw ObjectSizeMismatch(
-            fmt::format("Size of json object({}) doesn't match size of {}.",
-                        json_object.MemberCount(), type_id<map_t>().name()));
-      }
-    }
-
-    tupleForEach(
-        [&json_object](auto &tuple_val, char const *key_name_p) {
-          auto iter = json_object.FindMember(key_name_p);
-
-          if (iter == json_object.end()) {
-            if constexpr (is_optional_v<std::decay_t<decltype(tuple_val)>>) {
-              tuple_val = std::nullopt;
-            } else {
-              throw ObjectMemberMissing(
-                  fmt::format("Couldn't find member {} for {}", key_name_p,
-                              type_id<map_t>().name()));
-            }
-          } else {
-            try {
-              deserializeValue(iter->value, tuple_val);
-            } catch (...) {
-              impl::parsingLippincott(fmt::format(
-                  "{} at key {}", type_id<map_t>().name(), key_name_p));
-            }
-          }
-        },
-        map, key_names);
-
-  } else {
+  if (!json_value.IsObject())
     throw TypeMismatch(fmt::format(
         "Failed to get type '{}'. JSON value has following type flags: "
         "{}.(Note: TupleMap should be represented as Object in json)",
         type_id<map_t>().name(), getTypeFlagsAsString(json_value)));
-  }
-}
 
-} // namespace JSON
+  json_object_t const &json_object = json_value.GetObject();
+
+  tupleForEach(
+      [&json_object, &additional_info](auto &tagged_member) {
+        using TaggedMemberType = std::decay_t<decltype(tagged_member)>;
+        using TagType = typename TaggedMemberType::TagType;
+        using ValueType = typename TaggedMemberType::ValueType;
+
+        auto iter = json_object.FindMember(json_name_v<TagType>);
+
+        if (iter == json_object.end()) {
+          if constexpr (!impl::is_optional_v<ValueType> &&
+                        !impl::is_pointer_v<ValueType>) {
+            throw ObjectMemberMissing(
+                fmt::format("Couldn't find member {} for {}",
+                            json_name_v<TagType>, type_id<map_t>().name()));
+          }
+        } else {
+          try {
+            parse(iter->value, tagged_member.value_m,
+                  std::forward<AdditionalInfo>(additional_info));
+          } catch (...) {
+            impl::parsingLippincott(fmt::format(
+                "{} at key {}", type_id<map_t>().name(), json_name_v<TagType>));
+          }
+        }
+      },
+      map);
+}
 
 } // namespace CxxPlugins

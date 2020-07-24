@@ -1,6 +1,6 @@
 option(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(COMMON_NIX_FLAGS
-  "-Weffc++ -Wall -Wextra -pedantic"
+  "-Weffc++ -Wall -Wextra -pedantic -Wmissing-prototypes"
 )
 set(CMAKE_CXX_STANDARD 17)
 

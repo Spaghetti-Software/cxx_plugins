@@ -51,7 +51,6 @@ conan_basic_setup(TARGETS)
 
 target_sources(${This}
         PRIVATE
-        src/cxx_plugins.cpp
         src/polymorphic_allocator.cpp
         src/parser.cpp
 
@@ -106,6 +105,7 @@ target_include_directories(${This} PRIVATE src)
 target_link_libraries(${This} PUBLIC CONAN_PKG::boost CONAN_PKG::rapidjson CONAN_PKG::fmt)
 target_link_libraries(${This} PRIVATE Threads::Threads)
 
+
 # We determine dev / no dev by checking if tests are enabled
 # We need different configurations, so warnings from our library
 # are not seen from users compilation
@@ -115,6 +115,8 @@ else ()
     target_include_directories(${This} INTERFACE SYSTEM include)
     target_include_directories(${This} PRIVATE include)
 endif ()
+
+add_subdirectory(example)
 
 
 if (CXX_PLUGINS_BUILD_TESTS)

@@ -13,588 +13,239 @@
  */
 #pragma once
 
-#include "cxx_plugins/overload_set.hpp"
-#include "cxx_plugins/plugin.hpp"
-#include "cxx_plugins/type_index.hpp"
+#include "cxx_plugins/function_traits.hpp"
+#include "cxx_plugins/parser.hpp"
+#include "cxx_plugins/polymorphic_allocator.hpp"
 
-#include <fmt/format.h>
+#include <boost/dll.hpp>
+#include <boost/dll/shared_library_load_mode.hpp>
 #include <rapidjson/document.h>
-
-#include <fstream>
-
-struct declaration_name {};
+#include <rapidjson/rapidjson.h>
 
 namespace CxxPlugins {
 
-class ValidationError : public std::runtime_error {
-public:
-  using std::runtime_error::runtime_error;
+struct Library {
+  boost::dll::shared_library library_m;
+  std::filesystem::path config_path_m = ".";
+
+  operator boost::dll::shared_library &() noexcept { return library_m; }
+  operator boost::dll::shared_library const &() const noexcept {
+    return library_m;
+  }
 };
 
-class MissingValueError : public ValidationError {
-public:
-  using ValidationError::ValidationError;
+struct SharedLibrary {};
+template <> struct JsonName<SharedLibrary> {
+  static constexpr char const *value = "shared_library";
 };
 
-class NullValueError : public ValidationError {
-  using ValidationError::ValidationError;
+struct Config {};
+template <> struct JsonName<Config> {
+  static constexpr char const *value = "configuration";
+};
+struct Members {};
+template <> struct JsonName<Members> {
+  static constexpr char const *value = "members";
 };
 
-struct JsonMissing {};
-struct JsonNull {};
-
-template <typename T> constexpr void ignoreValue(T & /*unused*/) {}
-
-template <typename T>
-constexpr void ignoreMissing(T & /*unused*/, JsonMissing /*unused*/) {}
-
-template <typename T>
-constexpr void ignoreNull(T & /*unused*/, JsonNull /*unused*/) {}
-
-template <typename Callable, typename T>
-constexpr bool is_value_validator_v =
-    std::conditional_t<std::is_invocable_r_v<void, Callable, T &>,
-                       std::true_type, std::false_type>::value;
-
-template <typename Callable, typename T>
-constexpr bool is_missing_validator_v =
-    std::conditional_t<std::is_invocable_r_v<void, Callable, T &, JsonMissing>,
-                       std::true_type, std::false_type>::value;
-
-template <typename Callable, typename T>
-constexpr bool is_null_validator_v =
-    std::conditional_t<std::is_invocable_r_v<void, Callable, T &, JsonNull>,
-                       std::true_type, std::false_type>::value;
-
-template <typename T> constexpr bool is_field_v = is_tagged_value_v<T>;
-
-template <typename Callable, typename T>
-constexpr bool is_validator_v = is_value_validator_v<Callable, T>
-    &&is_missing_validator_v<Callable, T> &&is_null_validator_v<Callable, T>;
-
-template <typename ValueValidator, typename MissingValidator,
-          typename NullValidator>
-constexpr auto makeValidator(ValueValidator &&value_validator,
-                             MissingValidator &&missing_validator,
-                             NullValidator &&null_validator) {
-  return makeOverloadSet(std::forward<ValueValidator>(value_validator),
-                         std::forward<MissingValidator>(missing_validator),
-                         std::forward<NullValidator>(null_validator));
-}
-
-inline char const *const missing_message_format =
-    R"fmt(Missing required value '{}'.)fmt";
-inline char const *const null_message_format =
-    R"fmt(Null for required value '{}'.)fmt";
-
-template <typename T, typename MessageType>
-auto createThrowingOnMissing(MessageType message) {
-  return [message](T & /*unused*/, JsonMissing /*unused*/) {
-    throw MissingValueError(message);
-  };
-}
-
-template <typename T, typename MessageType>
-auto createThrowingOnNull(MessageType message) {
-  return [message](T & /*unused*/, JsonNull /*unused*/) {
-    throw NullValueError(message);
-  };
-}
-
-template <typename... Members>
-constexpr auto makePluginDescriptor(Members &&... members) {
-  return makeTupleMap(std::forward<Members>(members)...);
-}
-
-////////////////////////////////////////////////////////////////////
-//// CREATION OF FIELDS
-////////////////////////////////////////////////////////////////////
-
-template <typename FieldName, typename FieldType, typename Validator>
-constexpr auto makeField(Validator &&validator) {
-  static_assert(is_validator_v<std::decay_t<Validator>, FieldType>,
-                "Validator is not valid.");
-  return makeTaggedValue<FieldName>(
-      makeTaggedValue<FieldType>(std::forward<Validator>(validator)));
-}
-
-template <typename FieldName, typename FieldType, typename ValueValidator,
-          typename MissingValidator, typename NullValidator>
-constexpr auto makeField(ValueValidator &&value_validator,
-                         MissingValidator &&missing_validator,
-                         NullValidator &&null_validator) {
-  static_assert(is_value_validator_v<std::decay_t<ValueValidator>, FieldType>,
-                "Value validator is not valid.");
-  static_assert(
-      is_missing_validator_v<std::decay_t<MissingValidator>, FieldType>,
-      "Missing validator is not valid");
-  static_assert(is_null_validator_v<std::decay_t<NullValidator>, FieldType>,
-                "Null validator is not valid");
-
-  return makeField<FieldName, FieldType>(
-      makeValidator(std::forward<ValueValidator>(value_validator),
-                    std::forward<MissingValidator>(missing_validator),
-                    std::forward<NullValidator>(null_validator)));
-}
-
-template <typename FieldName, typename FieldType,
-          typename ValueValidator = decltype(ignoreValue<FieldType>)>
-constexpr auto
-makeRequiredField(ValueValidator &&value_validator = ignoreValue<FieldType>) {
-  return makeField<FieldName, FieldType>(
-      std::forward<ValueValidator>(value_validator),
-      createThrowingOnMissing<FieldType>(fmt::format(
-          missing_message_format, type_id<FieldName>().pretty_name())),
-      createThrowingOnNull<FieldType>(fmt::format(
-          null_message_format, type_id<FieldName>().pretty_name())));
-}
-
-template <typename FieldName, typename FieldType,
-          typename ValueValidator = decltype(ignoreValue<FieldType>),
-          typename NullValidator = decltype(ignoreNull<FieldType>)>
-constexpr auto makeRequiredNullableField(
-    ValueValidator &&value_validator = ignoreValue<FieldType>,
-    NullValidator &&null_validator = ignoreNull<FieldType>) {
-  return makeField<FieldName, FieldType>(
-      std::forward<ValueValidator>(value_validator),
-      createThrowingOnMissing<FieldType>(fmt::format(
-          missing_message_format, type_id<FieldName>().pretty_name())),
-      std::forward<NullValidator>(null_validator));
-}
-
-template <typename FieldName, typename FieldType,
-          typename ValueValidator = decltype(ignoreValue<FieldType>),
-          typename MissingValidator = decltype(ignoreMissing<FieldType>),
-          typename NullValidator = decltype(ignoreNull<FieldType>)>
-constexpr auto makeOptionalField(
-    ValueValidator &&value_validator = ignoreValue<FieldType>,
-    MissingValidator &&missing_validator = ignoreMissing<FieldType>,
-    NullValidator &&null_validator = ignoreNull<FieldType>) {
-  return makeField<FieldName, FieldType>(
-      std::forward<ValueValidator>(value_validator),
-      std::forward<MissingValidator>(missing_validator),
-      std::forward<NullValidator>(null_validator));
-}
-
-template <typename FieldName, typename FieldType,
-          typename ValueValidator = decltype(ignoreValue<FieldType>),
-          typename MissingValidator = decltype(ignoreMissing<FieldType>)>
-constexpr auto makeOptionalNonNullableField(
-    ValueValidator &&value_validator = ignoreValue<FieldType>,
-    MissingValidator &&missing_validator = ignoreMissing<FieldType>) {
-  return makeField<FieldName, FieldType>(
-      std::forward<ValueValidator>(value_validator),
-      std::forward<MissingValidator>(missing_validator),
-      createThrowingOnNull<FieldType>(fmt::format(
-          null_message_format, type_id<FieldName>().pretty_name())));
-}
-
-////////////////////////////////////////////////////////////////////
-//// CREATION OF SECTIONS
-////////////////////////////////////////////////////////////////////
-template <typename... Members> struct SectionResult {
-  //! \todo Change this type to real type of section
-  using Type =
-      decltype(makeTupleMap(std::forward<Members>(std::declval<Members>())...));
+class ConfigLoadingFailure : public ParsingError {
+  using ParsingError::ParsingError;
+};
+class LibraryLoadingFailure : public ParsingError {
+  using ParsingError::ParsingError;
 };
 
-template <typename... Members>
-using SectionResultT = typename SectionResult<Members...>::Type;
+auto loadLibrary(std::filesystem::path const &lib_path,
+                 std::filesystem::path const &config_path)
+    -> boost::dll::shared_library;
 
-template <typename SectionName, typename MissingValidator,
-          typename NullValidator, typename... Members>
-[[deprecated("(Function is incomplete. Look at todo section)")]] constexpr auto
-makeSection(MissingValidator &&missing_validator,
-            NullValidator &&null_validator, Members &&... members) {
-
-  using Type = decltype(makeTupleMap(std::forward<Members>(members)...));
-
-  return makeField<SectionName, Type>(
-      makeValidator(ignoreValue<SectionResultT<Members...>>,
-                    std::forward<MissingValidator>(missing_validator),
-                    std::forward<NullValidator>(null_validator)));
+template <typename... Fields>
+constexpr auto makeDescriptor(Fields &&... fields) {
+  return makeTupleMap(std::forward<Fields>(fields)...);
 }
 
-template <typename SectionName, typename... Members>
-constexpr auto makeRequiredSection(Members &&... members) {
-  return makeSection<SectionName>(
-      createThrowingOnMissing<SectionResultT<Members...>>(fmt::format(
-          missing_message_format, type_id<SectionName>().pretty_name())),
-      createThrowingOnNull<SectionResultT<Members...>>(fmt::format(
-          null_message_format, type_id<SectionName>().pretty_name())),
-      std::forward<Members>(members)...);
+template <typename Tag, typename T> constexpr auto makeField(T &&value = {}) {
+  return makeTaggedValue<Tag>(std::forward<T>(value));
 }
 
-template <
-    typename SectionName, typename NullValidator, typename... Members,
-    typename = std::enable_if_t<(is_field_v<std::decay_t<Members>> && ...)>,
-    std::enable_if_t<is_null_validator_v<std::decay_t<NullValidator>,
-                                         SectionResultT<Members...>>,
-                     int> = 0>
-constexpr auto makeRequiredNullableSection(NullValidator &&null_validator,
-                                           Members &&... members) {
-  return makeSection<SectionName>(
-      createThrowingOnMissing<SectionResultT<Members...>>(fmt::format(
-          missing_message_format, type_id<SectionName>().pretty_name())),
-      std::forward<NullValidator>(null_validator),
-      std::forward<Members>(members)...);
+template <typename Tag, typename... ChildFields>
+constexpr auto makeSection(ChildFields &&... fields) {
+  return makeTaggedValue<Tag>(
+      makeTupleMap(std::forward<ChildFields>(fields)...));
 }
 
-template <typename SectionName> constexpr auto makeRequiredNullableSection() {
-  return makeRequiredNullableSection<SectionName>(ignoreNull<SectionResultT<>>);
+template <typename Tag, typename T,
+          typename Allocator = PolymorphicAllocator<T>>
+constexpr auto makeList(std::vector<T, Allocator> const &vec) {
+  return makeField<Tag, std::vector<T, Allocator>>(vec);
 }
 
-template <
-    typename SectionName, typename FirstMember, typename... RestMembers,
-    typename = std::enable_if_t<is_field_v<std::decay_t<FirstMember>> &&
-                                (is_field_v<std::decay_t<RestMembers>> && ...)>,
-    std::enable_if_t<
-        is_null_validator_v<std::decay_t<FirstMember>,
-                            SectionResultT<FirstMember, RestMembers...>>,
-        unsigned> = 0>
-constexpr auto makeRequiredNullableSection(FirstMember &&first,
-                                           RestMembers &&... rest) {
-  return makeRequiredNullableSection<SectionName>(
-      ignoreNull<SectionResultT<FirstMember, RestMembers...>>,
-      std::forward<FirstMember>(first), std::forward<RestMembers>(rest)...);
+template <typename Tag, typename T,
+          typename Allocator = PolymorphicAllocator<T>>
+constexpr auto makeList(std::vector<T, Allocator> &&vec = {}) {
+  return makeField<Tag, std::vector<T, Allocator>>(std::move(vec));
 }
 
-template <
-    typename SectionName, typename MissingValidator, typename NullValidator,
-    typename... Members,
-    typename = std::enable_if_t<(is_field_v<std::decay_t<Members>> && ...)>,
-    std::enable_if_t<is_missing_validator_v<std::decay_t<MissingValidator>,
-                                            SectionResultT<Members...>>,
-                     int> = 0,
-    std::enable_if_t<is_null_validator_v<std::decay_t<NullValidator>,
-                                         SectionResultT<Members...>>,
-                     int> = 0>
-constexpr auto makeOptionalSection(MissingValidator &&missing_validator,
-                                   NullValidator &&null_validator,
-                                   Members &&... members) {
-  return makeSection<SectionName>(
-      std::forward<MissingValidator>(missing_validator),
-      std::forward<NullValidator>(null_validator),
-      std::forward<Members>(members)...);
-}
-
-template <
-    typename SectionName, typename MissingValidator,
-    std::enable_if_t<is_missing_validator_v<std::decay_t<MissingValidator>,
-                                            SectionResultT<>>,
-                     int> = 0>
-constexpr auto makeOptionalSection(MissingValidator &&missing_validator) {
-  return makeOptionalSection<SectionName>(
-      std::forward<MissingValidator>(missing_validator),
-      ignoreNull<SectionResultT<>>);
-}
-
-template <typename SectionName, typename NullValidator,
-          std::enable_if_t<is_null_validator_v<std::decay_t<NullValidator>,
-                                               SectionResultT<>>,
-                           int> = 0>
-constexpr auto makeOptionalSection(NullValidator &&null_validator) {
-  return makeOptionalSection<SectionName>(
-      ignoreMissing<SectionResultT<>>,
-      std::forward<NullValidator>(null_validator));
-}
-
-template <typename SectionName> constexpr auto makeOptionalSection() {
-  return makeOptionalSection<SectionName>(ignoreMissing<SectionResultT<>>,
-                                          ignoreNull<SectionResultT<>>);
-}
-
-template <
-    typename SectionName, typename FirstMember, typename... RestMembers,
-    typename = std::enable_if_t<is_field_v<std::decay_t<FirstMember>> &&
-                                (is_field_v<std::decay_t<RestMembers>> && ...)>,
-    std::enable_if_t<!is_missing_validator_v<std::decay_t<FirstMember>,
-                                             SectionResultT<RestMembers...>>,
-                     unsigned> = 0,
-    std::enable_if_t<!is_null_validator_v<std::decay_t<FirstMember>,
-                                          SectionResultT<RestMembers...>>,
-                     unsigned> = 0>
-constexpr auto makeOptionalSection(FirstMember &&first,
-                                   RestMembers &&... rest) {
-  return makeOptionalSection<SectionName>(
-      ignoreMissing<SectionResultT<FirstMember, RestMembers...>>,
-      ignoreNull<SectionResultT<FirstMember, RestMembers...>>,
-      std::forward<FirstMember>(first), std::forward<RestMembers>(rest)...);
-}
-
-template <
-    typename SectionName, typename MissingValidator, typename FirstMember,
-    typename... RestMembers,
-    typename = std::enable_if_t<is_field_v<std::decay_t<FirstMember>> &&
-                                (is_field_v<std::decay_t<RestMembers>> && ...)>,
-    std::enable_if_t<
-        is_missing_validator_v<std::decay_t<MissingValidator>,
-                               SectionResultT<FirstMember, RestMembers...>>,
-        int> = 0,
-    std::enable_if_t<!is_null_validator_v<std::decay_t<FirstMember>,
-                                          SectionResultT<RestMembers...>>,
-                     unsigned> = 0>
-constexpr auto makeOptionalSection(MissingValidator &&missing_validator,
-                                   FirstMember &&first,
-                                   RestMembers &&... rest) {
-  return makeOptionalSection<SectionName>(
-      std::forward<MissingValidator>(missing_validator),
-      ignoreNull<SectionResultT<FirstMember, RestMembers...>>,
-      std::forward<FirstMember>(first), std::forward<RestMembers>(rest)...);
-}
-
-template <
-    typename SectionName, typename NullValidator, typename FirstMember,
-    typename... RestMembers,
-    typename = std::enable_if_t<is_field_v<std::decay_t<FirstMember>> &&
-                                (is_field_v<std::decay_t<RestMembers>> && ...)>,
-    std::enable_if_t<
-        is_null_validator_v<std::decay_t<NullValidator>,
-                            SectionResultT<FirstMember, RestMembers...>>,
-        int> = 0>
-constexpr auto makeOptionalSection(NullValidator &&null_validator,
-                                   FirstMember &&first,
-                                   RestMembers &&... rest) {
-  return makeOptionalSection<SectionName>(
-      ignoreMissing<SectionResultT<FirstMember, RestMembers...>>,
-      std::forward<NullValidator>(null_validator),
-      std::forward<FirstMember>(first), std::forward<RestMembers>(rest)...);
-}
-
-template <
-    typename SectionName, typename MissingValidator, typename... Members,
-    typename = std::enable_if_t<(is_field_v<std::decay_t<Members>> && ...)>,
-    std::enable_if_t<is_missing_validator_v<std::decay_t<MissingValidator>,
-                                            SectionResultT<Members...>>,
-                     int> = 0>
-constexpr auto
-makeOptionalNonNullableSection(MissingValidator &&missing_validator,
-                               Members &&... members) {
-  return makeSection<SectionName>(
-      std::forward<MissingValidator>(missing_validator),
-      createThrowingOnNull<SectionResultT<Members...>>(fmt::format(
-          null_message_format, type_id<SectionName>().pretty_name())),
-      std::forward<Members>(members)...);
-}
-
-template <typename SectionName>
-constexpr auto makeOptionalNonNullableSection() {
-  return makeOptionalNonNullableSection<SectionName>(
-      ignoreMissing<SectionResultT<>>);
-}
-
-template <
-    typename SectionName, typename FirstMember, typename... RestMembers,
-    typename = std::enable_if_t<is_field_v<std::decay_t<FirstMember>> &&
-                                (is_field_v<std::decay_t<RestMembers>> && ...)>,
-    std::enable_if_t<!is_missing_validator_v<std::decay_t<FirstMember>,
-                                             SectionResultT<RestMembers...>>,
-                     unsigned> = 0>
-constexpr auto makeOptionalNonNullableSection(FirstMember &&first,
-                                              RestMembers &&... rest) {
-  return makeOptionalNonNullableSection<SectionName>(
-      ignoreMissing<SectionResultT<FirstMember, RestMembers...>>,
-      std::forward<FirstMember>(first), std::forward<RestMembers>(rest)...);
-}
-
-////////////////////////////////////////////////////////////////////
-//// CREATION OF FUNCTIONS
-////////////////////////////////////////////////////////////////////
-
-template <typename FunctionName, typename FunctionSignature,
-          typename... AdditionalFields>
-constexpr auto makeRequiredFunction(AdditionalFields &&... additional_fields) {
-  static_assert(std::is_function_v<FunctionSignature>,
-                "Should be a function signature.");
-  return makeRequiredSection<FunctionName>(
-      makeRequiredField<declaration_name,
-                        utility::FunctionPointer<FunctionSignature>>(),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <typename FunctionName, typename FunctionSignature,
-          typename... AdditionalFields>
-constexpr auto
-makeNullableRequiredFunction(AdditionalFields &&... additional_fields) {
-  static_assert(std::is_function_v<FunctionSignature>,
-                "Should be a function signature.");
-  return makeRequiredNullableSection<FunctionName>(
-      makeRequiredField<declaration_name,
-                        utility::FunctionPointer<FunctionSignature>>(),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <typename FunctionName, typename FunctionSignature,
-          typename... AdditionalFields>
-constexpr auto makeOptionalFunction(AdditionalFields &&... additional_fields) {
-  static_assert(std::is_function_v<FunctionSignature>,
-                "Should be a function signature.");
-  return makeOptionalSection<FunctionName>(
-      makeRequiredField<declaration_name,
-                        utility::FunctionPointer<FunctionSignature>>(),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <typename FunctionName, typename FunctionSignature,
-          typename... AdditionalFields>
-constexpr auto
-makeOptionalNonNullableFunction(AdditionalFields &&... additional_fields) {
-  static_assert(std::is_function_v<FunctionSignature>,
-                "Should be a function signature.");
-  return makeOptionalNonNullableSection<FunctionName>(
-      makeRequiredField<declaration_name,
-                        utility::FunctionPointer<FunctionSignature>>(),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-////////////////////////////////////////////////////////////////////
-//// CREATION OF VARIABLES
-////////////////////////////////////////////////////////////////////
-
-template <
-    typename VariableName, typename VariableType,
-    typename ValuePointerValidator = decltype(ignoreValue<VariableType *>),
-    typename... AdditionalFields>
-constexpr auto makeRequiredVariable(ValuePointerValidator &&value_ptr_validator,
-                                    AdditionalFields &&... additional_fields) {
-  return makeRequiredSection<VariableName>(
-      makeRequiredField<declaration_name, VariableType *>(
-          std::forward<ValuePointerValidator>(value_ptr_validator)),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <
-    typename VariableName, typename VariableType,
-    typename ValuePointerValidator = decltype(ignoreValue<VariableType *>),
-    typename NullValidator = decltype(ignoreNull<VariableType *>),
-    typename... AdditionalFields>
-constexpr auto makeRequiredNullableVariable(
-    ValuePointerValidator &&value_ptr_validator = ignoreValue<VariableType *>,
-    NullValidator &&null_validator = ignoreNull<VariableType *>,
-    AdditionalFields &&... additional_fields) {
-  return makeRequiredNullableSection<VariableName>(
-      makeRequiredField<declaration_name, VariableType *>(
-          std::forward<ValuePointerValidator>(value_ptr_validator)),
-      std::forward<NullValidator>(null_validator),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <
-    typename VariableName, typename VariableType,
-    typename ValuePointerValidator = decltype(ignoreValue<VariableType *>),
-    typename MissingValidator = decltype(ignoreMissing<VariableType *>),
-    typename NullValidator = decltype(ignoreNull<VariableType *>),
-    typename... AdditionalFields>
-constexpr auto makeOptionalVariable(
-    ValuePointerValidator &&value_ptr_validator = ignoreValue<VariableType *>,
-    MissingValidator &&missing_validator = ignoreMissing<VariableType *>,
-    NullValidator &&null_validator = ignoreNull<VariableType *>,
-    AdditionalFields &&... additional_fields) {
-  return makeOptionalSection<VariableName>(
-      makeRequiredField<declaration_name, VariableType *>(value_ptr_validator),
-      std::forward<MissingValidator>(missing_validator),
-      std::forward<NullValidator>(null_validator),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-template <
-    typename VariableName, typename VariableType,
-    typename ValuePointerValidator = decltype(ignoreValue<VariableType *>),
-    typename MissingValidator = decltype(ignoreMissing<VariableType *>),
-    typename... AdditionalFields>
-constexpr auto makeOptionalNonNullableVariable(
-    ValuePointerValidator &&value_ptr_validator = ignoreValue<VariableType *>,
-    MissingValidator &&missing_validator = ignoreMissing<VariableType *>,
-    AdditionalFields &&... additional_fields) {
-  return makeOptionalNonNullableSection<VariableName>(
-      makeRequiredField<declaration_name, VariableType *>(value_ptr_validator),
-      std::forward<MissingValidator>(missing_validator),
-      std::forward<AdditionalFields>(additional_fields)...);
-}
-
-namespace impl {
-
-template <typename T> struct FieldUnroller;
-
-template <typename T> using FieldUnrollerT = typename FieldUnroller<T>::Type;
-
-template <typename FieldName, typename FieldType, typename Validator>
-struct FieldUnroller<
-    TaggedValue<FieldName, TaggedValue<FieldType, Validator>>> {
-  using Type = TaggedValue<FieldName, FieldType>;
-};
-
-template <typename FieldName, typename... FieldTypeTaggedVals,
-          typename Validator>
-struct FieldUnroller<TaggedValue<
-    FieldName, TaggedValue<TupleMap<FieldTypeTaggedVals...>, Validator>>> {
-  using Type =
-      TaggedValue<FieldName, TupleMap<FieldUnrollerT<FieldTypeTaggedVals>...>>;
-};
-
-} // namespace impl
-
-template <typename T> struct PluginFromLoader;
-
-template <typename... TaggedVals>
-struct PluginFromLoader<TupleMap<TaggedVals...>> {
-  using Type = TupleMap<impl::FieldUnrollerT<TaggedVals>...>;
-};
-
-template <typename T>
-using PluginFromLoaderT = typename PluginFromLoader<T>::Type;
-
-template <typename Key, typename ValueT, typename Validator>
-void deserializeRecursive(rapidjson::Document::Object const &json_parent,
-                          ValueT &value, Validator &validator) {
-  std::cerr << fmt::format(R"(Can't deserialize type '{}')",
-                           type_id<ValueT>().name()) << '\n';
-}
-
-
-template <typename Key, typename Validator>
-void deserializeRecursive(rapidjson::Document::Object const &json_parent,
-                          std::string &str, Validator &validator) {
-  rapidjson::Document::MemberIterator iter = json_parent.FindMember(type_id<Key>().name());
-  if (iter == json_parent.end()) {
-    validator(str, JsonMissing{});
-  } else if (iter->value.IsNull()) {
-    validator(str, JsonNull{});
+template <typename TagT, typename T> constexpr auto makeVariable() {
+  if constexpr (std::is_function_v<T>) {
+    return makeField<TagT, T **>();
   } else {
-    validator(str);
+    return makeField<TagT, T *>();
+  }
+}
+template <typename TagT, typename T> constexpr auto makeVariableList() {
+  if constexpr (std::is_function_v<T>) {
+    return makeField<TagT, T **>();
+  } else {
+    return makeList<TagT, T *>();
   }
 }
 
-template <typename... FieldKeys, typename... FieldValues,
-          typename... FieldValidators>
-auto deserialize(
-    rapidjson::Document::Object const &json_obj,
-    TupleMap<TaggedValue<FieldKeys,
-                         TaggedValue<FieldValues, FieldValidators>>...> const
-        &loader) {
-
-  PluginFromLoaderT<TupleMap<
-      TaggedValue<FieldKeys, TaggedValue<FieldValues, FieldValidators>>...>>
-      plugin{};
-
-  Tuple<FieldKeys...> keys{};
-
-  tupleForEach(
-      [&json_obj](auto &plugin_member, auto const &loader_member,
-                  auto const &key) {
-        deserializeRecursive<std::decay_t<decltype(key)>>(
-            json_obj, plugin_member, loader_member.value_m);
-      },
-      plugin, loader, keys);
-  return plugin;
+template <typename TagT, typename Signature> constexpr auto makeFunction() {
+  return makeField<TagT, Signature *>();
+}
+template <typename TagT, typename Signature> constexpr auto makeFunctionList() {
+  return makeList<TagT, Signature *>();
 }
 
-template <typename Loader>
-auto loadPluginFromString(char const *configuration, Loader const &loader) {
-  rapidjson::Document document;
-  document.Parse(configuration);
+template <typename ConfigType, typename MembersType>
+constexpr auto makePlugin(ConfigType &&default_config,
+                          MembersType &&default_members) {
+  return makeTupleMap(
+      makeField<SharedLibrary>(Library{}),
+      makeField<Config>(std::forward<ConfigType>(default_config)),
+      makeField<Members>(std::forward<MembersType>(default_members)));
+}
 
-  return deserialize(document.GetObject(), loader);
+template <typename... Fields> constexpr auto makeConfig(Fields &&... fields) {
+  return makeTupleMap(std::forward<Fields>(fields)...);
+}
+
+template <typename... Fields> constexpr auto makeMembers(Fields &&... fields) {
+  return makeTupleMap(std::forward<Fields>(fields)...);
+}
+
+template <typename Encoding, typename JSONAllocator, typename Return,
+          typename... Args, typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           Return (*&fn_ptr)(Args...), AdditionalInfo &&additional_info) {
+  if (json_value.IsNull()) {
+    fn_ptr = nullptr;
+    return;
+  }
+
+  if (!json_value.IsString()) {
+    throw TypeMismatch(fmt::format(
+        "Failed to get function pointer '{}'. Should be a string in JSON.",
+        type_id<Return (*)(Args...)>().name()));
+  }
+
+  auto const *json_name = json_value.GetString();
+
+  boost::dll::shared_library const &lib =
+      get<SharedLibrary>(std::forward<AdditionalInfo>(additional_info));
+
+  fn_ptr = lib.get<Return(Args...)>(json_name);
+}
+
+template <typename Encoding, typename JSONAllocator, typename T,
+          typename AdditionalInfo>
+void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
+           T *&variable_ptr, AdditionalInfo &&additional_info) {
+  if (json_value.IsNull()) {
+    variable_ptr = nullptr;
+    return;
+  }
+
+  if (!json_value.IsString()) {
+    throw TypeMismatch(fmt::format(
+        "Failed to get pointer to variable '{}'. Should be a string in JSON.",
+        type_id<T>().name()));
+  }
+
+  auto const *json_name = json_value.GetString();
+
+  boost::dll::shared_library const &lib =
+      get<SharedLibrary>(std::forward<AdditionalInfo>(additional_info));
+
+  variable_ptr = &lib.get<T>(json_name);
+}
+
+template <typename AdditionalInfo = void *>
+void parse(rapidjson::Value const &value, Library &lib,
+           [[maybe_unused]] AdditionalInfo &&additional_info = nullptr) {
+  if (value.IsNull()) {
+    lib.library_m.load(boost::dll::program_location());
+    return;
+  }
+  if (!value.IsString()) {
+    throw TypeMismatch{
+        fmt::format("Failed to get library. Should be a string in JSON.")};
+  }
+
+  auto const *lib_path_name = value.GetString();
+  if (lib_path_name == std::string_view(".")) {
+    lib.library_m.load(boost::dll::program_location());
+  }
+
+  std::filesystem::path lib_path = lib.config_path_m;
+  lib_path += "/";
+  lib_path += lib_path_name;
+
+  lib.library_m.load(lib_path.c_str(),
+                     boost::dll::load_mode::append_decorations);
+  if (!lib.library_m.is_loaded()) {
+    throw LibraryLoadingFailure{
+        fmt::format("Failed to load library '{}'.", lib_path.c_str())};
+  }
+}
+
+template <typename PluginT>
+void loadPluginFromString(char const *config_p, PluginT &plugin) {
+  rapidjson::Document document;
+  document.Parse(config_p);
+  parse(document, plugin, plugin);
+}
+
+template <typename PluginT>
+void loadPluginFromString(std::string const &config, PluginT &plugin) {
+  loadPluginFromString(config.c_str(), plugin);
+}
+
+template <typename PluginT>
+void loadPluginFromFile(std::filesystem::path const &file_path, PluginT &plugin) {
+  namespace fs = std::filesystem;
+  if (!fs::exists(file_path)) {
+    throw ConfigLoadingFailure(fmt::format(
+        "Configuration file '{}' doesn't exist.", file_path.c_str()));
+  }
+  if (!fs::is_regular_file(file_path)) {
+    throw ConfigLoadingFailure(fmt::format(
+        "Configuration file '{}' is not a regular file", file_path.c_str()));
+  }
+
+  std::ifstream file(file_path);
+  if (!file.is_open()) {
+    throw ConfigLoadingFailure(fmt::format(
+        "Failed to open configuration file '{}'", file_path.c_str()));
+  }
+
+  std::basic_string<char, std::char_traits<char>, PolymorphicAllocator<char>>
+      data;
+
+  file.seekg(0, std::ios::end);
+  auto end_pos = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  data.reserve(end_pos);
+  data.assign(std::istreambuf_iterator<char>{file},
+              std::istreambuf_iterator<char>{});
+
+  Library& lib = get<SharedLibrary>(plugin).value_m;
+  lib.config_path_m = file_path.parent_path();
+
+  loadPluginFromString(data.c_str(), plugin);
+
 }
 
 } // namespace CxxPlugins
