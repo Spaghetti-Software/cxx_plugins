@@ -196,7 +196,7 @@ void parse(rapidjson::Value const &value, Library &lib,
                      boost::dll::load_mode::append_decorations);
   if (!lib.library_m.is_loaded()) {
     throw LibraryLoadingFailure{
-        fmt::format("Failed to load library '{}'.", lib_path.c_str())};
+        fmt::format("Failed to load library '{}'.", lib_path.string())};
   }
 }
 
@@ -217,17 +217,17 @@ void loadPluginFromFile(std::filesystem::path const &file_path, PluginT &plugin)
   namespace fs = std::filesystem;
   if (!fs::exists(file_path)) {
     throw ConfigLoadingFailure(fmt::format(
-        "Configuration file '{}' doesn't exist.", file_path.c_str()));
+        "Configuration file '{}' doesn't exist.", file_path.string()));
   }
   if (!fs::is_regular_file(file_path)) {
     throw ConfigLoadingFailure(fmt::format(
-        "Configuration file '{}' is not a regular file", file_path.c_str()));
+        "Configuration file '{}' is not a regular file", file_path.string()));
   }
 
   std::ifstream file(file_path);
   if (!file.is_open()) {
     throw ConfigLoadingFailure(fmt::format(
-        "Failed to open configuration file '{}'", file_path.c_str()));
+        "Failed to open configuration file '{}'", file_path.string()));
   }
 
   std::basic_string<char, std::char_traits<char>, PolymorphicAllocator<char>>

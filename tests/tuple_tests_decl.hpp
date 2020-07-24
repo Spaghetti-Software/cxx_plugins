@@ -331,7 +331,7 @@ template <typename T> struct RandomGenerator {
   T operator()() { return distribution_m(random_engine_m); }
 
 private:
-  std::random_device device_m = {};
+  std::random_device device_m;
   std::minstd_rand random_engine_m = std::minstd_rand(device_m());
 
   using type = std::conditional_t<std::is_same_v<T, char>, int, T>;

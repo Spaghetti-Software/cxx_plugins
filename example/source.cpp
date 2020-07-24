@@ -12,6 +12,7 @@
  * $BRIEF$
  */
 
+#define MY_API_INSTANTIATE_TEMPLATES
 #include "api.hpp"
 #include "example_plugin_export.h"
 
@@ -44,12 +45,17 @@ public:
   static void shutdown() { log("Shutdown DebugRenderer\n"); }
 };
 
+
 static GraphicsEngine graphics_engine = {};
 static DebugRenderer debug_renderer = {};
 
-EXPORT auto get_graphics_engine() -> SystemRef { return graphics_engine; }
+auto getGraphicsEngineImpl()->SystemRef {
+  return graphics_engine;
+}
 
-EXPORT auto get_debug_renderer() -> SystemRef { return debug_renderer; }
+extern "C" __declspec(dllexport) auto get_graphics_engine()->SystemRef { return getGraphicsEngineImpl(); }
+
+extern "C" __declspec(dllexport) auto get_debug_renderer() -> SystemRef { return graphics_engine; }
 
 
 

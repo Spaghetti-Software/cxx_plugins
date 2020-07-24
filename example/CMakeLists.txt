@@ -17,14 +17,29 @@ target_include_directories(example_api INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/example_plugin.json"
-  "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/example_plugin.json"
+  "${CMAKE_BINARY_DIR}/lib/example_plugin.json"
   COPYONLY
 )
 add_library(example_plugin SHARED
         source.cpp
         api.hpp
-        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/example_plugin.json"
+        "${CMAKE_BINARY_DIR}/lib/example_plugin.json"
         )
+set_target_properties( example_plugin
+  PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)
+foreach(CONFIG RELEASE DEBUG RELWITHDEBINFO MINSIZEREL)
+  set_target_properties( example_plugin
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY_${CONFIG} "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY_${CONFIG} "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY_${CONFIG} "${CMAKE_BINARY_DIR}/lib"
+  )
+endforeach()
+
 
 target_include_directories(example_plugin
 PRIVATE
