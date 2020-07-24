@@ -102,7 +102,7 @@ target_sources(${This}
 find_package(Threads REQUIRED)
 
 target_include_directories(${This} PRIVATE src)
-target_link_libraries(${This} PUBLIC CONAN_PKG::boost CONAN_PKG::rapidjson CONAN_PKG::fmt)
+target_link_libraries(${This} PUBLIC CONAN_PKG::boost ${CMAKE_DL_LIBS} CONAN_PKG::rapidjson CONAN_PKG::fmt)
 target_link_libraries(${This} PRIVATE Threads::Threads)
 
 

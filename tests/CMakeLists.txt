@@ -35,6 +35,8 @@ target_link_libraries(${This}
     CONAN_PKG::gtest
     cxx_plugins
     example_api
+    example_plugin
+
 )
 
 add_test(

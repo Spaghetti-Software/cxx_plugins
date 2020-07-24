@@ -22,7 +22,8 @@
 
 #define EXPORT extern "C" EXAMPLE_PLUGIN_EXPORT
 
-EXPORT void(*callback_ptr)(char const* str) = nullptr;
+EXPORT void(*callback_ptr)(char const* str);
+void(*callback_ptr)(char const* str) = nullptr;
 
 static void log(char const* message_p) {
   if (callback_ptr != nullptr) {
@@ -49,13 +50,12 @@ public:
 static GraphicsEngine graphics_engine = {};
 static DebugRenderer debug_renderer = {};
 
-auto getGraphicsEngineImpl()->SystemRef {
-  return graphics_engine;
-}
+static inline SystemRef graphics_engine_ref = graphics_engine;
+static inline SystemRef debug_renderer_ref = debug_renderer;
 
-extern "C" __declspec(dllexport) auto get_graphics_engine()->SystemRef { return getGraphicsEngineImpl(); }
+EXPORT auto get_graphics_engine()->SystemRef { return graphics_engine_ref; }
 
-extern "C" __declspec(dllexport) auto get_debug_renderer() -> SystemRef { return graphics_engine; }
+EXPORT auto get_debug_renderer() -> SystemRef { return debug_renderer_ref; }
 
 
 

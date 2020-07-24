@@ -17,8 +17,7 @@
 
 namespace CxxPlugins {
 template <typename... Ts>
-using Variant [[deprecated(
-    "CxxPlugins variant is not implemented yet. Using std::variant.")]] =
+using Variant =
     std::variant<Ts...>;
 
 using Monostate = std::monostate;
