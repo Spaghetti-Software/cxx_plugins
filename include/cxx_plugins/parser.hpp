@@ -35,10 +35,12 @@
 namespace CxxPlugins {
 
 template <typename T> struct JsonName {
-  static inline char const *value = type_id<T>().name();
+  static inline char const * const value = type_id<T>().name();
 };
-template <typename T>
-static inline char const *json_name_v = JsonName<T>::value;
+template<typename T>
+inline auto getJsonName()->char const* {
+  return JsonName<T>::value;
+}
 
 class ParsingError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -548,15 +550,23 @@ void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
         using TaggedMemberType = std::decay_t<decltype(tagged_member)>;
         using TagType = typename TaggedMemberType::TagType;
         using ValueType = typename TaggedMemberType::ValueType;
+        auto name = getJsonName<TagType>();
+        if (name == nullptr) {
+          if (!type_id<TagType>().name()) {
+            throw std::runtime_error(typeid(TagType).name());
+          } else {
+            throw std::runtime_error(type_id<TagType>().name());
+          }
 
-        auto iter = json_object.FindMember(json_name_v<TagType>);
+        }
+        auto iter = json_object.FindMember(name);
 
         if (iter == json_object.end()) {
           if constexpr (!impl::is_optional_v<ValueType> &&
                         !impl::is_pointer_v<ValueType>) {
             throw ObjectMemberMissing(
                 fmt::format("Couldn't find member {} for {}",
-                            json_name_v<TagType>, type_id<map_t>().name()));
+                            getJsonName<TagType>(), type_id<map_t>().name()));
           }
         } else {
           try {
@@ -564,7 +574,7 @@ void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
                   std::forward<AdditionalInfo>(additional_info));
           } catch (...) {
             impl::parsingLippincott(fmt::format(
-                "{} at key {}", type_id<map_t>().name(), json_name_v<TagType>));
+                "{} at key {}", type_id<map_t>().name(), getJsonName<TagType>()));
           }
         }
       },

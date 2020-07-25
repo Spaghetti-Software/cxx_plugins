@@ -67,9 +67,8 @@ TEST(Plugins, BasicPluginFromString) {
 
   loadPluginFromString(json_config, plugin);
 
-
   auto log = [](char const *message_p) {
-    std::cout << message_p;
+    //    std::cout << message_p;
   };
 
   *get<Members, log_callback>(plugin) = log;
@@ -116,7 +115,7 @@ TEST(Plugins, BasicPluginFromFile) {
   loadPluginFromFile(json_config_path, plugin);
 
   auto log = [](char const *message_p) {
-    std::cout << message_p;
+    //    std::cout << message_p;
   };
 
   *get<Members, log_callback>(plugin) = log;
