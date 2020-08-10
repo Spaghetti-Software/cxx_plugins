@@ -29,17 +29,11 @@ project(${This}
         HOMEPAGE_URL "https://github.com/Spaghetti-Software/cxx_plugins"
         LANGUAGES C CXX
         )
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 include(cxx_plugins_options)
 include(common_flags)
-
-
-if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
-    add_library(${This} SHARED)
-else ()
-    add_library(${This} STATIC)
-endif ()
 
 set(CONAN_SYSTEM_INCLUDE ON)
 if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
@@ -48,6 +42,14 @@ else ()
     include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 endif ()
 conan_basic_setup(TARGETS)
+
+if (BUILD_SHARED_LIBS OR CXX_PLUGINS_SHARED)
+    add_library(${This} SHARED)
+else ()
+    add_library(${This} STATIC)
+endif ()
+
+
 
 target_sources(${This}
         PRIVATE
