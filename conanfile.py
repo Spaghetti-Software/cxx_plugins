@@ -18,6 +18,9 @@ class CxxPlugins(ConanFile):
         del self.info.options.enable_tests
         del self.info.options.enable_documentation
 
+    def source(self):
+        self.run("git clone https://github.com/Spaghetti-Software/cxx_plugins")
+
     def build(self):
         cmake = CMake(self)
         cmake.definitions['CXX_PLUGINS_BUILD_TESTS'] = 'ON' if self.options.enable_tests else 'OFF'
@@ -32,3 +35,13 @@ class CxxPlugins(ConanFile):
     def requirements(self):
         if self.options.enable_tests:
             self.requires('gtest/1.10.0')
+
+    def package(self):
+        self.copy("*", dst="include", src="include")
+        self.copy("*.lib", dst="lib", keep_path=False)
+        self.copy("*.dll", dst="bin", keep_path=False)
+        self.copy("*.so", dst="lib", keep_path=False)
+        self.copy("*.dylib", dst="lib", keep_path=False)
+
+    def package_info(self):
+        self.cpp_info.libs = ["cxx-plugins"]
