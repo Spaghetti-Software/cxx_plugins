@@ -2,7 +2,7 @@ from conans import ConanFile, CMake, tools
 
 
 class CxxPlugins(ConanFile):
-    name = "cxx-plugins"
+    name = "cxx_plugins"
     version = "0.0.2"
     license = "MIT"
     url = "https://github.com/Spaghetti-Software/cxx_plugins"
@@ -48,4 +48,4 @@ class CxxPlugins(ConanFile):
         self.copy("*.dylib", dst="lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = ["cxx-plugins"]
+        self.cpp_info.libs = ["cxx_plugins"]

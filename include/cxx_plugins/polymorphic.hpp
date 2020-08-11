@@ -14,14 +14,14 @@
  */
 #pragma once
 
+#include "cxx_plugins/polymorphic_ref.hpp"
 #include "cxx_plugins/vtable.hpp"
 #include "cxx_plugins/function_proxy.hpp"
 #include "cxx_plugins/polymorphic_traits.hpp"
 
 namespace CxxPlugins {
   
-  template <typename... TaggedSignatures> class PolymorphicRef;
-  
+
   namespace impl {
     template <typename Allocator, typename... TaggedSignatures> class Polymorphic;
   } // namespace impl
