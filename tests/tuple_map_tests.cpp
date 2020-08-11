@@ -37,7 +37,7 @@ TEST(TupleMapTests, ConstructorsAndAssignments) {
   [[maybe_unused]] auto empty = makeTupleMap();
   auto complex_map =
       makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 5.0f));
-  TupleMap complex_map1(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 5.0f));
+  auto complex_map1 = makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 5.0f));
 
   TupleMap<TaggedValue<Tag<Bar>, double>, TaggedValue<Tag<Foo>, int64_t>>
       modified_complex_map(complex_map);

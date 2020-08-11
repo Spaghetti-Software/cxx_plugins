@@ -169,6 +169,7 @@ using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 namespace impl {
 template <typename... TaggedSignatures> class PolymorphicRef;
 template <typename... TaggedSignatures> class PrimitivePolymorphicRef;
+template <typename... TaggedSignatures> class Polymorphic;
 } // namespace impl
 
 template <typename T> struct IsPolymorphicRef : public std::false_type {};
@@ -183,6 +184,10 @@ template <typename T>
 static constexpr bool is_polymorphic_ref_v = IsPolymorphicRef<T>::value;
 
 template <typename T> struct IsPolymorphic : public std::false_type {};
+
+template <typename... TaggedSignatures>
+struct IsPolymorphic<impl::Polymorphic<TaggedSignatures...>>
+    : public std::true_type {};
 
 template <typename T>
 static constexpr bool is_polymorphic_v = IsPolymorphic<T>::value;

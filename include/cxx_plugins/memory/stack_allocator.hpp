@@ -20,53 +20,45 @@
 #include <cstdint>
 #include <new>
 
-namespace utility {
-
 template <std::size_t S>
 class StackAllocator {
 public:
-  constexpr StackAllocator() noexcept : m_stack(), m_p(m_stack) {}
+  constexpr StackAllocator() noexcept : stack_m(), p_m(stack_m) {}
 
   ~StackAllocator() = default;
 
-  constexpr mem_block allocate(std::size_t n, std::size_t alignment = 4) {
-    if (n == 0)
+  constexpr void* allocate(std::size_t bytes, std::size_t alignment = alignof(std::max_align_t)) {
+    if (bytes == 0)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    const auto alignedSize = roundLengthToAlignment(n, alignment);
-    const auto mod = reinterpret_cast<std::uint64_t>(m_p) % alignment;
+    const auto mod = reinterpret_cast<std::uint64_t>(p_m) % alignment;
     const auto offset = mod ? alignment - mod : 0;
-    auto *alignedPtr = m_p + offset;
-    if (m_stack + S < alignedPtr + alignedSize) 
+    auto *alignedPtr = p_m + offset;
+    if (stack_m + S < alignedPtr + bytes) 
       throw std::bad_alloc(); // out of stack memory. TODO: replace with out custom exception
 
-    m_p = alignedPtr + alignedSize;
-    return mem_block{alignedPtr, alignedSize}; 
+    p_m = alignedPtr + bytes;
+    return alignedPtr; 
   }
 
-  constexpr void deallocate(mem_block block) {
-    assert(block.ptr != nullptr);
+  constexpr void deallocate(void* p, std::size_t bytes, std::size_t alignment = alignof(std::max_align_t)) {
+    assert(p != nullptr);
 
-    if (!owns(block)) {
+    if (p < stack_m || p >= stack_m + max_size_s) {
       return; // pointer provided was not allocated by this allocator
     }
-    char *ptr = reinterpret_cast<char *>(block.ptr);
-    if (ptr == m_p - block.size)
-      m_p -= block.size; // deallocating last allocation
+    char *ptr = reinterpret_cast<char *>(p);
+    if (ptr == p_m - bytes)
+      p_m -= bytes; // deallocating last allocation
   }
 
-  constexpr void deallocateAll() {
-    m_p = m_stack;
-  }
-
-  constexpr bool owns(mem_block block) const noexcept {
-    char *ptr = reinterpret_cast<char *>(block.ptr);
-    return ptr >= m_stack && ptr < m_stack + S;
+  bool is_equal(const StackAllocator &other) const noexcept {
+    return stack_m == other.stack_m;
   }
 
 private:
-  char m_stack[S];
-  char *m_p;
-};
+  static constexpr std::size_t max_size_s = S;
 
-} // namespace utility
+  char stack_m[S];
+  char *p_m;
+};

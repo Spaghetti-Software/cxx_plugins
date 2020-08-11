@@ -20,11 +20,8 @@
 
 namespace CxxPlugins {
 
-template <typename Allocator, typename... TaggedSignatures> class Polymorphic;
-
-
-
 namespace impl {
+template <typename... TaggedSignatures> class Polymorphic;
 template <typename... TaggedSignatures> class PolymorphicRef;
 template <typename... TaggedSignatures> class PrimitivePolymorphicRef;
 } // namespace impl
