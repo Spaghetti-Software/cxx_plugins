@@ -16,8 +16,9 @@ class CxxPlugins(ConanFile):
     exports_sources = "*", "!.github", "!.vscode", "!build"
 
     def configure(self):
-        if self.settings.compiler.libcxx == "libstdc++":
-            raise Exception("This package is only compatible with libstdc++11")
+        if self.settings.compiler == "clang" or self.settings.compiler == "gcc":
+            if self.settings.compiler.libcxx == "libstdc++":
+                raise Exception("This package is only compatible with libstdc++11")
 
     def package_id(self):
         del self.info.options.enable_tests
