@@ -50,8 +50,8 @@ public:
 static GraphicsEngine graphics_engine = {};
 static DebugRenderer debug_renderer = {};
 
-static inline SystemRef graphics_engine_ref = graphics_engine;
-static inline SystemRef debug_renderer_ref = debug_renderer;
+static inline SystemRef graphics_engine_ref = &graphics_engine;
+static inline SystemRef debug_renderer_ref = &debug_renderer;
 
 EXPORT auto get_graphics_engine()->SystemRef { return graphics_engine_ref; }
 

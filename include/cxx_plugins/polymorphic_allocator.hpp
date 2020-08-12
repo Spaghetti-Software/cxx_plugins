@@ -25,7 +25,7 @@ struct allocate {};
 struct deallocate {};
 struct isEqual {};
 
-using MemoryResourceRef = PrimitivePolymorphicRef<
+using MemoryResourceRef = PrimitivePolymorphicPtr<
     TaggedSignature<allocate, void *(std::size_t bytes, std::size_t alignment)>,
     TaggedSignature<deallocate,
                 void(void *p, std::size_t bytes, std::size_t alignment)>,

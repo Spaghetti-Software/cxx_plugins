@@ -62,11 +62,11 @@ class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
       (utility::FunctionTraits<FunctionSignatures>::is_const && ...);
 
 public:
-
-  using FunctionTableT = VTable<
-      TaggedSignature<PrivateFunctions::obj_copy_ctor_tag, void *(void *)const>,
-      TaggedSignature<obj_dtor_tag, void()>,
-      TaggedSignature<Tags, FunctionSignatures>...>;
+  using FunctionTableT =
+      VTable<TaggedSignature<PrivateFunctions::obj_copy_ctor_tag,
+                             void *(void *) const>,
+             TaggedSignature<obj_dtor_tag, void()>,
+             TaggedSignature<Tags, FunctionSignatures>...>;
 
   constexpr GenericPolymorphic() noexcept : function_table_m() {
     setState(State::empty);
@@ -217,8 +217,26 @@ public:
     }
   }
 
-  [[nodiscard]] constexpr auto functionTable() const noexcept -> FunctionTableT const & {
+  [[nodiscard]] constexpr auto functionTable() const noexcept
+      -> FunctionTableT const & {
     return function_table_m;
+  }
+
+  template <typename T, typename... Args>
+  void emplace(std::in_place_type_t<T> type, Args &&... args) noexcept(
+      std::is_nothrow_constructible_v<T, Args &&...>) {
+    destructAndDeallocate();
+
+    function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
+    State state;
+    if (sizeof(T) <= size - 3) {
+      state = State::stack_allocated;
+    } else {
+      state = State::fallback_allocated;
+      new (data_m) FallbackAllocData();
+    }
+    new (allocateBasedOnState(state, sizeof(T), alignof(T)))
+        std::decay_t<T>(std::forward<Args>(args)...);
   }
 
 private:
@@ -337,14 +355,17 @@ private:
 
 private:
   char data_m[size];
-  FunctionTableT
-      function_table_m;
+  FunctionTableT function_table_m;
 };
 
 template <typename T>
 void *polymorphicExtend(PrivateFunctions::obj_copy_ctor_tag /*unused*/,
                         T const &obj, void *ptr) {
-  return new (ptr) T(obj);
+  if constexpr (std::is_copy_constructible_v<T>) {
+    return new (ptr) T(obj);
+  } else {
+    throw std::runtime_error("This polymorphic is not copy constructible");
+  }
 }
 
 template <typename T> void polymorphicExtend(obj_dtor_tag /*unused*/, T &obj) {

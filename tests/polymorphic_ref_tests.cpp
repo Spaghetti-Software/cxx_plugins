@@ -61,18 +61,18 @@ TEST(PolymorphicRef, SimpleTests) {
   using namespace CxxPlugins;
   foo obj0;
 
-  PolymorphicRef<Tag<add>, Tag<multiply>> simple_poly(obj0);
+  PolymorphicPtr<Tag<add>, Tag<multiply>> simple_poly(&obj0);
   simple_poly[tag<add>](4);
   EXPECT_EQ(obj0.i_m, 4);
   simple_poly[tag<multiply>](4);
   EXPECT_EQ(obj0.i_m, 16);
 
-  PolymorphicRef<Tag<add>> simpl_poly2(simple_poly);
+  PolymorphicPtr<Tag<add>> simpl_poly2(simple_poly);
   simpl_poly2 = simple_poly;
 
-  PolymorphicRef<Tag<stringify>, Tag<add>, Tag<multiply>> complex_poly0(obj0);
+  PolymorphicPtr<Tag<stringify>, Tag<add>, Tag<multiply>> complex_poly0(&obj0);
   EXPECT_EQ(std::to_string(obj0.i_m), complex_poly0[tag<stringify>]());
-  PolymorphicRef<Tag<stringify>> constant_poly(obj0);
+  PolymorphicPtr<Tag<stringify>> constant_poly(&obj0);
   static_assert(std::is_same_v<void const *, decltype(constant_poly.data())>,
                 "Constant objects should give void const*");
   complex_poly0.call<Tag<add>>(1);
@@ -115,45 +115,29 @@ constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &
                                  /*unused*/) -> ReferenceType {
   return ReferenceType::ConstLValue;
 }
-constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy && /*unused*/)
-    -> ReferenceType {
-  return ReferenceType::RValue;
-}
-constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &&
-                                 /*unused*/) -> ReferenceType {
-  return ReferenceType::ConstRValue;
-}
+//constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy && /*unused*/)
+//    -> ReferenceType {
+//  return ReferenceType::RValue;
+//}
+//constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &&
+//                                 /*unused*/) -> ReferenceType {
+//  return ReferenceType::ConstRValue;
+//}
 
 TEST(PolymorphicRef, checkReferenceCorrectness) {
   using namespace CxxPlugins;
   Dummy obj;
 
-  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> lvalue_ref(obj);
+  PolymorphicPtr<TaggedSignature<Correctness, ReferenceType()>> lvalue_ref(&obj);
   auto expected = ReferenceType::LValue;
   auto result = lvalue_ref.call<Correctness>();
   EXPECT_EQ(expected, result)
       << "Expected: " << expected << ", Result: " << result;
 
-  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
-      lvalue_const_ref(obj);
+  PolymorphicPtr<TaggedSignature<Correctness, ReferenceType() const>>
+      lvalue_const_ref(&obj);
   expected = ReferenceType::ConstLValue;
   result = lvalue_const_ref.call<Correctness>();
-  EXPECT_EQ(expected, result)
-      << "Expected: " << expected << ", Result: " << result;
-
-  PolymorphicRef<TaggedSignature<Correctness, ReferenceType()>> rvalue_ref(
-      std::move(obj));
-
-  expected = ReferenceType::RValue;
-  result = rvalue_ref.call<Correctness>();
-  EXPECT_EQ(expected, result)
-      << "Expected: " << expected << ", Result: " << result;
-
-  PolymorphicRef<TaggedSignature<Correctness, ReferenceType() const>>
-      const_rvalue_ref(static_cast<Dummy const &&>((std::move(obj))));
-
-  expected = ReferenceType::ConstRValue;
-  result = const_rvalue_ref.call<Correctness>();
   EXPECT_EQ(expected, result)
       << "Expected: " << expected << ", Result: " << result;
 }
@@ -161,9 +145,9 @@ TEST(PolymorphicRef, checkReferenceCorrectness) {
 
 TEST(PolymorphicRef, DefaultConstructor) {
   using namespace CxxPlugins;
-  [[maybe_unused]] PolymorphicRef<> default_empty;
-  [[maybe_unused]] PolymorphicRef<add> default_single_arg;
-  [[maybe_unused]] PolymorphicRef<add,multiply,stringify> default_multi_arg;
+  [[maybe_unused]] PolymorphicPtr<> default_empty;
+  [[maybe_unused]] PolymorphicPtr<add> default_single_arg;
+  [[maybe_unused]] PolymorphicPtr<add,multiply,stringify> default_multi_arg;
 
   EXPECT_TRUE(default_empty.isEmpty());
   EXPECT_TRUE(default_single_arg.isEmpty());
@@ -174,8 +158,8 @@ TEST(PolymorphicRef, DefaultConstructor) {
 TEST(PolymorphicRef, Reorder) {
   using namespace CxxPlugins;
   foo obj0;
-  PolymorphicRef<add,multiply> ref0(obj0);
-  PolymorphicRef<multiply,add> ref1(ref0);
+  PolymorphicPtr<add,multiply> ref0(&obj0);
+  PolymorphicPtr<multiply,add> ref1(ref0);
   ref0.call<add>(20);
   EXPECT_EQ(obj0.i_m, 20);
   ref1.call<add>(20);

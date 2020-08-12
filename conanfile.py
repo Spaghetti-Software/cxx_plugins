@@ -3,7 +3,7 @@ from conans import ConanFile, CMake, tools
 
 class CxxPlugins(ConanFile):
     name = "cxx_plugins"
-    version = "0.0.2"
+    version = "0.0.6"
     license = "MIT"
     url = "https://github.com/Spaghetti-Software/cxx_plugins"
     description = "CXX Plugins is a library that's main aim is to simplify dealing with API and external dll loading."
@@ -13,6 +13,7 @@ class CxxPlugins(ConanFile):
     options = {"shared": [True, False], "enable_tests": [True, False], "enable_documentation": [True, False]}
     default_options = {"shared": False, "enable_tests": False, "enable_documentation": False}
     requires = ["boost/1.73.0", "rapidjson/1.1.0", "fmt/6.2.1"]
+    exports_sources = "*", "!.github", "!.vscode", "!build"
 
     def configure(self):
         if self.settings.compiler.libcxx == "libstdc++":
@@ -22,8 +23,9 @@ class CxxPlugins(ConanFile):
         del self.info.options.enable_tests
         del self.info.options.enable_documentation
 
-    def source(self):
-        self.run("git clone -b dev/cxx_plugins/plugins https://github.com/Spaghetti-Software/cxx_plugins_mirror.git .")
+    # def source(self):
+    #     # self.run("git clone -b dev/cxx_plugins/plugins https://github.com/Spaghetti-Software/cxx_plugins_mirror.git .")
+    #     pass
 
     def build(self):
         cmake = CMake(self)

@@ -167,17 +167,17 @@ template <typename TagT>
 using PolymorphicTagSignatureT = typename PolymorphicTagSignature<TagT>::Type;
 
 namespace impl {
-template <typename... TaggedSignatures> class PolymorphicRef;
-template <typename... TaggedSignatures> class PrimitivePolymorphicRef;
+template <typename... TaggedSignatures> class PolymorphiсPtr;
+template <typename... TaggedSignatures> class PrimitivePolymorphicPtr;
 template <typename... TaggedSignatures> class Polymorphic;
 } // namespace impl
 
 template <typename T> struct IsPolymorphicRef : public std::false_type {};
 template <typename... TaggedSignatures>
-struct IsPolymorphicRef<impl::PolymorphicRef<TaggedSignatures...>>
+struct IsPolymorphicRef<impl::PolymorphiсPtr<TaggedSignatures...>>
     : public std::true_type {};
 template <typename... TaggedSignatures>
-struct IsPolymorphicRef<impl::PrimitivePolymorphicRef<TaggedSignatures...>>
+struct IsPolymorphicRef<impl::PrimitivePolymorphicPtr<TaggedSignatures...>>
     : std::true_type {};
 
 template <typename T>

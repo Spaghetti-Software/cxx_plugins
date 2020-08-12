@@ -19,6 +19,14 @@
 //! \brief Contains helper functions/classes
 namespace CxxPlugins::utility {
 
+template<typename T>
+struct IsInPlaceType : std::false_type {};
+template<typename T>
+struct IsInPlaceType<std::in_place_type_t<T>> : std::true_type {};
+template<typename T>
+constexpr bool is_in_place_type_v = IsInPlaceType<T>::value;
+
+
 template <typename... Types> struct AreUnique;
 
 template <typename First, typename... Rest> struct AreUnique<First, Rest...> {

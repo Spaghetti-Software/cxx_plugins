@@ -51,7 +51,8 @@ template <typename Tag, typename T, typename Return, typename... Args>
 struct PolymorphicTrampoline<Tag, T, Return(Args...)> {
 
   static constexpr Return call(void *obj_p, Args... args) {
-
+    static_assert(!std::is_rvalue_reference_v<T>,
+                  "T can't be rvalue reference");
     using underlying_t = std::remove_reference_t<T>;
 
     if constexpr (std::is_const_v<underlying_t>) {
@@ -76,7 +77,8 @@ struct PolymorphicTrampoline<Tag, T, Return(Args...)> {
 template <typename Tag, typename T, typename Return, typename... Args>
 struct PolymorphicTrampoline<Tag, T, Return(Args...) const> {
   static constexpr Return call(void const *obj_p, Args... args) {
-
+    static_assert(!std::is_rvalue_reference_v<T>,
+                  "Ta can't be rvalue reference");
     using underlying_t = std::remove_reference_t<T> const;
 
     if constexpr (std::is_reference_v<T>) {
