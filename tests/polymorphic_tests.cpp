@@ -100,20 +100,20 @@ TEST(Polymorphic, AllocationAndConstructorTests) {
   smallbar obj0;
   EXPECT_EQ(smallbar::counter, 1);
 
-  Polymorphic</*Tag<printSize>*/> poly(obj0);
-  //poly[tag<printSize>]();
+  Polymorphic<Tag<printSize>> poly(obj0);
+  poly[tag<printSize>]();
   EXPECT_EQ(smallbar::counter, 2); // copy constructor of smallbar called
   EXPECT_EQ(poly.data(), &poly); // stack allocated
 
   bigbar<64> big_obj;
   poly = big_obj;
-  //poly[tag<printSize>]();
+  poly[tag<printSize>]();
   EXPECT_EQ(smallbar::counter, 1); // destructor of smallbar called
   EXPECT_NE(poly.data(), &poly); // heap allocated
 
-  Polymorphic</*Tag<printSize>*/> copy_poly = poly;
-  //copy_poly[tag<printSize>]();
+  Polymorphic<Tag<printSize>> copy_poly = poly;
+  copy_poly[tag<printSize>]();
 
-  Polymorphic</*Tag<printSize>*/> move_poly = std::move(poly);
-  //move_poly[tag<printSize>]();
+  Polymorphic<Tag<printSize>> move_poly = std::move(poly);
+  move_poly[tag<printSize>]();
 }

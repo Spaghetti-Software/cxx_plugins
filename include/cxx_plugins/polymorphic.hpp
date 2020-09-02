@@ -361,11 +361,7 @@ private:
 template <typename T>
 void *polymorphicExtend(PrivateFunctions::obj_copy_ctor_tag /*unused*/,
                         T const &obj, void *ptr) {
-  if constexpr (std::is_copy_constructible_v<T>) {
-    return new (ptr) T(obj);
-  } else {
-    throw std::runtime_error("This polymorphic is not copy constructible");
-  }
+  return new (ptr) T(obj);
 }
 
 template <typename T> void polymorphicExtend(obj_dtor_tag /*unused*/, T &obj) {
