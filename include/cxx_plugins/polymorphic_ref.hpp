@@ -21,14 +21,14 @@ namespace CxxPlugins {
 
 namespace impl {
 template <typename... TaggedSignatures> class Polymorphic;
-template <typename... TaggedSignatures> class PolymorphiсPtr;
+template <typename... TaggedSignatures> class PolymorphicPtr;
 template <typename... TaggedSignatures> class PrimitivePolymorphicPtr;
 } // namespace impl
 
 template <typename... Ts>
 using PolymorphicPtr = std::conditional_t<
-    (is_tagged_signature<Ts> && ...), impl::PolymorphiсPtr<Ts...>,
-    impl::PolymorphiсPtr<TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+    (is_tagged_signature<Ts> && ...), impl::PolymorphicPtr<Ts...>,
+    impl::PolymorphicPtr<TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
 template <typename... Ts>
 using PrimitivePolymorphicPtr = std::conditional_t<
@@ -37,7 +37,7 @@ using PrimitivePolymorphicPtr = std::conditional_t<
         TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
 namespace impl {
-template <typename... TaggedSignatures> class PolymorphiсPtr;
+template <typename... TaggedSignatures> class PolymorphicPtr;
 
 /*!
  * \brief
@@ -45,16 +45,16 @@ template <typename... TaggedSignatures> class PolymorphiсPtr;
  */
 #ifdef DOXYGEN
 template <typename... TaggedSignatures>
-class PolymorphiсPtr
+class PolymorphicPtr
 #else
 template <typename... Tags, typename... Signatures>
-class PolymorphiсPtr<TaggedSignature<Tags, Signatures>...>
+class PolymorphicPtr<TaggedSignature<Tags, Signatures>...>
 #endif
 {
 private:
   template <typename U>
   static constexpr bool is_self =
-      std::is_same_v<std::decay_t<U>, PolymorphiсPtr>;
+      std::is_same_v<std::decay_t<U>, PolymorphicPtr>;
 
   static constexpr bool is_const =
       (utility::FunctionTraits<Signatures>::is_const && ...);
@@ -62,15 +62,15 @@ private:
 public:
   using PointerT = std::conditional_t<is_const, void const *, void *>;
   using FunctionTableT = VTable<TaggedSignature<
-      Tags, PolymorphicSignatureT<PolymorphiсPtr, Signatures>>...>;
+      Tags, PolymorphicSignatureT<PolymorphicPtr, Signatures>>...>;
 
-  constexpr PolymorphiсPtr() noexcept = default;
-  constexpr PolymorphiсPtr(PolymorphiсPtr const &) noexcept = default;
-  constexpr PolymorphiсPtr(PolymorphiсPtr &&) noexcept = default;
-  constexpr auto operator=(PolymorphiсPtr const &) noexcept
-      -> PolymorphiсPtr & = default;
-  constexpr auto operator=(PolymorphiсPtr &&) noexcept
-      -> PolymorphiсPtr & = default;
+  constexpr PolymorphicPtr() noexcept = default;
+  constexpr PolymorphicPtr(PolymorphicPtr const &) noexcept = default;
+  constexpr PolymorphicPtr(PolymorphicPtr &&) noexcept = default;
+  constexpr auto operator=(PolymorphicPtr const &) noexcept
+      -> PolymorphicPtr & = default;
+  constexpr auto operator=(PolymorphicPtr &&) noexcept
+      -> PolymorphicPtr & = default;
 
   //  template <typename T, typename = std::enable_if_t<
   //                            !is_polymorphic_ref_v<std::decay_t<T>> &&
@@ -95,7 +95,7 @@ public:
    * Converts pointer to object to PolymorphicRef
    *
    */
-  constexpr PolymorphiсPtr(T *obj_p) noexcept
+  constexpr PolymorphicPtr(T *obj_p) noexcept
       : type_index_m{type_id<T>()}, data_p_m{obj_p},
         function_table_m{std::in_place_type_t<T>{}} {}
 
@@ -108,8 +108,8 @@ public:
   /*!
    * \brief This constructor allows `upcasting` from bigger PolymorphicRef.
    */
-  constexpr PolymorphiсPtr(
-      PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...>
+  constexpr PolymorphicPtr(
+      PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -120,8 +120,8 @@ public:
             bool size_constraint = sizeof...(Tags) >= 1 &&
                                    sizeof...(Tags) < sizeof...(OtherTags),
             std::enable_if_t<size_constraint, int> = 0>
-  constexpr PolymorphiсPtr(
-      PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
+  constexpr PolymorphicPtr(
+      PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -139,8 +139,8 @@ public:
    * \brief This constructor allows conversion of PolymorphicRef with different
    * order
    */
-  constexpr PolymorphiсPtr(
-      PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...>
+  constexpr PolymorphicPtr(
+      PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -154,8 +154,8 @@ public:
             bool conversion_contraint = (!std::is_same_v<Tags, OtherTags> ||
                                          ...),
             std::enable_if_t<conversion_contraint, int> = 0>
-  constexpr PolymorphiсPtr(
-      PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
+  constexpr PolymorphicPtr(
+      PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -172,7 +172,7 @@ public:
    * This constructor allows `upcasting` from bigger Polymorphic or convertion
    * from Polymorphic to PolymorphicRef
    */
-  constexpr PolymorphiсPtr(
+  constexpr PolymorphicPtr(
       Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -185,7 +185,7 @@ public:
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
-  constexpr PolymorphiсPtr(
+  constexpr PolymorphicPtr(
       Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> const
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
@@ -200,7 +200,7 @@ public:
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
-  constexpr PolymorphiсPtr &operator=(T &&obj) noexcept {
+  constexpr PolymorphicPtr &operator=(T &&obj) noexcept {
     type_index_m = type_id<T>();
     function_table_m = std::in_place_type_t<decltype(obj)>{};
     data_p_m = &obj;
@@ -215,7 +215,7 @@ public:
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
-  constexpr PolymorphiсPtr &operator=(T *obj) noexcept {
+  constexpr PolymorphicPtr &operator=(T *obj) noexcept {
     *this = *obj;
     return *this;
   }
@@ -230,8 +230,8 @@ public:
    * \brief This assignment operator allows `upcasting` from bigger
    * PolymorphicRef.
    */
-  constexpr PolymorphiсPtr &
-  operator=(PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...>
+  constexpr PolymorphicPtr &
+  operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
@@ -244,8 +244,8 @@ public:
             bool size_constraint = sizeof...(Tags) >= 1 &&
                                    sizeof...(Tags) < sizeof...(OtherTags),
             std::enable_if_t<size_constraint, int> = 0>
-  constexpr PolymorphiсPtr &
-  operator=(PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
+  constexpr PolymorphicPtr &
+  operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
@@ -266,8 +266,8 @@ public:
    * \brief This assignment operator allows `upcasting` from bigger
    * PolymorphicRef.
    */
-  constexpr PolymorphiсPtr &
-  operator=(PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...>
+  constexpr PolymorphicPtr &
+  operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
@@ -283,8 +283,8 @@ public:
             bool conversion_contraint = (!std::is_same_v<Tags, OtherTags> &&
                                          ...),
             std::enable_if_t<conversion_contraint, unsigned> = 0>
-  constexpr PolymorphiсPtr &
-  operator=(PolymorphiсPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
+  constexpr PolymorphicPtr &
+  operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...> const
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
@@ -304,7 +304,7 @@ public:
    * \brief This assignment operator allows `upcasting` from bigger
    * Polymorphic and conversion of Polymorphic to PolymorphicRef.
    */
-  constexpr PolymorphiсPtr &
+  constexpr PolymorphicPtr &
   operator=(Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...>
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
@@ -321,7 +321,7 @@ public:
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
-  constexpr PolymorphiсPtr &
+  constexpr PolymorphicPtr &
   operator=(Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> const
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
