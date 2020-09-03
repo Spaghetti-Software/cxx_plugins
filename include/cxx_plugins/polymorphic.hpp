@@ -22,14 +22,40 @@
 namespace CxxPlugins {
 
 namespace impl {
+
+class PrivateFunctions {
+public:
+  //template <std::size_t size, typename... Ts> friend class GenericPolymorphic;
+  //template <typename... Ts> friend class PolymorphicRef;
+
+  struct obj_copy_ctor_tag {};
+  //template <typename T>
+  //friend void *polymorphicExtend(obj_copy_ctor_tag, T const &, void *);
+};
+
 template <std::size_t size, typename... TaggedSignatures>
 class GenericPolymorphic;
 template <typename... TaggedSignatures> class PolymorphicRef;
+
+template <std::size_t size, typename... TaggedSignatures>
+using CopyableGenericPolymorphic = GenericPolymorphic<
+    size,
+    TaggedSignature<PrivateFunctions::obj_copy_ctor_tag,
+                    void *(void *)const>,
+    TaggedSignatures...>;
 } // namespace impl
 
 template <typename... Ts>
 using Polymorphic = std::conditional_t<
-    (is_tagged_signature<Ts> && ...), impl::GenericPolymorphic<64, Ts...>,
+    (is_tagged_signature<Ts> && ...),
+    impl::CopyableGenericPolymorphic<64, Ts...>,
+    impl::CopyableGenericPolymorphic<
+        64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+
+template <typename... Ts>
+using UniquePolymorphic = std::conditional_t<
+    (is_tagged_signature<Ts> && ...),
+    impl::GenericPolymorphic<64, Ts...>,
     impl::GenericPolymorphic<
         64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
@@ -42,16 +68,6 @@ struct obj_copy_ctor_tag {};
 template <std::size_t size, typename... TaggedSignatures>
 class GenericPolymorphic;
 
-class PrivateFunctions {
-private:
-  template <std::size_t size, typename... Ts> friend class GenericPolymorphic;
-  template <typename... Ts> friend class PolymorphicRef;
-
-  struct obj_copy_ctor_tag {};
-  template <typename T>
-  friend void *polymorphicExtend(obj_copy_ctor_tag, T const &, void *);
-};
-
 template <std::size_t size, typename... Tags, typename... FunctionSignatures>
 class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
   template <typename U>
@@ -63,9 +79,7 @@ class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
 
 public:
   using FunctionTableT =
-      VTable<TaggedSignature<PrivateFunctions::obj_copy_ctor_tag,
-                             void *(void *) const>,
-             TaggedSignature<obj_dtor_tag, void()>,
+      VTable<TaggedSignature<obj_dtor_tag, void()>,
              TaggedSignature<Tags, FunctionSignatures>...>;
 
   constexpr GenericPolymorphic() noexcept : function_table_m() {
@@ -73,6 +87,11 @@ public:
   }
   constexpr GenericPolymorphic(GenericPolymorphic const &other) noexcept
       : function_table_m{other.functionTable()} {
+
+    static_assert(
+        utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>,
+        "This Polymorphic is not copyable"); 
+
     auto other_state = other.getState();
     if (other_state == State::fallback_allocated)
       new (data_m) FallbackAllocData();
@@ -83,15 +102,17 @@ public:
       : function_table_m{std::move(other.functionTable())} {
     std::memcpy(data_m, other.data_m, size);
     auto other_state = other.getState();
-    if (other_state == State::fallback_allocated) {
-      // change state to empty for now to prevent from deallocating/destructing
-      // in destructor, might have to change the object pointer in other to
-      // nullptr instead if this doesn't work
-      other.setState(State::empty);
-    }
+
+    // change state to empty for now to prevent from deallocating/destructing in destructor
+    other.setState(State::empty);
   }
+
   constexpr auto operator=(GenericPolymorphic const &rhs) noexcept
       -> GenericPolymorphic & {
+    static_assert(
+        utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>,
+        "This Polymorphic is not copyable"); 
+
     if (this == &rhs)
       return *this;
 
@@ -137,6 +158,12 @@ public:
                             !is_polymorphic_v<std::decay_t<T>>>>
   constexpr GenericPolymorphic(T &&t) noexcept
       : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}} {
+    static_assert(
+        std::is_rvalue_reference_v<T &&> ||
+            (std::is_lvalue_reference_v<T &&> &&
+             utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>),
+        "This Polymorphic is not copyable"); 
+
     State state;
     if (sizeof(T) <= size - 3)
       state = State::stack_allocated;
@@ -161,6 +188,12 @@ public:
    */
   constexpr GenericPolymorphic &operator=(T &&obj) noexcept {
     destructAndDeallocate();
+
+    static_assert(
+        std::is_rvalue_reference_v<T &&> ||
+            (std::is_lvalue_reference_v<T &&> &&
+             utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>),
+        "This Polymorphic is not copyable"); 
 
     function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
     State state;
