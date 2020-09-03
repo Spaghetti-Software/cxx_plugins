@@ -12,8 +12,8 @@
  * $BRIEF$
  */
 
-#include <cxx_plugins/polymorphic_ref.hpp>
 #include <cxx_plugins/polymorphic_allocator.hpp>
+#include <cxx_plugins/polymorphic_ptr.hpp>
 #include <gtest/gtest.h>
 
 struct add {};

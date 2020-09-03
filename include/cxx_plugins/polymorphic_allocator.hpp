@@ -14,7 +14,7 @@
 #pragma once
 
 #include "cxx_plugins/allocator_helpers.hpp"
-#include "cxx_plugins/polymorphic_ref.hpp"
+#include "cxx_plugins/polymorphic_ptr.hpp"
 
 #include <boost/type_index/runtime_cast/pointer_cast.hpp>
 #include <memory_resource>

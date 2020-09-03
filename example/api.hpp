@@ -13,10 +13,8 @@
  */
 #pragma once
 
-#include <cxx_plugins/polymorphic_ref.hpp>
 #include <boost/dll/alias.hpp>
-
-
+#include <cxx_plugins/polymorphic_ptr.hpp>
 
 namespace System {
 struct init{};
