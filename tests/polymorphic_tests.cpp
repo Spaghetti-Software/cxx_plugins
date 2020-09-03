@@ -117,3 +117,29 @@ TEST(Polymorphic, AllocationAndConstructorTests) {
   Polymorphic<Tag<printSize>> move_poly = std::move(poly);
   move_poly[tag<printSize>]();
 }
+
+struct printUnique {};
+
+template <> struct CxxPlugins::PolymorphicTagSignature<printUnique> {
+  using Type = void();
+};
+
+template <typename T>
+constexpr void polymorphicExtend(printUnique /*unused*/, T const &obj) {
+  obj.print();
+}
+
+struct unique_struct {
+  std::unique_ptr<int> p = std::make_unique<int>(4);
+
+  void print() const { std::cout << *p << std::endl; }
+};
+
+TEST(Polymorphic, UniquePolymorphicTests) {
+  using namespace CxxPlugins;
+
+  unique_struct us;
+  UniquePolymorphic<Tag<printUnique>> up(std::move(us));
+
+  UniquePolymorphic<Tag<printUnique>> up2 = std::move(up);
+}
