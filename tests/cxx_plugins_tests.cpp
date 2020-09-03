@@ -49,7 +49,6 @@ TEST(Plugins, BasicPluginFromString) {
 }
 )json";
 
-  namespace dll = boost::dll;
 
   auto plugin = makePlugin(
       makeConfig(makeField<plugin_name, std::string>(),

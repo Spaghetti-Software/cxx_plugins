@@ -25,10 +25,10 @@ struct allocate {};
 struct deallocate {};
 struct isEqual {};
 
-using MemoryResourceRef = PrimitivePolymorphicPtr<
+using MemoryResourcePtr = PrimitivePolymorphicPtr<
     TaggedSignature<allocate, void *(std::size_t bytes, std::size_t alignment)>,
     TaggedSignature<deallocate,
-                void(void *p, std::size_t bytes, std::size_t alignment)>,
+                    void(void *p, std::size_t bytes, std::size_t alignment)>,
     TaggedSignature<isEqual, bool(const SelfType &) const>>;
 
 template <typename T>
@@ -45,18 +45,26 @@ constexpr void polymorphicExtend(deallocate /*unused*/, T &mem_resource,
   mem_resource.deallocate(p, bytes, alignment);
 }
 
-
 template <typename T,
           typename = std::enable_if_t<
               !std::is_same_v<std::pmr::memory_resource, std::decay_t<T>> &&
               !std::is_base_of_v<std::pmr::memory_resource, std::decay_t<T>>>>
 constexpr auto polymorphicExtend(isEqual /*unused*/, T const &mem_resource,
-                                 MemoryResourceRef const &rhs) -> bool {
-  return mem_resource.is_equal(rhs);
+                                 MemoryResourcePtr const &rhs) -> bool {
+  if constexpr (std::is_invocable_r_v<bool, decltype(&T::is_equal),
+                                      decltype(mem_resource), decltype(rhs)>) {
+    return mem_resource.is_equal(rhs);
+  } else {
+    if (!rhs.isA<T>()) {
+      return false;
+    }
+
+    return mem_resource.is_equal(*static_cast<T const*>(rhs.data()));
+  }
 }
 
 inline auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
-                                 MemoryResourceRef const &rhs) {
+                              MemoryResourcePtr const &rhs) {
   if (rhs.isA<std::pmr::memory_resource>()) {
     return lhs.is_equal(
         *static_cast<std::pmr::memory_resource const *>(rhs.data()));
@@ -64,20 +72,20 @@ inline auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
   return false;
 }
 
-inline auto operator==(MemoryResourceRef const &lhs, MemoryResourceRef const &rhs)
-    -> bool {
+inline auto operator==(MemoryResourcePtr const &lhs,
+                       MemoryResourcePtr const &rhs) -> bool {
   return lhs.call<CxxPlugins::isEqual>(rhs);
 }
 
 // By default evaluates to std::pmr::get_default_resource()
-auto getDefaultMemoryResource() noexcept -> MemoryResourceRef;
-auto setDefaultMemoryResource(MemoryResourceRef mem_resource) noexcept
-    -> MemoryResourceRef;
+auto getDefaultMemoryResource() noexcept -> MemoryResourcePtr;
+auto setDefaultMemoryResource(MemoryResourcePtr mem_resource) noexcept
+    -> MemoryResourcePtr;
 auto setDefaultMemoryResource(
     std::pmr::memory_resource *std_mem_resource_p) noexcept
-    -> MemoryResourceRef;
+    -> MemoryResourcePtr;
 auto setDefaultMemoryResource(
-    std::pmr::memory_resource &std_mem_resource) noexcept -> MemoryResourceRef;
+    std::pmr::memory_resource &std_mem_resource) noexcept -> MemoryResourcePtr;
 
 template <typename Tp = std::byte>
 /*!
@@ -97,13 +105,11 @@ public:
 
   // constructors
   PolymorphicAllocator() noexcept = default;
-  PolymorphicAllocator(MemoryResourceRef r) noexcept : resource_m(r) {}
-  PolymorphicAllocator(std::pmr::memory_resource* resource) noexcept :
-    resource_m(resource)
-  {}
-  PolymorphicAllocator(std::pmr::memory_resource& resource) noexcept :
-      resource_m(resource)
-  {}
+  PolymorphicAllocator(MemoryResourcePtr r) noexcept : resource_m(r) {}
+  PolymorphicAllocator(std::pmr::memory_resource *resource) noexcept
+      : resource_m(resource) {}
+  PolymorphicAllocator(std::pmr::memory_resource &resource) noexcept
+      : resource_m(resource) {}
 
   PolymorphicAllocator(const PolymorphicAllocator &other) = default;
 
@@ -176,10 +182,10 @@ public:
     return PolymorphicAllocator();
   }
 
-  MemoryResourceRef resource() const { return resource_m; }
+  MemoryResourcePtr resource() const { return resource_m; }
 
 private:
-  MemoryResourceRef resource_m = getDefaultMemoryResource();
+  MemoryResourcePtr resource_m = getDefaultMemoryResource();
 };
 
 template <typename T1, typename T2>

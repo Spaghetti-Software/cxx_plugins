@@ -9,7 +9,7 @@
  * \author  Andrey Ponomarev
  * \date    26 Jun 2020
  * \brief
- * $BRIEF$
+ * This file contains functions to help with PolymorphicAllocator
  */
 #pragma once
 #include <tuple>
