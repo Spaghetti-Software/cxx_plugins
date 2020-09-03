@@ -27,10 +27,10 @@ struct obj_copy_ctor_tag {};
 } // namespace impl
 
 template <std::size_t size, typename... TaggedSignatures>
-class GenericPolymorphic;
+class UniqueGenericPolymorphic;
 
 template <std::size_t size, typename... TaggedSignatures>
-using CopyableGenericPolymorphic = GenericPolymorphic<
+using GenericPolymorphic = UniqueGenericPolymorphic<
     size,
     TaggedSignature<impl::obj_copy_ctor_tag,
                     void *(void *)const>,
@@ -39,29 +39,29 @@ using CopyableGenericPolymorphic = GenericPolymorphic<
 template <typename... Ts>
 using Polymorphic = std::conditional_t<
     (is_tagged_signature<Ts> && ...),
-    CopyableGenericPolymorphic<64, Ts...>,
-    CopyableGenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+    GenericPolymorphic<64, Ts...>,
+    GenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
 template <typename... Ts>
 using UniquePolymorphic = std::conditional_t<
     (is_tagged_signature<Ts> && ...),
-    GenericPolymorphic<64, Ts...>,
-    GenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+    UniqueGenericPolymorphic<64, Ts...>,
+    UniqueGenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
 /*!
  *
  */
 #ifdef DOXYGEN
 template<std::size_t size, typename... TaggedSignatures>
-class GenericPolymorphic 
+class UniqueGenericPolymorphic
 #else
 template <std::size_t size, typename... Tags, typename... FunctionSignatures>
-class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> 
+class UniqueGenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...>
 #endif
 {
   template <typename U>
   static constexpr bool is_self =
-      std::is_same_v<std::decay_t<U>, GenericPolymorphic>;
+      std::is_same_v<std::decay_t<U>, UniqueGenericPolymorphic>;
 
   static constexpr bool is_const =
       (utility::FunctionTraits<FunctionSignatures>::is_const && ...);
@@ -71,10 +71,10 @@ public:
       VTable<TaggedSignature<impl::obj_dtor_tag, void()>,
              TaggedSignature<Tags, FunctionSignatures>...>;
 
-  constexpr GenericPolymorphic() noexcept : function_table_m() {
+  constexpr UniqueGenericPolymorphic() noexcept : function_table_m() {
     setState(State::empty);
   }
-  constexpr GenericPolymorphic(GenericPolymorphic const &other) noexcept
+  constexpr UniqueGenericPolymorphic(UniqueGenericPolymorphic const &other) noexcept
       : function_table_m{other.functionTable()} {
 
     static_assert(
@@ -87,7 +87,7 @@ public:
     other.call<impl::obj_copy_ctor_tag>(allocateBasedOnState(
         other_state, other.getSize(), other.getAlignment()));
   }
-  constexpr GenericPolymorphic(GenericPolymorphic &&other) noexcept
+  constexpr UniqueGenericPolymorphic(UniqueGenericPolymorphic &&other) noexcept
       : function_table_m{std::move(other.functionTable())} {
     std::memcpy(data_m, other.data_m, size);
     auto other_state = other.getState();
@@ -96,8 +96,8 @@ public:
     other.setState(State::empty);
   }
 
-  constexpr auto operator=(GenericPolymorphic const &rhs) noexcept
-      -> GenericPolymorphic & {
+  constexpr auto operator=(UniqueGenericPolymorphic const &rhs) noexcept
+      -> UniqueGenericPolymorphic & {
     static_assert(
         utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
         "This Polymorphic is not copyable"); 
@@ -116,8 +116,8 @@ public:
 
     return *this;
   }
-  constexpr auto operator=(GenericPolymorphic &&rhs) noexcept
-      -> GenericPolymorphic & {
+  constexpr auto operator=(UniqueGenericPolymorphic &&rhs) noexcept
+      -> UniqueGenericPolymorphic & {
     if (this == &rhs)
       return *this;
 
@@ -145,7 +145,7 @@ public:
   template <typename T, typename = std::enable_if_t<
                             !is_polymorphic_ref_v<std::decay_t<T>> &&
                             !is_polymorphic_v<std::decay_t<T>>>>
-  constexpr GenericPolymorphic(T &&t) noexcept
+  constexpr UniqueGenericPolymorphic(T &&t) noexcept
       : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}} {
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
@@ -164,7 +164,7 @@ public:
         std::decay_t<T>(std::forward<T>(t));
   }
 
-  ~GenericPolymorphic() { destructAndDeallocate(); }
+  ~UniqueGenericPolymorphic() { destructAndDeallocate(); }
 
   template <typename T, typename = std::enable_if_t<
                             !is_polymorphic_ref_v<std::decay_t<T>> &&
@@ -175,7 +175,7 @@ public:
    * a function table.
    *
    */
-  constexpr GenericPolymorphic &operator=(T &&obj) noexcept {
+  constexpr UniqueGenericPolymorphic &operator=(T &&obj) noexcept {
     destructAndDeallocate();
 
     static_assert(
