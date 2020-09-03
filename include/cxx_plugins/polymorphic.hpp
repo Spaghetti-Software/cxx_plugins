@@ -6,8 +6,8 @@
  *************************************************************************************************/
 /*!
  * \file    polymorphic.hpp
+ * \author  Timur Kazhimuratov
  * \author  Andrey Ponomarev
- * \author  Timur Kazhimuratovs
  * \date    21 May 2020
  * \brief
  * $BRIEF$
@@ -22,54 +22,43 @@
 namespace CxxPlugins {
 
 namespace impl {
-
-class PrivateFunctions {
-public:
-  //template <std::size_t size, typename... Ts> friend class GenericPolymorphic;
-  //template <typename... Ts> friend class PolymorphicRef;
-
-  struct obj_copy_ctor_tag {};
-  //template <typename T>
-  //friend void *polymorphicExtend(obj_copy_ctor_tag, T const &, void *);
-};
+struct obj_dtor_tag {};
+struct obj_copy_ctor_tag {};
+} // namespace impl
 
 template <std::size_t size, typename... TaggedSignatures>
 class GenericPolymorphic;
-template <typename... TaggedSignatures> class PolymorphicRef;
 
 template <std::size_t size, typename... TaggedSignatures>
 using CopyableGenericPolymorphic = GenericPolymorphic<
     size,
-    TaggedSignature<PrivateFunctions::obj_copy_ctor_tag,
+    TaggedSignature<impl::obj_copy_ctor_tag,
                     void *(void *)const>,
     TaggedSignatures...>;
-} // namespace impl
 
 template <typename... Ts>
 using Polymorphic = std::conditional_t<
     (is_tagged_signature<Ts> && ...),
-    impl::CopyableGenericPolymorphic<64, Ts...>,
-    impl::CopyableGenericPolymorphic<
-        64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+    CopyableGenericPolymorphic<64, Ts...>,
+    CopyableGenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
 template <typename... Ts>
 using UniquePolymorphic = std::conditional_t<
     (is_tagged_signature<Ts> && ...),
-    impl::GenericPolymorphic<64, Ts...>,
-    impl::GenericPolymorphic<
-        64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
+    GenericPolymorphic<64, Ts...>,
+    GenericPolymorphic<64, TaggedSignature<Ts, PolymorphicTagSignatureT<Ts>>...>>;
 
-namespace impl {
-// Type for storing a function pointer to the polymorphic object's dtor in the
-// vtable
-struct obj_dtor_tag {};
-struct obj_copy_ctor_tag {};
-
-template <std::size_t size, typename... TaggedSignatures>
-class GenericPolymorphic;
-
+/*!
+ *
+ */
+#ifdef DOXYGEN
+template<std::size_t size, typename... TaggedSignatures>
+class GenericPolymorphic 
+#else
 template <std::size_t size, typename... Tags, typename... FunctionSignatures>
-class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
+class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> 
+#endif
+{
   template <typename U>
   static constexpr bool is_self =
       std::is_same_v<std::decay_t<U>, GenericPolymorphic>;
@@ -79,7 +68,7 @@ class GenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>...> {
 
 public:
   using FunctionTableT =
-      VTable<TaggedSignature<obj_dtor_tag, void()>,
+      VTable<TaggedSignature<impl::obj_dtor_tag, void()>,
              TaggedSignature<Tags, FunctionSignatures>...>;
 
   constexpr GenericPolymorphic() noexcept : function_table_m() {
@@ -89,13 +78,13 @@ public:
       : function_table_m{other.functionTable()} {
 
     static_assert(
-        utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>,
+        utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
         "This Polymorphic is not copyable"); 
 
     auto other_state = other.getState();
     if (other_state == State::fallback_allocated)
       new (data_m) FallbackAllocData();
-    other.call<PrivateFunctions::obj_copy_ctor_tag>(allocateBasedOnState(
+    other.call<impl::obj_copy_ctor_tag>(allocateBasedOnState(
         other_state, other.getSize(), other.getAlignment()));
   }
   constexpr GenericPolymorphic(GenericPolymorphic &&other) noexcept
@@ -110,7 +99,7 @@ public:
   constexpr auto operator=(GenericPolymorphic const &rhs) noexcept
       -> GenericPolymorphic & {
     static_assert(
-        utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>,
+        utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
         "This Polymorphic is not copyable"); 
 
     if (this == &rhs)
@@ -122,7 +111,7 @@ public:
     auto rhs_state = rhs.getState();
     if (rhs_state == State::fallback_allocated)
       new (data_m) FallbackAllocData();
-    rhs.call<PrivateFunctions::obj_copy_ctor_tag>(
+    rhs.call<impl::obj_copy_ctor_tag>(
         allocateBasedOnState(rhs_state, rhs.getSize(), rhs.getAlignment()));
 
     return *this;
@@ -161,7 +150,7 @@ public:
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
             (std::is_lvalue_reference_v<T &&> &&
-             utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>),
+             utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
         "This Polymorphic is not copyable"); 
 
     State state;
@@ -192,7 +181,7 @@ public:
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
             (std::is_lvalue_reference_v<T &&> &&
-             utility::is_in_the_pack_v<PrivateFunctions::obj_copy_ctor_tag, Tags...>),
+             utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
         "This Polymorphic is not copyable"); 
 
     function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
@@ -370,7 +359,7 @@ private:
     if (state == State::empty)
       return;
 
-    call<obj_dtor_tag>();
+    call<impl::obj_dtor_tag>();
 
     switch (state) {
     case State::fallback_allocated: {
@@ -391,16 +380,16 @@ private:
   FunctionTableT function_table_m;
 };
 
-template <typename T>
-void *polymorphicExtend(PrivateFunctions::obj_copy_ctor_tag /*unused*/,
-                        T const &obj, void *ptr) {
-  return new (ptr) T(obj);
-}
+namespace impl {
+  template <typename T>
+  void *polymorphicExtend(impl::obj_copy_ctor_tag /*unused*/, T const &obj, void *ptr) {
+    return new (ptr) T(obj);
+  }
 
-template <typename T> void polymorphicExtend(obj_dtor_tag /*unused*/, T &obj) {
-  obj.~T();
-}
-
+  template <typename T>
+  void polymorphicExtend(impl::obj_dtor_tag /*unused*/, T &obj) {
+    obj.~T();
+  }
 } // namespace impl
 
 } // namespace CxxPlugins
