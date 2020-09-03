@@ -19,7 +19,7 @@
 #include <memory_resource>
 #include <string>
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace impl {
 

@@ -20,13 +20,13 @@ struct add {};
 struct multiply {};
 struct stringify {};
 
-template <> struct CxxPlugins::PolymorphicTagSignature<add> {
+template <> struct plugins::PolymorphicTagSignature<add> {
   using Type = void(int);
 };
-template <> struct CxxPlugins::PolymorphicTagSignature<multiply> {
+template <> struct plugins::PolymorphicTagSignature<multiply> {
   using Type = void(int);
 };
-template <> struct CxxPlugins::PolymorphicTagSignature<stringify> {
+template <> struct plugins::PolymorphicTagSignature<stringify> {
   using Type = std::string() const;
 };
 
@@ -58,7 +58,7 @@ struct foo {
 
 TEST(PolymorphicRef, SimpleTests) {
 
-  using namespace CxxPlugins;
+  using namespace plugins;
   foo obj0;
 
   PolymorphicPtr<Tag<add>, Tag<multiply>> simple_poly(&obj0);
@@ -125,7 +125,7 @@ constexpr auto polymorphicExtend(Correctness /*unused*/, Dummy const &
 //}
 
 TEST(PolymorphicRef, checkReferenceCorrectness) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   Dummy obj;
 
   PolymorphicPtr<TaggedSignature<Correctness, ReferenceType()>> lvalue_ref(&obj);
@@ -144,7 +144,7 @@ TEST(PolymorphicRef, checkReferenceCorrectness) {
 
 
 TEST(PolymorphicRef, DefaultConstructor) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   [[maybe_unused]] PolymorphicPtr<> default_empty;
   [[maybe_unused]] PolymorphicPtr<add> default_single_arg;
   [[maybe_unused]] PolymorphicPtr<add,multiply,stringify> default_multi_arg;
@@ -156,7 +156,7 @@ TEST(PolymorphicRef, DefaultConstructor) {
 
 
 TEST(PolymorphicRef, Reorder) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   foo obj0;
   PolymorphicPtr<add,multiply> ref0(&obj0);
   PolymorphicPtr<multiply,add> ref1(ref0);

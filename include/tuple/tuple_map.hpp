@@ -15,7 +15,7 @@
 #include "tuple/tuple_cat.hpp"
 #include "tuple/tuple_impl.hpp"
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename... TaggedValues> struct TupleMap;
 

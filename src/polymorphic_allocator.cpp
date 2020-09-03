@@ -17,7 +17,7 @@
 #include <memory_resource>
 #include <mutex>
 
-namespace CxxPlugins {
+namespace plugins {
 
 static std::mutex resource_mutex;
 static ::utility::Mallocator global_mallocator = {};

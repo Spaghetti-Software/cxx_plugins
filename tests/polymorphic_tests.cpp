@@ -21,10 +21,10 @@
 struct add {};
 struct multiply {};
 
-template <> struct CxxPlugins::PolymorphicTagSignature<add> {
+template <> struct plugins::PolymorphicTagSignature<add> {
   using Type = void(int);
 };
-template <> struct CxxPlugins::PolymorphicTagSignature<multiply> {
+template <> struct plugins::PolymorphicTagSignature<multiply> {
   using Type = void(int);
 };
 
@@ -46,7 +46,7 @@ struct foo {
 };
 
 TEST(Polymorphic, SimpleTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   foo obj;
 
   Polymorphic<Tag<add>, Tag<multiply>> simple_poly(obj);
@@ -61,7 +61,7 @@ TEST(Polymorphic, SimpleTests) {
 
 struct printSize {};
 
-template <> struct CxxPlugins::PolymorphicTagSignature<printSize> {
+template <> struct plugins::PolymorphicTagSignature<printSize> {
   using Type = void();
 };
 
@@ -94,7 +94,7 @@ template <std::size_t size> struct bigbar {
 };
 
 TEST(Polymorphic, AllocationAndConstructorTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   EXPECT_EQ(smallbar::counter, 0);
 
   smallbar obj0;
@@ -120,7 +120,7 @@ TEST(Polymorphic, AllocationAndConstructorTests) {
 
 struct printUnique {};
 
-template <> struct CxxPlugins::PolymorphicTagSignature<printUnique> {
+template <> struct plugins::PolymorphicTagSignature<printUnique> {
   using Type = void();
 };
 
@@ -136,7 +136,7 @@ struct unique_struct {
 };
 
 TEST(Polymorphic, UniquePolymorphicTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   unique_struct us;
   UniquePolymorphic<Tag<printUnique>> up(std::move(us));

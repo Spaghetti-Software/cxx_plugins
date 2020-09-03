@@ -32,7 +32,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename T> struct JsonName {
   static inline char const * const value = type_id<T>().name();
@@ -196,7 +196,7 @@ void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
 template <typename... Keys, typename... Values, typename Encoding,
           typename JSONAllocator, typename AdditionalInfo = void *>
 void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-           CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map,
+           plugins::TupleMap<TaggedValue<Keys, Values>...> &map,
            AdditionalInfo &&additional_info = nullptr);
 
 
@@ -456,7 +456,7 @@ void deserializeTupleImpl(
     rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
     Tuple &tuple, AdditionalInfo &&additional_info) {
   using tuple_t = Tuple;
-  static constexpr std::size_t tuple_size = CxxPlugins::tuple_size_v<tuple_t>;
+  static constexpr std::size_t tuple_size = plugins::tuple_size_v<tuple_t>;
   static constexpr std::array<std::size_t, tuple_size> index_array =
       Sequence::AsStdArray<std::make_index_sequence<tuple_size>>::value;
 
@@ -529,10 +529,10 @@ void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
 template <typename... Keys, typename... Values, typename Encoding,
           typename JSONAllocator, typename AdditionalInfo>
 void parse(rapidjson::GenericValue<Encoding, JSONAllocator> const &json_value,
-           CxxPlugins::TupleMap<TaggedValue<Keys, Values>...> &map,
+           plugins::TupleMap<TaggedValue<Keys, Values>...> &map,
            AdditionalInfo &&additional_info) {
 
-  using map_t = CxxPlugins::TupleMap<TaggedValue<Keys, Values>...>;
+  using map_t = plugins::TupleMap<TaggedValue<Keys, Values>...>;
 
   using json_value_t = rapidjson::GenericValue<Encoding, JSONAllocator>;
   using json_object_t = typename json_value_t::ConstObject;

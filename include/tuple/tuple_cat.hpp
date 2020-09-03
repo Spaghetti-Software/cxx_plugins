@@ -23,7 +23,7 @@
 
 #include <utility>
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <template <typename...> class TupleTemplate, typename... FirstParam,
           typename... RestTuples>
@@ -124,7 +124,7 @@ private:
 
 public:
   using Type = TupleTemplate<TupleCatElementT<
-      inner_indices, CxxPlugins::utility::ElementType<outer_indices, FirstTuple,
+      inner_indices, plugins::utility::ElementType<outer_indices, FirstTuple,
                                                       RestTuples...>>...>;
 };
 

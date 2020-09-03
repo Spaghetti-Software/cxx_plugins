@@ -341,7 +341,7 @@ private:
 };
 
 template <typename... Ts>
-class PackedTupleTests<CxxPlugins::Tuple<Ts...>> : public ::testing::Test {
+class PackedTupleTests<plugins::Tuple<Ts...>> : public ::testing::Test {
 public:
   static_assert(true &&
                 ((is_implicit_data_v<Ts> || is_explicit_data_v<Ts>)&&...),
@@ -363,9 +363,9 @@ public:
 
   static constexpr std::size_t explicit_count = elements_count - implicit_count;
 
-  NOINLINE auto create(CxxPlugins::Tuple<Ts...> data) { return data; }
+  NOINLINE auto create(plugins::Tuple<Ts...> data) { return data; }
 
-  NOINLINE void createNoReturn(CxxPlugins::Tuple<Ts...> /*unused*/) {}
+  NOINLINE void createNoReturn(plugins::Tuple<Ts...> /*unused*/) {}
 
   static constexpr auto sequence = std::index_sequence_for<Ts...>();
 
@@ -382,31 +382,31 @@ public:
 
   template <std::size_t index>
   void
-  checkEqualityImpl(CxxPlugins::Tuple<Ts...> const &tuple,
+  checkEqualityImpl(plugins::Tuple<Ts...> const &tuple,
                     std::tuple<DecayedUnderlyingTypeT<Ts>...> const &expected) {
-    EXPECT_EQ(CxxPlugins::get<index>(tuple).value_m, std::get<index>(expected));
+    EXPECT_EQ(plugins::get<index>(tuple).value_m, std::get<index>(expected));
   }
 
   template <std::size_t... indices>
   void
   checkEquality(std::index_sequence<indices...> /*unused*/,
-                CxxPlugins::Tuple<Ts...> const &tuple,
+                plugins::Tuple<Ts...> const &tuple,
                 std::tuple<DecayedUnderlyingTypeT<Ts>...> const &expected) {
     (checkEqualityImpl<indices>(tuple, expected), ...);
   }
 
   template <std::size_t index,
       std::enable_if_t<index >= 0 && sizeof...(Ts) >= 1, int> = 0>
-  void checkEqualityImpl(CxxPlugins::Tuple<Ts...> const &tuple,
+  void checkEqualityImpl(plugins::Tuple<Ts...> const &tuple,
                          std::tuple<Ts...> const &expected) {
-    EXPECT_EQ(CxxPlugins::get<index>(tuple).value_m,
+    EXPECT_EQ(plugins::get<index>(tuple).value_m,
               std::get<index>(expected).value_m);
   }
 
   template <std::size_t... indices,
       std::enable_if_t<sizeof...(indices) >= 1, int> = 0>
   void checkEquality(std::index_sequence<indices...> /*unused*/,
-                     CxxPlugins::Tuple<Ts...> const &tuple,
+                     plugins::Tuple<Ts...> const &tuple,
                      std::tuple<Ts...> const &expected) {
     (checkEqualityImpl<indices>(tuple, expected), ...);
   }
@@ -418,12 +418,12 @@ public:
 
   template <std::size_t... indices>
   void testAlignment(std::index_sequence<indices...> /*unused*/,
-                     CxxPlugins::Tuple<Ts...> const &tuple) {
-    (testAlignmentImpl(&CxxPlugins::get<indices>(tuple)), ...);
+                     plugins::Tuple<Ts...> const &tuple) {
+    (testAlignmentImpl(&plugins::get<indices>(tuple)), ...);
   }
 
   void testDefaultCtor() {
-    using namespace CxxPlugins;
+    using namespace plugins;
     ::testing::InSequence in_sequence;
 
     setStrictMock();
@@ -476,14 +476,14 @@ public:
   void testDirectCtorExplicitImpl(std::index_sequence<indices...> /*unused*/,
                                   std::tuple<Ts...> const &input_data) {
     EXPECT_CALL(*mock_m, copyCtor).Times(elements_count);
-    CxxPlugins::Tuple<Ts...> data_copy(std::get<indices>(input_data)...);
+    plugins::Tuple<Ts...> data_copy(std::get<indices>(input_data)...);
     testAlignment(sequence, data_copy);
     checkEquality(sequence, data_copy, input_data);
 
     // Implicit tests move ctors, so let's check move here as well
     EXPECT_CALL(*mock_m, moveCtor).Times(elements_count);
-    CxxPlugins::Tuple<Ts...> data_move(
-        CxxPlugins::get<indices>(std::move(data_copy))...);
+    plugins::Tuple<Ts...> data_move(
+        plugins::get<indices>(std::move(data_copy))...);
     checkEquality(sequence, data_copy, input_data);
     EXPECT_CALL(*mock_m, dtor).Times(elements_count);
     EXPECT_CALL(*mock_m, dtor).Times(elements_count);
@@ -494,7 +494,7 @@ public:
   testConvertingCtorExplicitImpl(std::index_sequence<indices...> /*unused*/,
                                  std::tuple<Us...> const &input_data) {
     EXPECT_CALL(*mock_m, conversionCopyCtor).Times(elements_count);
-    CxxPlugins::Tuple<Ts...> data_copy(std::get<indices>(input_data)...);
+    plugins::Tuple<Ts...> data_copy(std::get<indices>(input_data)...);
     testAlignment(sequence, data_copy);
     checkEquality(sequence, data_copy, input_data);
     EXPECT_CALL(*mock_m, dtor).Times(elements_count);
@@ -502,7 +502,7 @@ public:
 
   void testDirectCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -535,7 +535,7 @@ public:
   }
   void testConvertingCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -565,7 +565,7 @@ public:
   }
   void testConvertingCopyCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -602,7 +602,7 @@ public:
   }
   void testConvertingMoveCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -641,7 +641,7 @@ public:
   }
   void testPairCopyCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -673,7 +673,7 @@ public:
   }
   void testPairMoveCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -705,7 +705,7 @@ public:
   }
   void testCopyCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -720,7 +720,7 @@ public:
   }
   void testMoveCtor() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -736,7 +736,7 @@ public:
   }
   void testCopyAssignment() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -753,7 +753,7 @@ public:
   }
   void testMoveAssignment() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -772,7 +772,7 @@ public:
   }
   void testConversionCopyAssignment() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -789,7 +789,7 @@ public:
   }
   void testConversionMoveAssignment() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -808,7 +808,7 @@ public:
 
   void testMemberSwap() {
     ::testing::InSequence in_sequence;
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setNiceMock();
 
@@ -836,13 +836,13 @@ public:
 
     // ExplicitData has explicit move/copy constructors, which breaks swap
     if constexpr (explicit_count == 0) {
-      CxxPlugins::Tuple<Ts...> expected0(
+      plugins::Tuple<Ts...> expected0(
           RandomGenerator<DecayedUnderlyingTypeT<Ts>>{}()...);
-      CxxPlugins::Tuple<Ts...> expected1(
+      plugins::Tuple<Ts...> expected1(
           RandomGenerator<DecayedUnderlyingTypeT<Ts>>{}()...);
 
-      CxxPlugins::Tuple<Ts...> val0(expected0);
-      CxxPlugins::Tuple<Ts...> val1(expected1);
+      plugins::Tuple<Ts...> val0(expected0);
+      plugins::Tuple<Ts...> val1(expected1);
 
       swap(val0, val1);
 
@@ -852,7 +852,7 @@ public:
   }
 
   void testMakeTuple() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     bool is_same = std::is_same_v<Tuple<Ts...>,
         decltype(makeTuple(std::declval<Ts>()...))>;
@@ -862,7 +862,7 @@ public:
   }
 
   void testApply() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     //    if constexpr (elements_count >= 1) {
 
@@ -893,7 +893,7 @@ public:
   }
 
   void testMultiArgumentApply() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -926,7 +926,7 @@ public:
   }
 
   void testForEach() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -953,7 +953,7 @@ public:
   }
 
   void testForEachMultiArgument() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -990,14 +990,14 @@ public:
   }
 
   template <std::size_t... indices>
-  auto tieImpl(CxxPlugins::Tuple<Ts...> &tuple,
+  auto tieImpl(plugins::Tuple<Ts...> &tuple,
                std::index_sequence<indices...> /*unused*/) {
-    using namespace CxxPlugins;
+    using namespace plugins;
     return tie(get<indices>(tuple)...);
   }
 
   void testTie() {
-    using namespace CxxPlugins;
+    using namespace plugins;
 
     setStrictMock();
 
@@ -1018,7 +1018,7 @@ public:
   }
 
   void testTypeDeductionGuides() {
-    using namespace CxxPlugins;
+    using namespace plugins;
     setNiceMock();
     Tuple tuple0(Ts{}...);
     using type0 = decltype(tuple0);
@@ -1037,50 +1037,50 @@ public:
 
   void testStructuredBinding() {
     setNiceMock();
-    CxxPlugins::Tuple tuple(Ts{}...);
+    plugins::Tuple tuple(Ts{}...);
     if constexpr (elements_count == 1) {
       auto &[member_ref] = tuple;
-      EXPECT_EQ(&member_ref, &CxxPlugins::get<0>(tuple));
+      EXPECT_EQ(&member_ref, &plugins::get<0>(tuple));
       auto [member_val] = tuple;
-      EXPECT_NE(&member_val, &CxxPlugins::get<0>(tuple));
-      EXPECT_EQ(member_val, CxxPlugins::get<0>(tuple));
+      EXPECT_NE(&member_val, &plugins::get<0>(tuple));
+      EXPECT_EQ(member_val, plugins::get<0>(tuple));
     }
     if constexpr (elements_count == 2) {
       auto &[member_ref0, member_ref1] = tuple;
-      EXPECT_EQ(&member_ref0, &CxxPlugins::get<0>(tuple));
-      EXPECT_EQ(&member_ref1, &CxxPlugins::get<1>(tuple));
+      EXPECT_EQ(&member_ref0, &plugins::get<0>(tuple));
+      EXPECT_EQ(&member_ref1, &plugins::get<1>(tuple));
 
       auto [member_val0, member_val1] = tuple;
 
-      EXPECT_NE(&member_val0, &CxxPlugins::get<0>(tuple));
-      EXPECT_NE(&member_val1, &CxxPlugins::get<1>(tuple));
+      EXPECT_NE(&member_val0, &plugins::get<0>(tuple));
+      EXPECT_NE(&member_val1, &plugins::get<1>(tuple));
 
-      EXPECT_EQ(member_val0, CxxPlugins::get<0>(tuple));
-      EXPECT_EQ(member_val1, CxxPlugins::get<1>(tuple));
+      EXPECT_EQ(member_val0, plugins::get<0>(tuple));
+      EXPECT_EQ(member_val1, plugins::get<1>(tuple));
 
     }
     if constexpr (elements_count == 3) {
       auto &[member_ref0, member_ref1, member_ref2] = tuple;
-      EXPECT_EQ(&member_ref0, &CxxPlugins::get<0>(tuple));
-      EXPECT_EQ(&member_ref1, &CxxPlugins::get<1>(tuple));
-      EXPECT_EQ(&member_ref2, &CxxPlugins::get<2>(tuple));
+      EXPECT_EQ(&member_ref0, &plugins::get<0>(tuple));
+      EXPECT_EQ(&member_ref1, &plugins::get<1>(tuple));
+      EXPECT_EQ(&member_ref2, &plugins::get<2>(tuple));
 
 
       auto [member_val0, member_val1, member_val2] = tuple;
 
-      EXPECT_NE(&member_val0, &CxxPlugins::get<0>(tuple));
-      EXPECT_NE(&member_val1, &CxxPlugins::get<1>(tuple));
-      EXPECT_NE(&member_val2, &CxxPlugins::get<2>(tuple));
+      EXPECT_NE(&member_val0, &plugins::get<0>(tuple));
+      EXPECT_NE(&member_val1, &plugins::get<1>(tuple));
+      EXPECT_NE(&member_val2, &plugins::get<2>(tuple));
 
 
-      EXPECT_EQ(member_val0, CxxPlugins::get<0>(tuple));
-      EXPECT_EQ(member_val1, CxxPlugins::get<1>(tuple));
-      EXPECT_EQ(member_val2, CxxPlugins::get<2>(tuple));
+      EXPECT_EQ(member_val0, plugins::get<0>(tuple));
+      EXPECT_EQ(member_val1, plugins::get<1>(tuple));
+      EXPECT_EQ(member_val2, plugins::get<2>(tuple));
     }
   }
 
   void testTupleCat() {
-    using namespace CxxPlugins;
+    using namespace plugins;
     setNiceMock();
     Tuple<Ts...> t0;
     Tuple<Ts...> t1;
@@ -1200,29 +1200,29 @@ REGISTER_TYPED_TEST_SUITE_P(
     ForEach, ForEachMulti, Tie, Cat, DeductionGuides, StructuredBinding);
 
 // clang-format off
-using EmptyType = CxxPlugins::Tuple<>;
+using EmptyType = plugins::Tuple<>;
 
 using SimpleSingleTypes = ::testing::Types<
-    CxxPlugins::Tuple<ImplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>>
+    plugins::Tuple<ImplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>>
 >;
 
 using SimpleMultiTypes = ::testing::Types<
-    CxxPlugins::Tuple<ImplicitData<int>, ImplicitData<int>>,
-    CxxPlugins::Tuple<ImplicitData<int>, ImplicitData<int>, ImplicitData<int>>,
-    CxxPlugins::Tuple<ImplicitData<int>, ImplicitData<int>, ImplicitData<int>, ImplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int>, ExplicitData<int>>
+    plugins::Tuple<ImplicitData<int>, ImplicitData<int>>,
+    plugins::Tuple<ImplicitData<int>, ImplicitData<int>, ImplicitData<int>>,
+    plugins::Tuple<ImplicitData<int>, ImplicitData<int>, ImplicitData<int>, ImplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int>, ExplicitData<int>>
 >;
 
 using MixedMultiTypes = ::testing::Types<
-    CxxPlugins::Tuple<ImplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ImplicitData<int>, ExplicitData<int>, ImplicitData<int>>,
-    CxxPlugins::Tuple<ImplicitData<int>, ExplicitData<int>, ImplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ImplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ImplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ImplicitData<int>, ExplicitData<int>, ImplicitData<int>>
+    plugins::Tuple<ImplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ImplicitData<int>, ExplicitData<int>, ImplicitData<int>>,
+    plugins::Tuple<ImplicitData<int>, ExplicitData<int>, ImplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ImplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ImplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ImplicitData<int>, ExplicitData<int>, ImplicitData<int>>
 >;
 
 // Implicit and explicit Constructors are tested in types above
@@ -1230,27 +1230,27 @@ using MixedMultiTypes = ::testing::Types<
 // (implicit ctors use explicit ctors too)
 
 using PaddedTypes = :: testing::Types<
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<char>>,
-    CxxPlugins::Tuple<ExplicitData<char>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<double>, ExplicitData<int>, ExplicitData<char>>,
-    CxxPlugins::Tuple<ExplicitData<char>, ExplicitData<int>, ExplicitData<double>>,
-    CxxPlugins::Tuple<ExplicitData<char>, ExplicitData<double>, ExplicitData<char>, ExplicitData<double>>,
-    CxxPlugins::Tuple<ExplicitData<double>, ExplicitData<double>, ExplicitData<char>, ExplicitData<char>>
+    plugins::Tuple<ExplicitData<int>, ExplicitData<char>>,
+    plugins::Tuple<ExplicitData<char>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<double>, ExplicitData<int>, ExplicitData<char>>,
+    plugins::Tuple<ExplicitData<char>, ExplicitData<int>, ExplicitData<double>>,
+    plugins::Tuple<ExplicitData<char>, ExplicitData<double>, ExplicitData<char>, ExplicitData<double>>,
+    plugins::Tuple<ExplicitData<double>, ExplicitData<double>, ExplicitData<char>, ExplicitData<char>>
 >;
 
 // No Default constroctors
 // No Copy/Move assignment
 using ReferenceTypes = ::testing::Types<
-    CxxPlugins::Tuple<ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int&>, ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int&>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int>, ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int&>, ExplicitData<int&>>,
-    CxxPlugins::Tuple<ExplicitData<int&>, ExplicitData<int>, ExplicitData<int>>,
-    CxxPlugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int&>>
+    plugins::Tuple<ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int&>, ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int&>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int>, ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int&>, ExplicitData<int&>>,
+    plugins::Tuple<ExplicitData<int&>, ExplicitData<int>, ExplicitData<int>>,
+    plugins::Tuple<ExplicitData<int>, ExplicitData<int>, ExplicitData<int&>>
 >;
 
 // clang-format on
@@ -1261,7 +1261,7 @@ template <> struct PaddedStruct<0> {
   char val1_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<int, char>) == sizeof(PaddedStruct<0>),
+static_assert(sizeof(plugins::Tuple<int, char>) == sizeof(PaddedStruct<0>),
               "Size is wrong");
 
 template <> struct PaddedStruct<1> {
@@ -1269,7 +1269,7 @@ template <> struct PaddedStruct<1> {
   int val1_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<char, int>) == sizeof(PaddedStruct<1>),
+static_assert(sizeof(plugins::Tuple<char, int>) == sizeof(PaddedStruct<1>),
               "Size is wrong");
 
 template <> struct PaddedStruct<2> {
@@ -1278,7 +1278,7 @@ template <> struct PaddedStruct<2> {
   char val2_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<double, int, char>) ==
+static_assert(sizeof(plugins::Tuple<double, int, char>) ==
               sizeof(PaddedStruct<2>),
               "Size is wrong");
 
@@ -1288,7 +1288,7 @@ template <> struct PaddedStruct<3> {
   double val2_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<char, int, double>) ==
+static_assert(sizeof(plugins::Tuple<char, int, double>) ==
               sizeof(PaddedStruct<3>),
               "Size is wrong");
 
@@ -1299,7 +1299,7 @@ template <> struct PaddedStruct<4> {
   double val_3_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<char, double, char, double>) ==
+static_assert(sizeof(plugins::Tuple<char, double, char, double>) ==
               sizeof(PaddedStruct<4>),
               "Size is wrong");
 
@@ -1310,7 +1310,7 @@ template <> struct PaddedStruct<5> {
   char val_3_m;
 };
 
-static_assert(sizeof(CxxPlugins::Tuple<double, double, char, char>) ==
+static_assert(sizeof(plugins::Tuple<double, double, char, char>) ==
               sizeof(PaddedStruct<5>),
               "Size is wrong");
 

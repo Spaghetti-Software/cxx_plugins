@@ -15,7 +15,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace impl {
 template <typename T> struct IsPair : public std::false_type{};
@@ -61,13 +61,13 @@ constexpr auto usesAllocatorConstructionArgs(
       std::piecewise_construct,
       std::apply(
           [&alloc](auto &&... args1) {
-            return CxxPlugins::usesAllocatorConstructionArgs<T1>(
+            return plugins::usesAllocatorConstructionArgs<T1>(
                 alloc, std::forward<decltype(args1)>(args1)...);
           },
           std::forward<Tuple1>(x)),
       std::apply(
           [&alloc](auto &&... args2) {
-            return CxxPlugins::usesAllocatorConstructionArgs<T2>(
+            return plugins::usesAllocatorConstructionArgs<T2>(
                 alloc, std::forward<decltype(args2)>(args2)...);
           },
           std::forward<Tuple2>(y)));
@@ -88,7 +88,7 @@ usesAllocatorConstructionArgs(const Alloc &alloc,
 
 template <class T, class Alloc, typename = std::enable_if_t<impl::is_pair_v<T>>>
 constexpr auto usesAllocatorConstructionArgs(const Alloc &alloc) noexcept {
-  return CxxPlugins::usesAllocatorConstructionArgs<T>(
+  return plugins::usesAllocatorConstructionArgs<T>(
       alloc, std::piecewise_construct, std::tuple<>{}, std::tuple<>{});
 }
 
@@ -96,7 +96,7 @@ template <class T, class Alloc, class U, class V,
           typename = std::enable_if_t<impl::is_pair_v<T>>>
 constexpr auto usesAllocatorConstructionArgs(const Alloc &alloc, U &&u,
                                              V &&v) noexcept {
-  return CxxPlugins::usesAllocatorConstructionArgs<T>(
+  return plugins::usesAllocatorConstructionArgs<T>(
       alloc, std::piecewise_construct,
       std::forward_as_tuple(std::forward<U>(u)),
       std::forward_as_tuple(std::forward<V>(v)));
@@ -107,7 +107,7 @@ template <class T, class Alloc, class U, class V,
 constexpr auto
 usesAllocatorConstructionArgs(const Alloc &alloc,
                               const std::pair<U, V> &pr) noexcept {
-  return CxxPlugins::usesAllocatorConstructionArgs<T>(
+  return plugins::usesAllocatorConstructionArgs<T>(
       alloc, std::piecewise_construct, std::forward_as_tuple(pr.first),
       std::forward_as_tuple(pr.second));
 }
@@ -116,7 +116,7 @@ template <class T, class Alloc, class U, class V,
           typename = std::enable_if_t<impl::is_pair_v<T>>>
 constexpr auto usesAllocatorConstructionArgs(const Alloc &alloc,
                                              std::pair<U, V> &&pr) noexcept {
-  return CxxPlugins::usesAllocatorConstructionArgs<T>(
+  return plugins::usesAllocatorConstructionArgs<T>(
       alloc, std::piecewise_construct,
       std::forward_as_tuple(std::move(pr).first),
       std::forward_as_tuple(std::move(pr).second));
@@ -128,9 +128,9 @@ constexpr auto uninitializedConstructUsingAllocator(T *p, const Alloc &alloc,
 
   return std::apply(
       [&](auto &&... xs) {
-        return CxxPlugins::constructAt(p, std::forward<decltype(xs)>(xs)...);
+        return plugins::constructAt(p, std::forward<decltype(xs)>(xs)...);
       },
-      CxxPlugins::usesAllocatorConstructionArgs<T>(
+      plugins::usesAllocatorConstructionArgs<T>(
           alloc, std::forward<Args>(args)...));
 }
 } // namespace CxxPlugins

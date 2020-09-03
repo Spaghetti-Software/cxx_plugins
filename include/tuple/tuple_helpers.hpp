@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <array>
 
-namespace CxxPlugins {
+namespace plugins {
 template <typename T> struct TupleSize;
 
 template <template <typename...> class TupleTemplate, typename... Ts>

@@ -25,7 +25,7 @@
  * in implementation but they are generic and can be used by external
  * applications.
  */
-namespace CxxPlugins::utility {
+namespace plugins::utility {
 
 // implementation details
 namespace impl {

@@ -17,7 +17,7 @@
 
 #include <functional>
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename Signature> using Function = std::function<Signature>;
 

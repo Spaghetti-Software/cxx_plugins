@@ -1,5 +1,5 @@
 
-namespace CxxPlugins::utility {
+namespace plugins::utility {
 
 template <typename Return, typename... Args>
 struct FunctionTraits<Return(Args...)> {

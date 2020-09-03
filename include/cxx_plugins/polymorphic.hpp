@@ -19,7 +19,7 @@
 #include "cxx_plugins/polymorphic_allocator.hpp"
 #include "cxx_plugins/vtable.hpp"
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace impl {
 

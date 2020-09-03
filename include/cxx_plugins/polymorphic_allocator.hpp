@@ -19,7 +19,7 @@
 #include <boost/type_index/runtime_cast/pointer_cast.hpp>
 #include <memory_resource>
 
-namespace CxxPlugins {
+namespace plugins {
 
 struct allocate {};
 struct deallocate {};
@@ -74,7 +74,7 @@ inline auto polymorphicExtend(isEqual, std::pmr::memory_resource const &lhs,
 
 inline auto operator==(MemoryResourcePtr const &lhs,
                        MemoryResourcePtr const &rhs) -> bool {
-  return lhs.call<CxxPlugins::isEqual>(rhs);
+  return lhs.call<plugins::isEqual>(rhs);
 }
 
 // By default evaluates to std::pmr::get_default_resource()
@@ -126,20 +126,20 @@ public:
     }
 
     return static_cast<Tp *>(
-        resource_m.call<CxxPlugins::allocate>(n * sizeof(Tp), alignof(Tp)));
+        resource_m.call<plugins::allocate>(n * sizeof(Tp), alignof(Tp)));
   }
   void deallocate(Tp *p, size_t n) noexcept {
-    resource_m.call<CxxPlugins::deallocate>(p, n * sizeof(Tp), alignof(Tp));
+    resource_m.call<plugins::deallocate>(p, n * sizeof(Tp), alignof(Tp));
   }
 
   [[nodiscard]] auto allocate_bytes(size_t nbytes,
                                     size_t alignment = alignof(max_align_t))
       -> void * {
-    return resource_m.call<CxxPlugins::allocate>(nbytes, alignment);
+    return resource_m.call<plugins::allocate>(nbytes, alignment);
   }
   void deallocate_bytes(void *p, size_t nbytes,
                         size_t alignment = alignof(max_align_t)) {
-    resource_m.call<CxxPlugins::deallocate>(p, nbytes, alignment);
+    resource_m.call<plugins::deallocate>(p, nbytes, alignment);
   }
   template <typename U>[[nodiscard]] auto allocate_object(size_t n = 1) -> U * {
     if (n > std::numeric_limits<std::size_t>::max() / sizeof(U)) {
@@ -172,7 +172,7 @@ public:
 
   template <typename U, typename... Args>
   void construct(U *p, Args &&... args) {
-    CxxPlugins::uninitializedConstructUsingAllocator(
+    plugins::uninitializedConstructUsingAllocator(
         p, *this, std::forward<Args>(args)...);
   }
 
@@ -190,8 +190,8 @@ private:
 
 template <typename T1, typename T2>
 constexpr auto
-operator==(const CxxPlugins::PolymorphicAllocator<T1> &lhs,
-           const CxxPlugins::PolymorphicAllocator<T2> &rhs) noexcept -> bool {
+operator==(const plugins::PolymorphicAllocator<T1> &lhs,
+           const plugins::PolymorphicAllocator<T2> &rhs) noexcept -> bool {
   return lhs.resource() == rhs.resource();
 }
 

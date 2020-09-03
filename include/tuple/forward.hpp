@@ -13,7 +13,7 @@
  */
 #pragma once
 
-namespace CxxPlugins {
+namespace plugins {
 
 //template<typename... Args>
 //auto forwardAsTuple(Args&&...args);

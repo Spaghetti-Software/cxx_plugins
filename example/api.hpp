@@ -22,10 +22,10 @@ struct update{};
 struct shutdown{};
 }
 
-using SystemRef = CxxPlugins::PolymorphicPtr<
-    CxxPlugins::TaggedSignature<System::init,void()>,
-    CxxPlugins::TaggedSignature<System::update, void()>,
-    CxxPlugins::TaggedSignature<System::shutdown, void()>
+using SystemRef = plugins::PolymorphicPtr<
+    plugins::TaggedSignature<System::init,void()>,
+    plugins::TaggedSignature<System::update, void()>,
+    plugins::TaggedSignature<System::shutdown, void()>
 >;
 
 

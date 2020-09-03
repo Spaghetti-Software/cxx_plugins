@@ -20,7 +20,7 @@
 #include <vector>
 
 TEST(PolymorphicAllocator, SimpleTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   PolymorphicAllocator<> alloc;
   auto ptr = alloc.allocate(10);
   alloc.deallocate(ptr, 10);
@@ -28,7 +28,7 @@ TEST(PolymorphicAllocator, SimpleTests) {
 }
 
 TEST(PolymorphicAllocator, VectorIntTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   std::vector<int, PolymorphicAllocator<int>> vec;
   for (int i = 0; i < 10; ++i) {
     vec.resize(i + 1);
@@ -56,7 +56,7 @@ private:
 } // namespace
 
 TEST(PolymorphicAllocator, VectorObjectTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   std::vector<Foo, PolymorphicAllocator<Foo>> vec;
   for (int i = 0; i < 10; ++i) {
     vec.resize(i + 1);
@@ -74,7 +74,7 @@ constexpr std::size_t upTo(std::size_t size) {
 }
 
 TEST(PolymorphicAllocator, MonotonicBufferTests) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   static constexpr std::size_t max_size = 10;
   std::array<std::byte, sizeof(Foo) * upTo(max_size / 2 + 1)> buffer = {};
   std::array<std::byte, std::size(buffer)> old_buffer = buffer;
