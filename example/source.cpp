@@ -16,7 +16,7 @@
 #include "api.hpp"
 #include "example_plugin_export.h"
 
-#include <cxx_plugins/polymorphic_ref.hpp>
+#include <cxx_plugins/polymorphic_ptr.hpp>
 
 #include <iostream>
 

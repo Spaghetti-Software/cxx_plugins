@@ -28,7 +28,7 @@ public:
 
   ~Mallocator() = default;
 
-  mem_block allocate(std::size_t n, std::size_t alignment = 4) {
+  void* allocate(std::size_t n, std::size_t alignment = 4) {
     if (n == 0)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
@@ -42,18 +42,18 @@ public:
     if (ptr == nullptr)
       throw std::bad_alloc(); // TODO: replace with out custom exception
 
-    return mem_block{ptr, alignedSize};
+    return ptr;
   }
 
-  void deallocate(mem_block block) {
-    assert(block.ptr != nullptr);
-
-    if (!owns(block))
-      return;
+  void deallocate(void* ptr, std::size_t size, std::size_t alignment) {
+    assert(ptr != nullptr);
+//
+//    if (!owns())
+//      return;
 #ifdef _MSC_VER
-    _aligned_free(block.ptr);
+    _aligned_free(ptr);
 #else
-    std::free(block.ptr);
+    std::free(ptr);
 #endif
   }
 
@@ -65,6 +65,11 @@ public:
   bool owns(mem_block block) const noexcept {
     return true; // TODO: actually check if it was returned by malloc (check in the container of allocated blocks)
   }
+
+  bool is_equal(const Mallocator & rhs) const {
+    return true;
+  }
+
 private:
 
 };

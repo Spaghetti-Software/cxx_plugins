@@ -18,7 +18,7 @@
 
 #include <functional>
 
-namespace CxxPlugins {
+namespace plugins {
 template <typename Signature> struct FunctionRef;
 
 namespace impl {

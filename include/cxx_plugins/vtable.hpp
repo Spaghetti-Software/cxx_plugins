@@ -25,7 +25,7 @@
 
 #include <limits>
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace impl {
 

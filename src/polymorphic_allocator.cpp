@@ -12,25 +12,28 @@
  *
  */
 #include "cxx_plugins/polymorphic_allocator.hpp"
+#include "cxx_plugins/memory/mallocator.hpp"
+
 #include <memory_resource>
 #include <mutex>
 
-namespace CxxPlugins {
+namespace plugins {
 
 static std::mutex resource_mutex;
-static MemoryResourceRef default_resource = std::pmr::get_default_resource();
+static ::utility::Mallocator global_mallocator = {};
+static MemoryResourcePtr default_resource = &global_mallocator;
 
-auto getDefaultMemoryResource() noexcept -> MemoryResourceRef {
-  MemoryResourceRef result;
+auto getDefaultMemoryResource() noexcept -> MemoryResourcePtr {
+  MemoryResourcePtr result;
   {
     std::scoped_lock lock(resource_mutex);
     result = default_resource;
   }
   return result;
 }
-auto setDefaultMemoryResource(MemoryResourceRef mem_resource) noexcept
-    -> MemoryResourceRef {
-  MemoryResourceRef previous;
+auto setDefaultMemoryResource(MemoryResourcePtr mem_resource) noexcept
+    -> MemoryResourcePtr {
+  MemoryResourcePtr previous;
   if (!mem_resource.isEmpty()) {
     std::scoped_lock lock(resource_mutex);
     previous = default_resource;
@@ -44,12 +47,12 @@ auto setDefaultMemoryResource(MemoryResourceRef mem_resource) noexcept
 }
 auto setDefaultMemoryResource(
     std::pmr::memory_resource *std_mem_resource_p) noexcept
-    -> MemoryResourceRef {
-  return setDefaultMemoryResource(MemoryResourceRef{std_mem_resource_p});
+    -> MemoryResourcePtr {
+  return setDefaultMemoryResource(MemoryResourcePtr{std_mem_resource_p});
 }
 auto setDefaultMemoryResource(
-    std::pmr::memory_resource &std_mem_resource) noexcept -> MemoryResourceRef {
-  return setDefaultMemoryResource(MemoryResourceRef{std_mem_resource});
+    std::pmr::memory_resource &std_mem_resource) noexcept -> MemoryResourcePtr {
+  return setDefaultMemoryResource(MemoryResourcePtr{std_mem_resource});
 }
 
 } // namespace CxxPlugins

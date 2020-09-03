@@ -14,7 +14,7 @@
 
 #include "cxx_plugins/parser.hpp"
 
-namespace CxxPlugins {
+namespace plugins {
 
 
 void impl::parsingLippincott(std::string_view type_description) {

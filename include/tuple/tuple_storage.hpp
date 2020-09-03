@@ -19,7 +19,7 @@
 #include <algorithm> // std::max
 #include <utility>   // std::pair
 
-namespace CxxPlugins {
+namespace plugins {
 
 ///////////////////////////////////////////////////////
 /// DECLARATIONS

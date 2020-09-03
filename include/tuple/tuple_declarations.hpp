@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename... Ts> struct Tuple;
 template <typename... Ts> struct TupleMap;

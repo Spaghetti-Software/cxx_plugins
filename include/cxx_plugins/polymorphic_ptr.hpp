@@ -17,7 +17,7 @@
 #include "cxx_plugins/type_index.hpp"
 #include "cxx_plugins/vtable.hpp"
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace impl {
 template <typename... TaggedSignatures> class Polymorphic;

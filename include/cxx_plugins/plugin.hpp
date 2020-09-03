@@ -25,14 +25,14 @@ struct plugin_name {};
 struct plugin_version {};
 struct library_path {};
 
-namespace CxxPlugins {
+namespace plugins {
 
 namespace fs = std::filesystem;
 
-using VersionInfo = CxxPlugins::Tuple<int, int, int>;
+using VersionInfo = plugins::Tuple<int, int, int>;
 
 using SimplePluginInfo =
-    CxxPlugins::TupleMap<TaggedValue<api_id, std::string>,
+    plugins::TupleMap<TaggedValue<api_id, std::string>,
                          TaggedValue<api_version, VersionInfo>,
                          TaggedValue<plugin_name, std::string>,
                          TaggedValue<plugin_version, VersionInfo>,

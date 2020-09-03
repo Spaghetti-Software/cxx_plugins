@@ -15,7 +15,7 @@
 
 #include <variant>
 
-namespace CxxPlugins {
+namespace plugins {
 template <typename... Ts>
 using Variant =
     std::variant<Ts...>;

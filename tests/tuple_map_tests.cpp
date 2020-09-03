@@ -21,7 +21,7 @@ struct Foo {};
 struct Bar {};
 
 TEST(TupleMapTests, ConstructorsAndAssignments) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   //  TupleMap a(Pair(1,2.f));
 
@@ -48,7 +48,7 @@ TEST(TupleMapTests, ConstructorsAndAssignments) {
 }
 
 TEST(TupleMapTests, Subscript) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   TupleMap<TaggedValue<int, float>> map(0.5F);
   TaggedValue<int, float> result = get<int>(map);
@@ -66,7 +66,7 @@ TEST(TupleMapTests, Subscript) {
 }
 
 TEST(TupleMapTests, Comparison) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   auto t0 =
       makeTupleMap(TaggedValue(tag<Foo>, 0.5f), TaggedValue(tag<Bar>, 1.5f));
@@ -84,7 +84,7 @@ TEST(TupleMapTests, Comparison) {
 }
 
 TEST(TupleMapTests, Cat) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   auto map0 = makeTupleMap(TaggedValue(tag<Foo>, 5));
   auto map1 = makeTupleMap(TaggedValue(tag<Bar>, 2.0));
   auto expected =
@@ -96,7 +96,7 @@ TEST(TupleMapTests, Cat) {
 }
 
 TEST(TupleMapTests, SubMap) {
-  using namespace CxxPlugins;
+  using namespace plugins;
   auto map = makeTupleMap(TaggedValue(tag<Foo>, 5), TaggedValue(tag<Bar>, 2.0));
   static_assert(
       std::is_same_v<decltype(map), TupleMap<TaggedValue<Tag<Foo>, int>,

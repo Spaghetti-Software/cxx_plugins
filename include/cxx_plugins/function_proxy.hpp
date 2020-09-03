@@ -15,7 +15,7 @@
 
 #include <utility>
 
-namespace CxxPlugins {
+namespace plugins {
 template <typename Signature> struct FunctionProxy;
 
 template <typename Return, typename... Args>

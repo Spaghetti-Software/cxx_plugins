@@ -13,10 +13,8 @@
  */
 #pragma once
 
-#include <cxx_plugins/polymorphic_ref.hpp>
 #include <boost/dll/alias.hpp>
-
-
+#include <cxx_plugins/polymorphic_ptr.hpp>
 
 namespace System {
 struct init{};
@@ -24,10 +22,10 @@ struct update{};
 struct shutdown{};
 }
 
-using SystemRef = CxxPlugins::PolymorphicPtr<
-    CxxPlugins::TaggedSignature<System::init,void()>,
-    CxxPlugins::TaggedSignature<System::update, void()>,
-    CxxPlugins::TaggedSignature<System::shutdown, void()>
+using SystemRef = plugins::PolymorphicPtr<
+    plugins::TaggedSignature<System::init,void()>,
+    plugins::TaggedSignature<System::update, void()>,
+    plugins::TaggedSignature<System::shutdown, void()>
 >;
 
 

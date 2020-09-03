@@ -11,6 +11,26 @@
  * \brief
  *
  */
+ /*!
+  * \mainpage
+  *
+  * ## Emphasis
+  *
+  * CxxPlugins is a library that aims to simplify creation of plugin systems.
+  * It consists of:
+  *
+  * + `Polymorphic` and `PolymorphicPtr` templates,
+  *    that allow storing polymorphic objects without inheritance.
+  * + `PolymorphicAllocator` that is implemented using polymorphic and has the same purpose
+  *    as `std::pmr::polymorphic_allocator`.
+  *    + `Mallocator` - default polymorphic allocator memory resource. Uses malloc to allocate/deallocate objects.
+  *    + `StackAllocator` - memory resource that allocates objects on the stack.
+  * + Plugin configurator
+  *     + Customize json file configuration with constexpr function calls
+  *     + Load configurations and dlls automatically.
+  *
+  *
+  */
 /*!
  * \dir cxx_plugins
  * \brief Contains public interface for CXX Plugins
@@ -19,7 +39,7 @@
 
 #include "cxx_plugins/function_traits.hpp"
 #include "cxx_plugins/parser.hpp"
-#include "polymorphic_ref.hpp"
+#include "polymorphic_ptr.hpp"
 #include "tuple/tuple_map.hpp"
 
 #include <fmt/format.h>
@@ -76,12 +96,12 @@ template <typename... Elements, typename... Tags, typename... ElementValues,
           typename PluginType>
 void validate(
     elements /*unused*/,
-    CxxPlugins::TupleMap<CxxPlugins::TaggedValue<Tags, ElementValues>...> const
+    plugins::TupleMap<plugins::TaggedValue<Tags, ElementValues>...> const
         &map_of_elements,
     PluginType const &plugin) {
 
-  auto tags = CxxPlugins::makeTuple(Tags{}...);
-  CxxPlugins::tupleForEach(
+  auto tags = plugins::makeTuple(Tags{}...);
+  plugins::tupleForEach(
       [&plugin](auto const &tag, auto const &val) {
         validate(tag, val, plugin);
       },
@@ -92,12 +112,12 @@ template <typename... Elements, typename... Tags, typename... ElementValues,
           typename PluginType>
 void adjust(
     elements /*unused*/,
-    CxxPlugins::TupleMap<CxxPlugins::TaggedValue<Tags, ElementValues>...>
+    plugins::TupleMap<plugins::TaggedValue<Tags, ElementValues>...>
         &map_of_elements,
     PluginType const &plugin) {
 
-  auto tags = CxxPlugins::makeTuple(Tags{}...);
-  CxxPlugins::tupleForEach(
+  auto tags = plugins::makeTuple(Tags{}...);
+  plugins::tupleForEach(
       [&plugin](auto const &tag, auto &val) { adjust(tag, val, plugin); }, tags,
       map_of_elements);
 }
@@ -105,7 +125,7 @@ void adjust(
 } // namespace plugin_info
 
 //! \brief Main namespace for CXX Plugins project
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename Signature, bool Required> struct GlobalFunction;
 

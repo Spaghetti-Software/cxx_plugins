@@ -18,7 +18,7 @@
 
 #include <type_traits>
 
-namespace CxxPlugins {
+namespace plugins {
 
 
 template<typename TagT, typename Signature>

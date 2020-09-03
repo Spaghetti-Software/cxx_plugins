@@ -70,7 +70,7 @@ target_sources(${This}
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/parser.hpp
         include/cxx_plugins/polymorphic_traits.hpp
-        include/cxx_plugins/polymorphic_ref.hpp
+        include/cxx_plugins/polymorphic_ptr.hpp
         include/cxx_plugins/function_proxy.hpp
         include/cxx_plugins/polymorphic_allocator.hpp
         include/cxx_plugins/allocator_helpers.hpp

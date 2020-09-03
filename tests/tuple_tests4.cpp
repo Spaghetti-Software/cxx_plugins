@@ -18,7 +18,7 @@
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 
-using Type = CxxPlugins::Tuple<ExplicitData<double>, ExplicitData<double>, ExplicitData<char>, ExplicitData<char>>;
+using Type = plugins::Tuple<ExplicitData<double>, ExplicitData<double>, ExplicitData<char>, ExplicitData<char>>;
 
 //INSTANTIATE_TYPED_TEST_SUITE_P(PaddedTypes, PackedTupleTests, PaddedTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(PaddedTypes, PackedTupleTests, Type);

@@ -18,7 +18,7 @@
 #include <functional>
 #include <iosfwd>
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename T, typename TagT = void>
 // This template class exists to wrap existing arithmetic types
@@ -264,8 +264,8 @@ constexpr auto operator>>(std::istream& is,
 } // namespace CxxPlugins
 
 template <typename T, typename TagT>
-class std::hash<CxxPlugins::ArithmeticWrapper<T, TagT>> {
-  constexpr auto operator()(CxxPlugins::ArithmeticWrapper<T, TagT> value)
+class std::hash<plugins::ArithmeticWrapper<T, TagT>> {
+  constexpr auto operator()(plugins::ArithmeticWrapper<T, TagT> value)
       -> std::size_t {
     return std::hash<T>(static_cast<T>(value));
   }

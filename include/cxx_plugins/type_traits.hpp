@@ -17,7 +17,7 @@
 #include <utility>
 
 //! \brief Contains helper functions/classes
-namespace CxxPlugins::utility {
+namespace plugins::utility {
 
 template<typename T>
 struct IsInPlaceType : std::false_type {};

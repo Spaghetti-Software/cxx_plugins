@@ -22,7 +22,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/rapidjson.h>
 
-namespace CxxPlugins {
+namespace plugins {
 
 struct Library {
   boost::dll::shared_library library_m;

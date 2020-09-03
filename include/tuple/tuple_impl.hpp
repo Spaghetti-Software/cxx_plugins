@@ -24,7 +24,7 @@
 #include <compare>
 #endif
 
-namespace CxxPlugins {
+namespace plugins {
 
 template <typename... Ts> struct Tuple;
 
@@ -1024,14 +1024,14 @@ constexpr void tupleForEach(Fn &&fn, Ts &&... tuples) {
 
 // Enable structured binding
 
-template <typename... Ts> class std::tuple_size<CxxPlugins::Tuple<Ts...>> {
+template <typename... Ts> class std::tuple_size<plugins::Tuple<Ts...>> {
 public:
   static constexpr std::size_t value =
-      CxxPlugins::tuple_size_v<CxxPlugins::Tuple<Ts...>>;
+      plugins::tuple_size_v<plugins::Tuple<Ts...>>;
 };
 
 template <std::size_t I, typename... Ts>
-class std::tuple_element<I, CxxPlugins::Tuple<Ts...>> {
+class std::tuple_element<I, plugins::Tuple<Ts...>> {
 public:
-  using type = CxxPlugins::TupleElementT<I, CxxPlugins::Tuple<Ts...>>;
+  using type = plugins::TupleElementT<I, plugins::Tuple<Ts...>>;
 };

@@ -22,7 +22,7 @@ struct system_getters {};
 struct log_callback {};
 
 TEST(Plugins, BasicPluginFromString) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   //! \attention no need to specify lib prefix or .so/.dll,
   //! boost::dll handles this for us
@@ -49,7 +49,6 @@ TEST(Plugins, BasicPluginFromString) {
 }
 )json";
 
-  namespace dll = boost::dll;
 
   auto plugin = makePlugin(
       makeConfig(makeField<plugin_name, std::string>(),
@@ -89,7 +88,7 @@ TEST(Plugins, BasicPluginFromString) {
 }
 
 TEST(Plugins, BasicPluginFromFile) {
-  using namespace CxxPlugins;
+  using namespace plugins;
 
   //! \attention no need to specify lib prefix or .so/.dll,
   //! boost::dll handles this for us
