@@ -14,21 +14,62 @@ cmake_minimum_required(VERSION 3.15)
 
 set(This CXX_PluginsTests)
 
-set(Sources
-  cxx_plugins_tests.cpp
-  example_api.cpp
-  example_api.hpp
-)
+add_executable(${This})
+target_sources(${This}
+        PRIVATE
+        cxx_plugins_tests.cpp
+        function_traits_tests.cpp
+        #    vtable_tests.cpp
+        #    allocators_tests.cpp
+        tuple_map_tests.cpp
+        example_api.cpp
+        example_api.hpp
+        polymorphic_tests.cpp
+        polymorphic_ref_tests.cpp
+        polymorphic_allocator_tests.cpp
+        parser_tests.cpp
+        function_ref_tests.cpp
+        )
 
-add_executable(${This} ${Sources})
-target_link_libraries(${This} 
-  PUBLIC
-    gtest
-    cxx_plugins
-)
 
+target_link_libraries(${This}
+        PUBLIC
+        CONAN_PKG::gtest
+        cxx_plugins
+        example_api
+        example_plugin
+
+        )
 
 add_test(
-  NAME ${This}
-  COMMAND ${This}
+        NAME ${This}
+        COMMAND ${This}
 )
+
+add_executable(tuple_tests)
+target_sources(tuple_tests
+        PRIVATE
+        tuple_tests.cpp
+        tuple_tests0.cpp
+        tuple_tests1.cpp
+        tuple_tests2.cpp
+        tuple_tests3.cpp
+        tuple_tests4.cpp
+        tuple_tests_decl.hpp
+        )
+
+target_link_libraries(tuple_tests
+        PUBLIC
+        CONAN_PKG::gtest
+        cxx_plugins
+        )
+add_test(
+        NAME tuple_tests
+        COMMAND tuple_tests
+)
+if (MSVC)
+    #    target_compile_options(CXX_PluginsTests PRIVATE "/bigobj")
+    #    target_compile_options(tuple_tests PRIVATE "/bigobj")
+endif ()
+
+

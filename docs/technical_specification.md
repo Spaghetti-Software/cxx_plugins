@@ -6,7 +6,7 @@ Managing dlls can be a difficult task. This library should simplify the proccess
 
 ## Objects
 
-### `Polymorhic<StoragePolicy, pair<Tag, FunctionSignature>...>`
+### `Polymorhic<StoragePolicy, pair<TagType, FunctionSignature>...>`
 
 Polymorphic object represents object with custom vtable. Essential idea is that Polymorphic is a map of the form:
 ```json

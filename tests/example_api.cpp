@@ -40,12 +40,12 @@ public:
   void some_function(int some_arg);
 };
 
-void foo(int i, int j) {}
-void foo(int i) {}
+[[maybe_unused]] static void foo([[maybe_unused]] int i,[[maybe_unused]] int j) {}
+[[maybe_unused]] static void foo([[maybe_unused]]int i) {}
 
 struct Bar {
-  void baz(int i) {}
+  void baz([[maybe_unused]]int i) {}
 
-  void baz2(int i, int j) const {}
-  void baz2(int i, int j) {}
+  void baz2([[maybe_unused]]int i, [[maybe_unused]] int j) const {}
+  void baz2([[maybe_unused]] int i,[[maybe_unused]] int j) {}
 };

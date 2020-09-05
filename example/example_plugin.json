@@ -1,0 +1,18 @@
+{
+  "shared_library" : "../lib/example_plugin",
+  "configuration" : {
+    "plugin_name" : "Example Plugin",
+    "plugin_version" : [0,0,1],
+    "plugin_api" : "ExampleApi",
+    "plugin_api_version" : [0,0,1]
+  },
+  "members" : {
+    "init_plugin" : "init_plugin",
+    "shutdown_plugin" : "shutdown_plugin",
+    "systems_count" : null,
+    "log_callback" : "callback_ptr",
+    "system_getters" : [
+      "get_graphics_engine", "get_debug_renderer"
+    ]
+  }
+}

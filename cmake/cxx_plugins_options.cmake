@@ -10,8 +10,10 @@
 # \brief
 # This file contains initialization for cached variables and options of project
 
-option(CXX_PLUGINS_BUILD_TESTS OFF)
-
+option(CXX_PLUGINS_BUILD_TESTS "Build tests for CXX Plugins library" OFF)
+option(CXX_PLUGINS_SHARED      "Build CXX Plugins as shared library(isn't implemented yet)" OFF)
+option(CXX_PLUGINS_BUILD_DOCUMENTATION  "Create HTML based documentation" OFF)
+option(CXX_PLUGINS_ENABLE_RTTI_TYPE_INDEX OFF)
 
 if (CXX_PLUGINS_BUILD_TESTS)
   enable_testing()

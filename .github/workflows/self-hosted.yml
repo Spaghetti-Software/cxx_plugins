@@ -16,48 +16,85 @@ jobs:
       - self-hosted 
       - ${{matrix.config.os}}
       
-    name: ${{matrix.config.os}} ${{matrix.config.cc}} ${{matrix.config.build_type}}
+    name: ${{matrix.config.os}} ${{matrix.config.arch}} ${{matrix.config.compiler}}-${{matrix.config.compiler_version}} ${{matrix.config.build_type}}
 
     strategy:
       fail-fast: false
       matrix:
-        config: 
-          - build_type: "Release"
-            generator: "Ninja"
-            cc: "gcc"
-            cxx: "g++"
-            os: Linux
-            build_dir: build/linux/gcc-release
-          - build_type: "Debug"
-            generator: "Ninja"
-            cc: "gcc"
-            cxx: "g++"
-            os: Linux
-            build_dir: build/linux/gcc-debug
-          - build_type: "Release"
-            generator: "Ninja"
-            cc: "clang"
-            cxx: "clang++"
-            os: Linux
-            build_dir: build/linux/clang-release
-          - build_type: "Debug"
-            generator: "Ninja"
-            cc: "clang"
-            cxx: "clang++"
-            os: Linux
-            build_dir: build/linux/clang-debug
-          - build_type: "Release"
-            generator: "Visual Studio 16 2019"
-            cc: cl
-            cxx: cl
-            os: Windows
-            build_dir: build/windows/visual-studio
-          - build_type: "Debug"
-            generator: "Visual Studio 16 2019"
-            cc: cl
-            cxx: cl
-            os: Windows
-            build_dir: build/windows/visual-studio
+        config:
+          - os: Windows
+            os_build: Windows
+            arch: x86_64
+            arch_build: x86_64
+            compiler: Visual Studio
+            compiler_version: 16
+            build_type: Release
+          - os: Windows
+            os_build: Windows
+            arch: x86_64
+            arch_build: x86_64
+            compiler: Visual Studio
+            compiler_version: 16
+            build_type: Debug
+          - os: Windows
+            os_build: Windows
+            arch: x86
+            arch_build: x86
+            compiler: Visual Studio
+            compiler_version: 16
+            build_type: Release
+          - os: Windows
+            os_build: Windows
+            arch: x86
+            arch_build: x86
+            compiler: Visual Studio
+            compiler_version: 16
+            build_type: Debug
+          - os: Linux
+            os_build: Linux
+            arch: x86_64
+            arch_build: x86_64
+            compiler: clang
+            compiler_version: 10
+            compiler_libcxx: libstdc++11
+            build_type: Release
+            cc: clang
+            cxx: clang++
+          - os: Linux
+            os_build: Linux
+            arch: x86_64
+            arch_build: x86_64
+            compiler: clang
+            compiler_version: 10
+            compiler_libcxx: libstdc++11
+            build_type: Debug
+            cc: clang
+            cxx: clang++
+          - os: Linux
+            os_build: Linux
+            arch: x86_64
+            arch_build: x86_64
+            compiler: gcc
+            compiler_version: 9
+            compiler_libcxx: libstdc++11
+            build_type: Release
+            cc: gcc
+            cxx: g++
+          - os: Linux
+            os_build: Linux
+            arch: x86_64
+            arch_build: x86_64
+            compiler: gcc
+            compiler_version: 9
+            compiler_libcxx: libstdc++11
+            build_type: Debug
+            cc: gcc
+            cxx: g++
+
+    env:
+      build_dir: '${{matrix.config.os}}-${{matrix.config.arch}}-${{matrix.config.compiler}}-${{matrix.config.compiler_version}}-${{matrix.config.build_type}}'
+      CC: ${{matrix.config.cc}}
+      CXX: ${{matrix.config.cxx}}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -70,41 +107,32 @@ jobs:
     - name: Create build directory
       if:   matrix.config.os == 'Linux'
       run:  |
-            mkdir -p ${{matrix.config.build_dir}}
+            mkdir -p '${{env.build_dir}}'
     - name: Create build directory
       if:   matrix.config.os == 'Windows'
-      run:  New-Item -Path '${{matrix.config.build_dir}}' -Force -ItemType directory 
-    
+      run:  New-Item -Path '${{env.build_dir}}' -Force -ItemType directory
 
-    - name: Clear old build
+    - name: Conan install/update
+      if: ${{ matrix.config.compiler != 'Visual Studio' }}
+      working-directory:  ${{env.build_dir}}
+      run: conan install .. -s arch='${{matrix.config.arch}}' -s arch_build='${{matrix.config.arch_build}}' -s compiler='${{matrix.config.compiler}}' -s compiler.version='${{matrix.config.compiler_version}}' -s compiler.libcxx='${{matrix.config.compiler_libcxx}}' -s build_type='${{matrix.config.build_type}}' --build=missing --update -o enable_tests=True
+    - name: Conan install/update
+      if: ${{ matrix.config.compiler == 'Visual Studio'}}
+      working-directory:  ${{env.build_dir}}
+      run: conan install .. -s arch='${{matrix.config.arch}}' -s arch_build='${{matrix.config.arch_build}}' -s compiler='${{matrix.config.compiler}}' -s compiler.version='${{matrix.config.compiler_version}}' -s build_type='${{matrix.config.build_type}}' --build=missing --update -o enable_tests=True
+    - name: Conan build and test
+      working-directory:  ${{env.build_dir}}
+      run: conan build ..
+
+    - name: Clear build
       if:   matrix.config.os == 'Linux'
       run:  |
-            rm -rf ${{matrix.config.build_dir}}/*
-    - name: Clear old build
+        rm -rf '${{env.build_dir}}'
+    - name: Clear build
       if:   matrix.config.os == 'Windows'
-      run:  Get-ChildItem -Path ${{matrix.config.build_dir}} -Include *.* -File -Recurse | foreach { $_.Delete()}
-            
-
-    - name: Configure cmake
-      if:   matrix.config.os == 'Linux'
-      run:  |
-            cd ${{matrix.config.build_dir}}
-            cmake ../../.. -G "${{matrix.config.generator}}" -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}} -DCXX_PLUGINS_BUILD_TESTS=ON
-    - name: Configure cmake
-      if:   matrix.config.os == 'Windows'
-      run:  |
-            cd ${{matrix.config.build_dir}}
-            cmake ../../.. -G "${{matrix.config.generator}}" -A x64 -DCXX_PLUGINS_BUILD_TESTS=ON
+      run:  Get-ChildItem -Path '${{env.build_dir}}' -Include *.* -File -Recurse | foreach { $_.Delete()}
     
 
-    - name: Build all
-      run:  |
-            cd ${{matrix.config.build_dir}}
-            cmake --build . --config ${{matrix.config.build_type}}
-    
-    # Run tests
-    - name: Test
-      run:  |
-            cd ${{matrix.config.build_dir}}
-            ctest -C ${{matrix.config.build_type}} -V
+
+
     
