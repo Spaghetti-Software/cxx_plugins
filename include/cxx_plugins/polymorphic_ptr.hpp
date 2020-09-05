@@ -57,7 +57,7 @@ private:
       std::is_same_v<std::decay_t<U>, PolymorphicPtr>;
 
   static constexpr bool is_const =
-      (utility::FunctionTraits<Signatures>::is_const && ...);
+      (traits::FunctionTraits<Signatures>::is_const && ...);
 
 public:
   using PointerT = std::conditional_t<is_const, void const *, void *>;
@@ -413,7 +413,7 @@ private:
       std::is_same_v<std::decay_t<U>, PolymorphicPtr>;
 
   static constexpr bool is_const =
-      (utility::FunctionTraits<Signatures>::is_const && ...);
+      (traits::FunctionTraits<Signatures>::is_const && ...);
 
 public:
   using PointerT = std::conditional_t<is_const, void const *, void *>;

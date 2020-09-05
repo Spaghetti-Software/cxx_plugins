@@ -57,4 +57,4 @@ template <typename Return, typename... Args>
 FunctionProxy(Return (*)(void const *, Args...), void const *)
     -> FunctionProxy<Return(Args...) const>;
 
-} // namespace CxxPlugins
+} // namespace plugins

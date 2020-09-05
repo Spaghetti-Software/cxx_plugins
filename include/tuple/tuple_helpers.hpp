@@ -40,7 +40,7 @@ template <std::size_t I, typename TupleT> struct TupleElement;
 template <std::size_t I, template <typename...> class TupleTemplate,
           typename... Ts>
 struct TupleElement<I, TupleTemplate<Ts...>> {
-  using Type = utility::ElementType<I,Ts...>;
+  using Type = traits::ElementType<I,Ts...>;
 };
 
 template <std::size_t I, typename T, std::size_t size>

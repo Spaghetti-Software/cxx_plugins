@@ -62,10 +62,10 @@ target_sources(${This}
         include/cxx_plugins/variant.hpp
         include/cxx_plugins/function_traits.hpp
         include/cxx_plugins/function_traits.ipp
+        include/cxx_plugins/function_cast.hpp
         include/cxx_plugins/functionref.hpp
         include/cxx_plugins/overload_set.hpp
         include/cxx_plugins/type_traits.hpp
-        include/cxx_plugins/arithmetic_wrapper.hpp
         include/cxx_plugins/definitions.hpp
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/parser.hpp

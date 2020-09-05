@@ -339,7 +339,7 @@ private:
 template <std::size_t I, typename... Us>
 constexpr auto get(const TupleStorage<Us...> &tuple) noexcept ->
     typename TupleElement<I, TupleStorage<Us...>>::Type const & {
-  using type = utility::ElementType<I, Us...>;
+  using type = traits::ElementType<I, Us...>;
   if constexpr (std::is_reference_v<type>) {
     return impl::getInner<I>(tuple).reference_m;
   } else {
@@ -349,7 +349,7 @@ constexpr auto get(const TupleStorage<Us...> &tuple) noexcept ->
 template <std::size_t I, typename... Us>
 constexpr auto get(TupleStorage<Us...> &tuple) noexcept ->
     typename TupleElement<I, TupleStorage<Us...>>::Type & {
-  using type = utility::ElementType<I, Us...>;
+  using type = traits::ElementType<I, Us...>;
   if constexpr (std::is_reference_v<type>) {
     return impl::getInner<I>(tuple).reference_m;
   } else {
@@ -360,7 +360,7 @@ constexpr auto get(TupleStorage<Us...> &tuple) noexcept ->
 template <std::size_t I, typename... Us>
 constexpr auto get(TupleStorage<Us...> &&tuple) noexcept ->
     typename TupleElement<I, TupleStorage<Us...>>::Type && {
-  using type = utility::ElementType<I, Us...>;
+  using type = traits::ElementType<I, Us...>;
   if constexpr (std::is_reference_v<type>) {
     return impl::getInner<I>(tuple).reference_m;
   } else {
@@ -371,7 +371,7 @@ constexpr auto get(TupleStorage<Us...> &&tuple) noexcept ->
 template <std::size_t I, typename... Us>
 constexpr auto get(TupleStorage<Us...> const &&tuple) noexcept ->
     typename TupleElement<I, TupleStorage<Us...>>::Type const && {
-  using type = utility::ElementType<I, Us...>;
+  using type = traits::ElementType<I, Us...>;
   if constexpr (std::is_reference_v<type>) {
     return impl::getInner<I>(tuple).reference_m;
   } else {
@@ -383,7 +383,7 @@ namespace impl {
 
 template <std::size_t I, typename... Ts>
 struct TupleInnerElement<I, TupleStorage<Ts...>> {
-  using Type = TupleInnerType<utility::ElementType<I, Ts...>>;
+  using Type = TupleInnerType<traits::ElementType<I, Ts...>>;
 };
 
 template <std::size_t I, typename T> struct TupleInnerElement;

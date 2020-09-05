@@ -124,7 +124,7 @@ private:
 
 public:
   using Type = TupleTemplate<TupleCatElementT<
-      inner_indices, plugins::utility::ElementType<outer_indices, FirstTuple,
+      inner_indices, plugins::traits::ElementType<outer_indices, FirstTuple,
                                                       RestTuples...>>...>;
 };
 
