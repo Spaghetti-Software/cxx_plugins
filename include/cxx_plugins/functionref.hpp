@@ -210,7 +210,7 @@ public:
       if constexpr (std::is_same_v<std::decay_t<decltype(fn)>, Monostate>) {
         throw std::logic_error("Trying to invoke empty FunctionRef");
       } else {
-        return std::invoke(fn, std::forward<decltype(args)>(args)...);
+        return std::invoke(fn, std::forward<Args>(args)...);
       }
     }, fn_m);
   }
