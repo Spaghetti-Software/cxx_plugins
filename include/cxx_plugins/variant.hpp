@@ -9,7 +9,7 @@
  * \author  Andrey Ponomarev
  * \date    07 Jul 2020
  * \brief
- * $BRIEF$
+ * Contains variant
  */
 #pragma once
 
