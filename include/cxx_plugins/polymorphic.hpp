@@ -18,6 +18,7 @@
 #include "cxx_plugins/memory/stack_allocator.hpp"
 #include "cxx_plugins/polymorphic_allocator.hpp"
 #include "cxx_plugins/vtable.hpp"
+#include "cxx_plugins/polymorphic_cast.hpp"
 
 namespace plugins {
 
@@ -64,7 +65,7 @@ class UniqueGenericPolymorphic<size, TaggedSignature<Tags, FunctionSignatures>..
       std::is_same_v<std::decay_t<U>, UniqueGenericPolymorphic>;
 
   static constexpr bool is_const =
-      (utility::FunctionTraits<FunctionSignatures>::is_const && ...);
+      (traits::FunctionTraits<FunctionSignatures>::is_const && ...);
 
 public:
   using FunctionTableT =
@@ -77,9 +78,8 @@ public:
   constexpr UniqueGenericPolymorphic(UniqueGenericPolymorphic const &other) noexcept
       : function_table_m{other.functionTable()} {
 
-    static_assert(
-        utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
-        "This Polymorphic is not copyable"); 
+    static_assert(traits::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
+        "This Polymorphic is not copyable");
 
     auto other_state = other.getState();
     if (other_state == State::fallback_allocated)
@@ -98,9 +98,8 @@ public:
 
   constexpr auto operator=(UniqueGenericPolymorphic const &rhs) noexcept
       -> UniqueGenericPolymorphic & {
-    static_assert(
-        utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
-        "This Polymorphic is not copyable"); 
+    static_assert(traits::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
+        "This Polymorphic is not copyable");
 
     if (this == &rhs)
       return *this;
@@ -150,8 +149,8 @@ public:
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
             (std::is_lvalue_reference_v<T &&> &&
-             utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
-        "This Polymorphic is not copyable"); 
+             traits::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
+        "This Polymorphic is not copyable");
 
     State state;
     if (sizeof(T) <= size - 3)
@@ -181,7 +180,7 @@ public:
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
             (std::is_lvalue_reference_v<T &&> &&
-             utility::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
+             traits::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>),
         "This Polymorphic is not copyable"); 
 
     function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};

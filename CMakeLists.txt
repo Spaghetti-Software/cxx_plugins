@@ -62,11 +62,12 @@ target_sources(${This}
         include/cxx_plugins/variant.hpp
         include/cxx_plugins/function_traits.hpp
         include/cxx_plugins/function_traits.ipp
+        include/cxx_plugins/function_cast.hpp
         include/cxx_plugins/functionref.hpp
         include/cxx_plugins/overload_set.hpp
         include/cxx_plugins/type_traits.hpp
-        include/cxx_plugins/arithmetic_wrapper.hpp
         include/cxx_plugins/definitions.hpp
+        include/cxx_plugins/polymorphic_cast.hpp
         include/cxx_plugins/polymorphic.hpp
         include/cxx_plugins/parser.hpp
         include/cxx_plugins/polymorphic_traits.hpp
@@ -79,6 +80,23 @@ target_sources(${This}
         include/cxx_plugins/memory/stack_allocator.hpp
         include/cxx_plugins/memory/mallocator.hpp
         include/cxx_plugins/memory/memory_common.hpp
+
+##      Containers
+#       Sequence containers
+        include/cxx_plugins/array.hpp
+        include/cxx_plugins/vector.hpp
+        include/cxx_plugins/deque.hpp
+        include/cxx_plugins/forward_list.hpp
+        include/cxx_plugins/list.hpp
+#       Associative containers
+        include/cxx_plugins/set.hpp
+        include/cxx_plugins/map.hpp
+#       Unordered associative containers
+        include/cxx_plugins/unordered_set.hpp
+        include/cxx_plugins/unordered_map.hpp
+#       Container Adaptors
+        include/cxx_plugins/stack.hpp
+        include/cxx_plugins/queue.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp

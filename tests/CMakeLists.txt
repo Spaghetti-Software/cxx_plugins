@@ -16,29 +16,30 @@ set(This CXX_PluginsTests)
 
 add_executable(${This})
 target_sources(${This}
-  PRIVATE
-    cxx_plugins_tests.cpp
-    function_traits_tests.cpp
-#    vtable_tests.cpp
-#    allocators_tests.cpp
-    tuple_map_tests.cpp
-    example_api.cpp
-    example_api.hpp
-    polymorphic_tests.cpp
-    polymorphic_ref_tests.cpp
-    polymorphic_allocator_tests.cpp
-    parser_tests.cpp
-)
+        PRIVATE
+        cxx_plugins_tests.cpp
+        function_traits_tests.cpp
+        #    vtable_tests.cpp
+        #    allocators_tests.cpp
+        tuple_map_tests.cpp
+        example_api.cpp
+        example_api.hpp
+        polymorphic_tests.cpp
+        polymorphic_ref_tests.cpp
+        polymorphic_allocator_tests.cpp
+        parser_tests.cpp
+        function_ref_tests.cpp
+        )
 
 
 target_link_libraries(${This}
-  PUBLIC
-    CONAN_PKG::gtest
-    cxx_plugins
-    example_api
-    example_plugin
+        PUBLIC
+        CONAN_PKG::gtest
+        cxx_plugins
+        example_api
+        example_plugin
 
-)
+        )
 
 add_test(
         NAME ${This}
@@ -67,8 +68,8 @@ add_test(
         COMMAND tuple_tests
 )
 if (MSVC)
-#    target_compile_options(CXX_PluginsTests PRIVATE "/bigobj")
-#    target_compile_options(tuple_tests PRIVATE "/bigobj")
-endif()
+    #    target_compile_options(CXX_PluginsTests PRIVATE "/bigobj")
+    #    target_compile_options(tuple_tests PRIVATE "/bigobj")
+endif ()
 
 

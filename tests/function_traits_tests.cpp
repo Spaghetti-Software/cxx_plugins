@@ -4,6 +4,7 @@
 #include <cxx_plugins/function_traits.hpp>
 #include <gtest/gtest.h>
 
+#include "cxx_plugins/function_cast.hpp"
 #include <cstdio>
 #include <string>
 
@@ -28,10 +29,10 @@ struct Foo {
 TEST(FunctionPointerTests, SimpleFn) {
   using namespace plugins;
   auto expected_fn = &simpleFunction;
-  auto result_fn = utility::functionPointerCast<void()>(simpleFunction);
+  auto result_fn = functionPointerCast<void()>(simpleFunction);
   EXPECT_EQ(expected_fn, result_fn);
 
-  utility::FunctionPointer<void()> result_fn2 = simpleFunction;
+  FnPtr<void()> result_fn2 = simpleFunction;
   EXPECT_EQ(expected_fn, result_fn2);
 }
 
@@ -42,14 +43,14 @@ TEST(FunctionPointerTests, OverloadedFn) {
   auto expected_overloaded0 = type0(overloadedFunction);
   auto expected_overloaded1 = type1(overloadedFunction);
 
-  auto result0_0 = utility::functionPointerCast<void()>(overloadedFunction);
-  auto result0_1 = utility::functionPointerCast<void(int)>(overloadedFunction);
+  auto result0_0 = functionPointerCast<void()>(overloadedFunction);
+  auto result0_1 = functionPointerCast<void(int)>(overloadedFunction);
 
   EXPECT_EQ(expected_overloaded0, result0_0);
   EXPECT_EQ(expected_overloaded1, result0_1);
 
-  utility::FunctionPointer<void()> result1_0 = overloadedFunction;
-  utility::FunctionPointer<void(int)> result1_1 = overloadedFunction;
+  FnPtr<void()> result1_0 = overloadedFunction;
+  FnPtr<void(int)> result1_1 = overloadedFunction;
 
   EXPECT_EQ(expected_overloaded0, result1_0);
   EXPECT_EQ(expected_overloaded1, result1_1);
@@ -59,11 +60,11 @@ TEST(FunctionPointerTests, SimpleMethod) {
   using namespace plugins;
 
   auto expected_fn = &Foo::simpleMethod;
-  auto result_fn = utility::functionPointerCast<int(), Foo>(&Foo::simpleMethod);
+  auto result_fn = functionPointerCast<int(), Foo>(&Foo::simpleMethod);
 
   EXPECT_EQ(expected_fn, result_fn);
 
-  utility::FunctionPointer<int(), Foo> result_fn2 = &Foo::simpleMethod;
+  FnPtr<int(), Foo> result_fn2 = &Foo::simpleMethod;
   EXPECT_EQ(expected_fn, result_fn2);
 }
 
@@ -77,19 +78,19 @@ TEST(FunctionPointerTests, OverloadedMethod) {
   auto expected_overloaded2 = type2(&Foo::overloadedMethod);
 
   auto result0_0 =
-      utility::functionPointerCast<int(), Foo>(&Foo::overloadedMethod);
+      functionPointerCast<int(), Foo>(&Foo::overloadedMethod);
   auto result0_1 =
-      utility::functionPointerCast<int(int), Foo>(&Foo::overloadedMethod);
+      functionPointerCast<int(int), Foo>(&Foo::overloadedMethod);
   auto result0_2 =
-      utility::functionPointerCast<int() const, Foo>(&Foo::overloadedMethod);
+      functionPointerCast<int() const, Foo>(&Foo::overloadedMethod);
 
   EXPECT_EQ(expected_overloaded0, result0_0);
   EXPECT_EQ(expected_overloaded1, result0_1);
   EXPECT_EQ(expected_overloaded2, result0_2);
 
-  utility::FunctionPointer<int(), Foo> result1_0 = &Foo::overloadedMethod;
-  utility::FunctionPointer<int(int), Foo> result1_1 = &Foo::overloadedMethod;
-  utility::FunctionPointer<int() const, Foo> result1_2 = &Foo::overloadedMethod;
+  FnPtr<int(), Foo> result1_0 = &Foo::overloadedMethod;
+  FnPtr<int(int), Foo> result1_1 = &Foo::overloadedMethod;
+  FnPtr<int() const, Foo> result1_2 = &Foo::overloadedMethod;
 
   EXPECT_EQ(expected_overloaded0, result1_0);
   EXPECT_EQ(expected_overloaded1, result1_1);
@@ -102,7 +103,7 @@ TEST(castMethodToFunctionTests, SimpleFunction) {
   Foo f;
   auto expected = f.simpleMethod();
 
-  auto fn = utility::castMethodToFunction<&Foo::simpleMethod>();
+  auto fn = castMethodToFunction<&Foo::simpleMethod>();
   auto result = fn(&f);
 
   EXPECT_EQ(expected, result)
@@ -117,12 +118,11 @@ TEST(castMethodToFunctionTests, OverloadedFunction) {
   auto expected1 = f.overloadedMethod(1);
   auto expected2 = std::as_const(f).overloadedMethod();
 
-  auto fn0 =
-      utility::castMethodToFunction<int(), Foo, &Foo::overloadedMethod>();
+  auto fn0 = castMethodToFunction<int(), Foo, &Foo::overloadedMethod>();
   auto fn1 =
-      utility::castMethodToFunction<int(int), Foo, &Foo::overloadedMethod>();
+      castMethodToFunction<int(int), Foo, &Foo::overloadedMethod>();
   auto fn2 =
-      utility::castMethodToFunction<int() const, Foo, &Foo::overloadedMethod>();
+      castMethodToFunction<int() const, Foo, &Foo::overloadedMethod>();
 
   auto result0 = fn0(&f);
   auto result1 = fn1(&f, 1);
@@ -142,7 +142,7 @@ TEST(voidTrampolineTest, SimpleMethod) {
   Foo f;
   auto expected = f.simpleMethod();
 
-  auto fn = utility::generateTrampoline<&Foo::simpleMethod,void>();
+  auto fn = generateTrampoline<&Foo::simpleMethod,void>();
   auto result = fn(&f);
 
   EXPECT_EQ(expected, result)

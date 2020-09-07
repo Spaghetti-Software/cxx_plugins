@@ -16,11 +16,13 @@
 #include "cxx_plugins/function_proxy.hpp"
 #include "cxx_plugins/type_index.hpp"
 #include "cxx_plugins/vtable.hpp"
+#include "cxx_plugins/polymorphic_cast.hpp"
 
 namespace plugins {
 
+template <std::size_t size, typename... TaggedSignatures>
+class UniqueGenericPolymorphic;
 namespace impl {
-template <typename... TaggedSignatures> class Polymorphic;
 template <typename... TaggedSignatures> class PolymorphicPtr;
 template <typename... TaggedSignatures> class PrimitivePolymorphicPtr;
 } // namespace impl
@@ -41,7 +43,7 @@ template <typename... TaggedSignatures> class PolymorphicPtr;
 
 /*!
  * \brief
- * PolymorphicRef is a pointer-like wrapper for polymorphic objects.
+ * PolymorphicPtr is a pointer-like wrapper for polymorphic objects.
  */
 #ifdef DOXYGEN
 template <typename... TaggedSignatures>
@@ -57,7 +59,7 @@ private:
       std::is_same_v<std::decay_t<U>, PolymorphicPtr>;
 
   static constexpr bool is_const =
-      (utility::FunctionTraits<Signatures>::is_const && ...);
+      (traits::FunctionTraits<Signatures>::is_const && ...);
 
 public:
   using PointerT = std::conditional_t<is_const, void const *, void *>;
@@ -72,27 +74,12 @@ public:
   constexpr auto operator=(PolymorphicPtr &&) noexcept
       -> PolymorphicPtr & = default;
 
-  //  template <typename T, typename = std::enable_if_t<
-  //                            !is_polymorphic_ref_v<std::decay_t<T>> &&
-  //                            !is_polymorphic_v<std::decay_t<T>> &&
-  //                            !std::is_pointer_v<std::decay_t<T>>>>
-  //  /*!
-  //   * \brief
-  //   * Main constructor for PolymorphicRef.
-  //   * It gets object of any type stores pointer to it and forms a function
-  //   table.
-  //   *
-  //   */
-  //  constexpr PolymorphicRef(T &&obj) noexcept
-  //      : type_index_m{type_id<T>()}, data_p_m{&obj},
-  //        function_table_m{std::in_place_type_t<decltype(obj)>{}} {}
-
   template <typename T, typename = std::enable_if_t<
                             !is_polymorphic_ref_v<std::decay_t<T>> &&
                             !is_polymorphic_v<std::decay_t<T>>>>
   /*!
    * \brief
-   * Converts pointer to object to PolymorphicRef
+   * Converts pointer to object to PolymorphicPtr
    *
    */
   constexpr PolymorphicPtr(T *obj_p) noexcept
@@ -106,7 +93,7 @@ public:
                                    sizeof...(Tags) < sizeof...(OtherTags),
             std::enable_if_t<size_constraint, int> = 0>
   /*!
-   * \brief This constructor allows `upcasting` from bigger PolymorphicRef.
+   * \brief This constructor allows `upcasting` from bigger PolymorphicPtr.
    */
   constexpr PolymorphicPtr(
       PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
@@ -136,7 +123,7 @@ public:
                                          ...),
             std::enable_if_t<conversion_contraint, int> = 0>
   /*!
-   * \brief This constructor allows conversion of PolymorphicRef with different
+   * \brief This constructor allows conversion of PolymorphicPtr with different
    * order
    */
   constexpr PolymorphicPtr(
@@ -160,7 +147,7 @@ public:
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
 
-  template <typename... OtherTags, typename... OtherFunctions,
+  template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
                 // Tags >= 1, because otherwise it is a default constructor
             sizeof...(Tags) >= 1 &&
@@ -170,14 +157,15 @@ public:
   /*!
    * \brief
    * This constructor allows `upcasting` from bigger Polymorphic or convertion
-   * from Polymorphic to PolymorphicRef
+   * from Polymorphic to PolymorphicPtr
    */
   constexpr PolymorphicPtr(
-      Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> &rhs) noexcept
+      UniqueGenericPolymorphic<
+          size, TaggedSignature<OtherTags, OtherFunctions>...> &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
 
-  template <typename... OtherTags, typename... OtherFunctions,
+  template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
                 // Tags >= 1, because otherwise it is a default constructor
             sizeof...(Tags) >= 1 &&
@@ -186,7 +174,8 @@ public:
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
   constexpr PolymorphicPtr(
-      Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> const
+      UniqueGenericPolymorphic<
+          size, TaggedSignature<OtherTags, OtherFunctions>...> const
           &rhs) noexcept
       : type_index_m{rhs.typeIndex()}, data_p_m{rhs.data()},
         function_table_m{rhs.functionTable()} {}
@@ -196,7 +185,7 @@ public:
                             !is_polymorphic_v<std::decay_t<T>> &&
                             !std::is_pointer_v<std::decay_t<T>>>>
   /*!
-   * \brief Main assignment operator for PolymorphicRef.
+   * \brief Main assignment operator for PolymorphicPtr.
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
@@ -211,7 +200,7 @@ public:
                             !is_polymorphic_ref_v<std::decay_t<T>> &&
                             !is_polymorphic_v<std::decay_t<T>>>>
   /*!
-   * \brief Main assignment operator for PolymorphicRef.
+   * \brief Main assignment operator for PolymorphicPtr.
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
@@ -228,7 +217,7 @@ public:
             std::enable_if_t<size_constraint, int> = 0>
   /*!
    * \brief This assignment operator allows `upcasting` from bigger
-   * PolymorphicRef.
+   * PolymorphicPtr.
    */
   constexpr PolymorphicPtr &
   operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
@@ -264,7 +253,7 @@ public:
             std::enable_if_t<conversion_contraint, unsigned> = 0>
   /*!
    * \brief This assignment operator allows `upcasting` from bigger
-   * PolymorphicRef.
+   * PolymorphicPtr.
    */
   constexpr PolymorphicPtr &
   operator=(PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>
@@ -292,7 +281,7 @@ public:
     return *this;
   }
 
-  template <typename... OtherTags, typename... OtherFunctions,
+  template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
                 // Tags >= 1, because otherwise it is a default constructor
             sizeof...(Tags) >= 1 &&
@@ -302,18 +291,18 @@ public:
             std::enable_if_t<constraints, int> = 0>
   /*!
    * \brief This assignment operator allows `upcasting` from bigger
-   * Polymorphic and conversion of Polymorphic to PolymorphicRef.
+   * Polymorphic and conversion of Polymorphic to PolymorphicPtr.
    */
-  constexpr PolymorphicPtr &
-  operator=(Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...>
-                &rhs) noexcept {
+  constexpr PolymorphicPtr &operator=(
+      UniqueGenericPolymorphic<
+          size, TaggedSignature<OtherTags, OtherFunctions>...> &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
     data_p_m = rhs.data();
     return *this;
   }
 
-  template <typename... OtherTags, typename... OtherFunctions,
+  template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
                 // Tags >= 1, because otherwise it is a default constructor
             sizeof...(Tags) >= 1 &&
@@ -322,7 +311,8 @@ public:
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
             std::enable_if_t<constraints, unsigned> = 0>
   constexpr PolymorphicPtr &
-  operator=(Polymorphic<TaggedSignature<OtherTags, OtherFunctions>...> const
+  operator=(UniqueGenericPolymorphic<
+            size, TaggedSignature<OtherTags, OtherFunctions>...> const
                 &rhs) noexcept {
     type_index_m = rhs.typeIndex();
     function_table_m = rhs.functionTable();
@@ -380,6 +370,10 @@ public:
     return type_index_m;
   }
 
+  operator bool() const noexcept{
+    return !isEmpty();
+  }
+
 private:
   /*
    * Order of members is important.
@@ -397,7 +391,7 @@ template <typename... Signatures> class PrimitivePolymorphicPtr;
 
 /*!
  * \brief
- * PolymorphicRSimplePolymorphicReflike wrapper for polymorphic objects.
+ * PolymorphicRSimplePolymorphicPtrlike wrapper for polymorphic objects.
  */
 #ifdef DOXYGEN
 template <typename... TaggedSignatures>
@@ -413,7 +407,7 @@ private:
       std::is_same_v<std::decay_t<U>, PolymorphicPtr>;
 
   static constexpr bool is_const =
-      (utility::FunctionTraits<Signatures>::is_const && ...);
+      (traits::FunctionTraits<Signatures>::is_const && ...);
 
 public:
   using PointerT = std::conditional_t<is_const, void const *, void *>;
@@ -436,7 +430,7 @@ public:
                             !std::is_pointer_v<std::decay_t<T>>>>
   /*!
    * \brief
-   * Main constructor for SimplePolymorphicRef.
+   * Main constructor for SimplePolymorphicPtr.
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
@@ -460,7 +454,7 @@ public:
                             !is_polymorphic_v<std::decay_t<T>> &&
                             !std::is_pointer_v<std::decay_t<T>>>>
   /*!
-   * \brief Main assignment operator for SimplePolymorphicRef.
+   * \brief Main assignment operator for SimplePolymorphicPtr.
    * It gets object of any type stores pointer to it and forms a function table.
    *
    */
@@ -550,4 +544,4 @@ auto polymorphicCast(PolymorphicT &&poly) -> T * {
   return nullptr;
 }
 
-} // namespace CxxPlugins
+} // namespace plugins

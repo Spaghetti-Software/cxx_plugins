@@ -204,7 +204,7 @@ struct SelfType {};
 template <typename PolymorphicType, typename Signature>
 struct PolymorphicSignature {
   using Type =
-      utility::SignatureReplaceTypeWithT<SelfType, PolymorphicType, Signature>;
+      traits::SignatureReplaceTypeWithT<SelfType, PolymorphicType, Signature>;
 };
 template <typename PolymorphicType, typename Signature>
 using PolymorphicSignatureT =

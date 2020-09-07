@@ -219,10 +219,10 @@ private:
 
     using IsImplicitDefaultConstructible = std::bool_constant<
         (std::is_default_constructible_v<TArgs> && ...) &&
-        (utility::is_implicit_default_constructible_v<TArgs> && ...)>;
+        (traits::is_implicit_default_constructible_v<TArgs> && ...)>;
     using IsExplicitDefaultConstructible = std::bool_constant<
         (std::is_default_constructible_v<TArgs> && ...) &&
-        !(utility::is_implicit_default_constructible_v<TArgs> && ...)>;
+        !(traits::is_implicit_default_constructible_v<TArgs> && ...)>;
   };
   template <typename... TArgs> struct Constraints<false, TArgs...> {
     template <typename... Us>
@@ -955,8 +955,8 @@ constexpr decltype(auto) apply(Fn &&fn, FirstTuple &&first,
 
   using Sizes = std::index_sequence<tuple_size_v<std::decay_t<FirstTuple>>,
                                     tuple_size_v<std::decay_t<RestTuples>>...>;
-  using inner_indices = utility::RepeatingIndexSequenceT<0, Sizes>;
-  using outer_indices = utility::IntegerSequenceCatT<
+  using inner_indices = traits::RepeatingIndexSequenceT<0, Sizes>;
+  using outer_indices = traits::IntegerSequenceCatT<
       std::make_index_sequence<tuple_size_v<std::decay_t<FirstTuple>>>,
       std::make_index_sequence<tuple_size_v<std::decay_t<RestTuples>>>...>;
 
@@ -1007,12 +1007,12 @@ template <typename Fn, typename... Ts>
 constexpr void tupleForEach(Fn &&fn, Ts &&... tuples) {
 
   static_assert(sizeof...(Ts) >= 1, "You should provide at least one tuple");
-  static_assert(((tuple_size_v<utility::ElementType<0, std::decay_t<Ts>...>> ==
+  static_assert(((tuple_size_v<traits::ElementType<0, std::decay_t<Ts>...>> ==
                   tuple_size_v<std::decay_t<Ts>>)&&...),
                 "All tuples should have the same size");
 
   using tuple_member_indices = std::make_index_sequence<
-      tuple_size_v<utility::ElementType<0, std::decay_t<Ts>...>>>;
+      tuple_size_v<traits::ElementType<0, std::decay_t<Ts>...>>>;
   using tuple_indices = std::index_sequence_for<Ts...>;
 
   impl::tupleForEachComplex(std::forward<Fn>(fn),

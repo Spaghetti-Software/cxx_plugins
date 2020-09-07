@@ -45,12 +45,12 @@ public:
 
 template <typename... Callables>
 OverloadSet(Callables...) -> OverloadSet<
-    utility::SignatureRemoveConstT<utility::SignatureOfT<Callables>>...>;
+    traits::SignatureRemoveConstT<traits::SignatureOfT<Callables>>...>;
 
 template <typename... Callables>
 constexpr auto makeOverloadSet(Callables &&... callables) {
-  return OverloadSet<utility::SignatureRemoveConstT<
-      utility::SignatureOfT<std::decay_t<Callables>>>...>{
+  return OverloadSet<traits::SignatureRemoveConstT<
+      traits::SignatureOfT<std::decay_t<Callables>>>...>{
       std::forward<Callables>(callables)...};
 }
 
@@ -79,12 +79,12 @@ public:
 
 template <typename... Callables>
 OverloadSetRef(Callables...) -> OverloadSetRef<
-    utility::SignatureRemoveConstT<utility::SignatureOfT<Callables>>...>;
+    traits::SignatureRemoveConstT<traits::SignatureOfT<Callables>>...>;
 
 template <typename... Callables>
 constexpr auto makeOverloadSetRef(Callables &&... callables) {
-  return OverloadSetRef<utility::SignatureRemoveConstT<
-      utility::SignatureOfT<std::decay_t<Callables>>>...>{
+  return OverloadSetRef<traits::SignatureRemoveConstT<
+      traits::SignatureOfT<std::decay_t<Callables>>>...>{
       std::forward<Callables>(callables)...};
 }
 

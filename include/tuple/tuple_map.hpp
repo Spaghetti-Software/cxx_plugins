@@ -217,7 +217,7 @@ public:
    * \tparam Tag
    */
 
-  static_assert(utility::are_unique_v<Tags...>, "All tags should be unique");
+  static_assert(traits::are_unique_v<Tags...>, "All tags should be unique");
 
   //! \brief Tuple of all tags
   using TagsTuple = Tuple<Tags...>;
@@ -274,7 +274,7 @@ public:
   template <typename... UTags, typename... UValues,
             typename = std::enable_if_t<
                 sizeof...(Tags) == sizeof...(UTags) &&
-                (utility::is_in_the_pack_v<Tags, UTags...> && ...) &&
+                (traits::is_in_the_pack_v<Tags, UTags...> && ...) &&
                 ((!std::is_same_v<Tags, UTags> && ...) ||
                  (!std::is_same_v<TValues, UValues> && ...))>>
   explicit constexpr TupleMap(
@@ -285,7 +285,7 @@ public:
   template <typename... UTags, typename... UValues,
             typename = std::enable_if_t<
                 sizeof...(Tags) == sizeof...(UTags) &&
-                (utility::is_in_the_pack_v<Tags, UTags...> && ...) &&
+                (traits::is_in_the_pack_v<Tags, UTags...> && ...) &&
                 ((!std::is_same_v<Tags, UTags> && ...) ||
                  (!std::is_same_v<TValues, UValues> && ...))>>
   explicit constexpr TupleMap(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
@@ -314,7 +314,7 @@ public:
   template <typename... UTags, typename... UValues,
             typename = std::enable_if_t<
                 sizeof...(Tags) == sizeof...(UTags) &&
-                (utility::is_in_the_pack_v<Tags, UTags...> && ...) &&
+                (traits::is_in_the_pack_v<Tags, UTags...> && ...) &&
                 (!std::is_same_v<Tags, UTags> && ...)>>
   constexpr auto operator=(TupleMap<TaggedValue<UTags, UValues>...> const &rhs)
       -> TupleMap & {
@@ -325,7 +325,7 @@ public:
   template <typename... UTags, typename... UValues,
             typename = std::enable_if_t<
                 sizeof...(Tags) == sizeof...(UTags) &&
-                (utility::is_in_the_pack_v<Tags, UTags...> && ...) &&
+                (traits::is_in_the_pack_v<Tags, UTags...> && ...) &&
                 ((!std::is_same_v<Tags, UTags> && ...) ||
                  (!std::is_same_v<TValues, UValues> && ...))>>
   constexpr auto operator=(TupleMap<TaggedValue<UTags, UValues>...> &&rhs)
@@ -379,7 +379,7 @@ struct Compare<TupleMap<TaggedValue<TTags, TValues>...>,
                TupleMap<TaggedValue<UTags, UValues>...>> {
   static_assert(sizeof...(TValues) == sizeof...(UValues),
                 "Sizes should be same");
-  static_assert((utility::is_in_the_pack_v<TTags, UTags...> && ...),
+  static_assert((traits::is_in_the_pack_v<TTags, UTags...> && ...),
                 "TTags and UTags should be same(order doesn't matter).");
 
   using LeftT = TupleMap<TaggedValue<TTags, TValues>...>;
@@ -456,7 +456,7 @@ constexpr auto operator>=(TupleMap<Ts...> const &lhs,
 
 template <typename Tag, typename... Tags, typename... Values>
 struct TupleMapElement<Tag, TupleMap<TaggedValue<Tags, Values>...>> {
-  using Type = utility::ElementType<utility::index_of<Tag, Tags...>,
+  using Type = traits::ElementType<traits::index_of<Tag, Tags...>,
                                     TaggedValue<Tags, Values>...>;
 };
 
@@ -464,26 +464,26 @@ template <typename Tag, typename... UTags, typename... UArgs>
 constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const
         & {
-  return get<utility::index_of<Tag, UTags...>>(map);
+  return get<traits::index_of<Tag, UTags...>>(map);
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
 constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> & {
-  return get<utility::index_of<Tag, UTags...>>(map);
+  return get<traits::index_of<Tag, UTags...>>(map);
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
 constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> &&map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> && {
-  return get<utility::index_of<Tag, UTags...>>(std::move(map));
+  return get<traits::index_of<Tag, UTags...>>(std::move(map));
 }
 
 template <typename Tag, typename... UTags, typename... UArgs>
 constexpr auto get(TupleMap<TaggedValue<UTags, UArgs>...> const &&map) noexcept
     -> TupleMapElementType<Tag, TupleMap<TaggedValue<UTags, UArgs>...>> const
         && {
-  get<utility::index_of<Tag, UTags...>>(std::move(map));
+  get<traits::index_of<Tag, UTags...>>(std::move(map));
 }
 
 template <typename FirstTag, typename SecondTag, typename... RestTags,
@@ -526,7 +526,7 @@ constexpr auto makeTupleMap(TaggedValues &&... vals) {
 
 template <std::size_t I, typename... Tags, typename... Values>
 struct TupleCatElement<I, TupleMap<TaggedValue<Tags, Values>...>> {
-  using Type = utility::ElementType<I, TaggedValue<Tags, Values>...>;
+  using Type = traits::ElementType<I, TaggedValue<Tags, Values>...>;
 };
 
 /*!
@@ -539,7 +539,7 @@ constexpr auto
 tupleMapSubMap(TupleMap<TaggedValue<Tags, Values>...> const &old_map,
                [[maybe_unused]] SelectedTags &&... tags) {
   static_assert(
-      (utility::is_in_the_pack_v<std::decay_t<SelectedTags>, Tags...> && ...),
+      (traits::is_in_the_pack_v<std::decay_t<SelectedTags>, Tags...> && ...),
       "SelectedTags should be a subset of Tags");
   static_assert((!std::is_reference_v<Tags> && ...) &&
                     (!std::is_const_v<Tags> && ...) &&
@@ -561,7 +561,7 @@ template <typename... Tags, typename... Values, typename... SelectedTags>
 constexpr auto tupleMapSubMap(TupleMap<TaggedValue<Tags, Values>...> &&old_map,
                               [[maybe_unused]] SelectedTags &&... tags) {
   static_assert(
-      (utility::is_in_the_pack_v<std::decay_t<SelectedTags>, Tags...> && ...),
+      (traits::is_in_the_pack_v<std::decay_t<SelectedTags>, Tags...> && ...),
       "SelectedTags should be a subset of Tags");
   using OldType = std::decay_t<TupleMap<TaggedValue<Tags, Values>...>>;
   using NewType = TupleMap<

@@ -51,19 +51,29 @@
 #include <fstream>
 
 namespace plugin_info {
+
+//! \brief Tag for representing api name
 struct api_id {};
+//! \brief Tag for representing api version
 struct api_version {};
+//! \brief Tag for representing plugin name
 struct name {};
+//! \brief Tag for representing plugin version
 struct version {};
+//! \brief Tag for representing relative path to shared library
 struct library_path {};
+//! \brief Tag for representing actual data to import from shared library
 struct elements {};
 
+//! \brief Base class for configuration validation exception
 class ValidationError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+//! \brief Missing file exception
 class FileMissing : public ValidationError {
   using ValidationError::ValidationError;
 };
+//! \brief File type mismatch
 class FileTypeMismatch : public ValidationError {
   using ValidationError::ValidationError;
 };
