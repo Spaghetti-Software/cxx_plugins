@@ -18,6 +18,7 @@
 #include "cxx_plugins/memory/stack_allocator.hpp"
 #include "cxx_plugins/polymorphic_allocator.hpp"
 #include "cxx_plugins/vtable.hpp"
+#include "cxx_plugins/polymorphic_cast.hpp"
 
 namespace plugins {
 
