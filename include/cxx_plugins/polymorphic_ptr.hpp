@@ -370,6 +370,10 @@ public:
     return type_index_m;
   }
 
+  operator bool() const noexcept{
+    return !isEmpty();
+  }
+
 private:
   /*
    * Order of members is important.
