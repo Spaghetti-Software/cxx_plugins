@@ -17,7 +17,7 @@ include(cmake/cmake_modules_setup.cmake)
 
 #include(get_git_version)
 #get_git_version(VERSION)
-set(VERSION 0.0.2)
+set(VERSION 0.1.0)
 
 
 set(This cxx_plugins)
