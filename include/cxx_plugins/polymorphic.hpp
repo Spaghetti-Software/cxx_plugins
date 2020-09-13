@@ -243,6 +243,8 @@ public:
     return function_table_m;
   }
 
+  bool isEmpty() const { return getState() == State::empty; }
+
   template <typename T, typename... Args>
   void emplace(std::in_place_type_t<T> type, Args &&... args) noexcept(
       std::is_nothrow_constructible_v<T, Args &&...>) {
