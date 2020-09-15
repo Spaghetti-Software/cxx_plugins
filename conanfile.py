@@ -3,7 +3,7 @@ from conans import ConanFile, CMake, tools
 
 class CxxPlugins(ConanFile):
     name = "cxx_plugins"
-    version = "0.1.0"
+    version = "0.1.1"
     license = "MIT"
     url = "https://github.com/Spaghetti-Software/cxx_plugins"
     description = "CXX Plugins is a library that's main aim is to simplify dealing with API and external dll loading."
@@ -12,7 +12,7 @@ class CxxPlugins(ConanFile):
 
     options = {"shared": [True, False], "enable_tests": [True, False], "enable_documentation": [True, False]}
     default_options = {"shared": False, "enable_tests": False, "enable_documentation": False}
-    requires = ["boost/1.73.0", "rapidjson/1.1.0", "fmt/6.2.1"]
+    requires = ["boost/1.73.0", "rapidjson/1.1.0", "fmt/7.0.3"]
     exports_sources = "*", "!.github", "!.vscode", "!build"
 
     def configure(self):
