@@ -88,6 +88,7 @@ target_sources(${This}
         include/cxx_plugins/deque.hpp
         include/cxx_plugins/forward_list.hpp
         include/cxx_plugins/list.hpp
+        include/cxx_plugins/string.hpp
 #       Associative containers
         include/cxx_plugins/set.hpp
         include/cxx_plugins/map.hpp
@@ -97,6 +98,7 @@ target_sources(${This}
 #       Container Adaptors
         include/cxx_plugins/stack.hpp
         include/cxx_plugins/queue.hpp
+        include/cxx_plugins/string_view.hpp
 
         include/sequence/size.hpp
         include/sequence/partial_sum.hpp
