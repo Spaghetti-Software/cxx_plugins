@@ -51,9 +51,6 @@ TEST(Plugins, BasicPluginFromString) {
 }
 )json";
 
-  UnorderedMap<std::string, uint32_t> a;
-  UnorderedMap<String, uint32_t> b;
-
   auto plugin = makePlugin(
       makeConfig(makeField<plugin_name, std::string>(),
                  makeField<plugin_version, std::array<int, 3>>(),

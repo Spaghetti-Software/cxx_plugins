@@ -37,7 +37,7 @@ template <typename CharT, typename Traits>
 struct std::hash<plugins::BasicString<CharT, Traits>> {
   std::size_t operator()(plugins::BasicString<CharT, Traits> const
                              &str) const noexcept {
-    return std::hash{
-        std::basic_string_view<CharT, Traits>{str.begin(), str.end()}};
+    std::basic_string_view<CharT, Traits> str_view{str};
+    return std::hash<std::basic_string_view<CharT, Traits>>{}(str_view);
   }
 };
