@@ -4,6 +4,8 @@
 #include <api.hpp>
 #include <cxx_plugins/overload_set.hpp>
 #include <cxx_plugins/plugin_builder.hpp>
+#include <cxx_plugins/unordered_map.hpp>
+#include <cxx_plugins/string.hpp>
 
 #include <stack>
 
@@ -49,6 +51,8 @@ TEST(Plugins, BasicPluginFromString) {
 }
 )json";
 
+  UnorderedMap<std::string, uint32_t> a;
+  UnorderedMap<String, uint32_t> b;
 
   auto plugin = makePlugin(
       makeConfig(makeField<plugin_name, std::string>(),
