@@ -33,9 +33,9 @@ using U32String = BasicString<char32_t>;
 
 } // namespace plugins
 
-template <typename CharT, typename Traits, typename Allocator>
-struct std::hash<plugins::BasicString<CharT, Traits, Allocator>> {
-  std::size_t operator()(plugins::BasicString<CharT, Traits, Allocator> const
+template <typename CharT, typename Traits>
+struct std::hash<plugins::BasicString<CharT, Traits>> {
+  std::size_t operator()(plugins::BasicString<CharT, Traits> const
                              &str) const noexcept {
     return std::hash{
         std::basic_string_view<CharT, Traits>{str.begin(), str.end()}};
