@@ -528,12 +528,4 @@ private:
 
 } // namespace impl
 
-template <typename T, typename PolymorphicT>
-auto polymorphicCast(PolymorphicT &&poly) -> T * {
-  if (poly.template isA<T>()) {
-    return static_cast<T *>(poly.data());
-  }
-  return nullptr;
-}
-
 } // namespace plugins
