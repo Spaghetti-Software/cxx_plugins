@@ -72,11 +72,13 @@ public:
       VTable<TaggedSignature<impl::obj_dtor_tag, void()>,
              TaggedSignature<Tags, FunctionSignatures>...>;
 
-  constexpr UniqueGenericPolymorphic() noexcept : function_table_m() {
+  constexpr UniqueGenericPolymorphic() noexcept : function_table_m(), type_index_m(type_id<void>()) {
     setState(State::empty);
   }
   constexpr UniqueGenericPolymorphic(UniqueGenericPolymorphic const &other) noexcept
-      : function_table_m{other.functionTable()} {
+      : function_table_m{other.functionTable()},
+        type_index_m(other.type_index_m)
+  {
 
     static_assert(traits::is_in_the_pack_v<impl::obj_copy_ctor_tag, Tags...>,
         "This Polymorphic is not copyable");
@@ -88,7 +90,9 @@ public:
         other_state, other.getSize(), other.getAlignment()));
   }
   constexpr UniqueGenericPolymorphic(UniqueGenericPolymorphic &&other) noexcept
-      : function_table_m{std::move(other.functionTable())} {
+      : function_table_m{std::move(other.functionTable())},
+        type_index_m(std::move(other.type_index_m))
+  {
     std::memcpy(data_m, other.data_m, size);
     auto other_state = other.getState();
 
@@ -107,6 +111,7 @@ public:
     destructAndDeallocate();
 
     function_table_m = rhs.functionTable();
+    type_index_m = rhs.type_index_m;
     auto rhs_state = rhs.getState();
     if (rhs_state == State::fallback_allocated)
       new (data_m) FallbackAllocData();
@@ -131,6 +136,7 @@ public:
       rhs.setState(State::empty);
     }
     function_table_m = std::move(rhs.functionTable());
+    type_index_m = std::move(rhs.type_index_m);
 
     return *this;
   }
@@ -145,7 +151,9 @@ public:
                             !is_polymorphic_ref_v<std::decay_t<T>> &&
                             !is_polymorphic_v<std::decay_t<T>>>>
   constexpr UniqueGenericPolymorphic(T &&t) noexcept
-      : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}} {
+      : function_table_m{std::in_place_type_t<std::remove_reference_t<T>>{}},
+        type_index_m(type_id<T>())
+  {
     static_assert(
         std::is_rvalue_reference_v<T &&> ||
             (std::is_lvalue_reference_v<T &&> &&
@@ -184,6 +192,7 @@ public:
         "This Polymorphic is not copyable"); 
 
     function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
+    type_index_m = type_id<T>();
     State state;
     if (sizeof(T) <= size - 3)
       state = State::stack_allocated;
@@ -245,12 +254,27 @@ public:
 
   bool isEmpty() const { return getState() == State::empty; }
 
+  void reset() noexcept {
+    type_index_m = type_id<void>();
+    function_table_m.reset();
+    destructAndDeallocate();
+  }
+
+  template <typename T> inline auto isA() const noexcept -> bool {
+    return type_id<T> == type_index_m;
+  }
+
+  inline auto typeIndex() const noexcept -> type_index const & {
+    return type_index_m;
+  }
+
   template <typename T, typename... Args>
   void emplace(std::in_place_type_t<T> type, Args &&... args) noexcept(
       std::is_nothrow_constructible_v<T, Args &&...>) {
     destructAndDeallocate();
 
     function_table_m = std::in_place_type_t<std::remove_reference_t<T>>{};
+    type_index_m = type_id<T>();
     State state;
     if (sizeof(T) <= size - 3) {
       state = State::stack_allocated;
@@ -379,6 +403,7 @@ private:
 private:
   char data_m[size];
   FunctionTableT function_table_m;
+  type_index type_index_m;
 };
 
 namespace impl {
