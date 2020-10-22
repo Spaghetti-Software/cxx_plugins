@@ -32,7 +32,7 @@ TEST(PolymorphicCast, Void)
 TEST(PolymorphicCast, PolymorphicToPolymorphicPtr)
 {
   Polymorphic<> a{4};
-  impl::PolymorphicPtr b{a};
+  PolymorphicPtr<> b{a};
 
   auto* a_p = polymorphicCast<int>(a);
   auto* b_p = polymorphicCast<int const>(b);

@@ -3,7 +3,7 @@ from conans import ConanFile, CMake, tools
 
 class CxxPlugins(ConanFile):
     name = "cxx_plugins"
-    version = "0.2.0"
+    version = "0.2.1"
     license = "MIT"
     url = "https://github.com/Spaghetti-Software/cxx_plugins"
     description = "CXX Plugins is a library that's main aim is to simplify dealing with API and external dll loading."

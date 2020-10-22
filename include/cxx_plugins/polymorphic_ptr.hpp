@@ -149,8 +149,6 @@ public:
 
   template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
             // Number of this tags should be less or equal then rhs
             (sizeof...(Tags) <= sizeof...(OtherTags)) && !is_const,
             std::enable_if_t<constraints, int> = 0>
@@ -167,8 +165,6 @@ public:
 
   template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
             // Number of this tags should be strictly less then rhs
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,
@@ -283,8 +279,6 @@ public:
 
   template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
             // Number of this tags should be strictly less then rhs
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) <= sizeof...(OtherTags)) && !is_const,
@@ -304,8 +298,6 @@ public:
 
   template <std::size_t size, typename... OtherTags, typename... OtherFunctions,
             bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
             // Number of this tags should be strictly less then rhs
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) <= sizeof...(OtherTags)) && is_const,

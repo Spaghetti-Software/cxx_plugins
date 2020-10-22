@@ -165,8 +165,7 @@ public:
 
   template <
       typename... OtherTags, typename... OtherSignatures,
-      bool size_constraint = sizeof...(Tags) >= 1 &&
-                             sizeof...(Tags) < sizeof...(OtherTags),
+      bool size_constraint = sizeof...(Tags) < sizeof...(OtherTags),
       std::enable_if_t<size_constraint, int> = 0,
       bool other_constraints =
           // Every tag from `this` should be represented in rhs
@@ -186,8 +185,7 @@ public:
 
   template <
       typename... OtherTags, typename... OtherSignatures,
-      bool size_constraint = sizeof...(Tags) >= 1 &&
-                             sizeof...(Tags) < sizeof...(OtherTags),
+      bool size_constraint = sizeof...(Tags) < sizeof...(OtherTags),
       std::enable_if_t<size_constraint, int> = 0,
       bool other_constraints =
           // Every tag from `this` should be represented in rhs
@@ -290,8 +288,6 @@ public:
 
   template <typename... OtherTags, typename... OtherSignatures,
             bool constraints =
-                // Tags >= 1, because otherwise it is a default constructor
-            sizeof...(Tags) >= 1 &&
             // Number of this tags should be strictly less then rhs
             // if equal copy assignment operator should be called instead
             (sizeof...(Tags) < sizeof...(OtherTags)),
