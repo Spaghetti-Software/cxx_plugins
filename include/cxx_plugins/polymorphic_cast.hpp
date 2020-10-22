@@ -17,12 +17,12 @@ template<typename T, typename Poly>
 T* polymorphicCast(Poly& poly) {
   if (!poly.template isA<T>())
     return nullptr;
-  return static_cast<T*>(poly.data());
+  return reinterpret_cast<T*>(poly.data());
 }
 
 template<typename T, typename Poly>
 T const* polymorphicCast(Poly const& poly) {
   if (!poly.template isA<T>())
     return nullptr;
-  return static_cast<T const*>(poly.data());
+  return reinterpret_cast<T*>(poly.data());
 }

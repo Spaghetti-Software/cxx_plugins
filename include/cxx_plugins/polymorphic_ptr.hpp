@@ -14,9 +14,9 @@
 #pragma once
 
 #include "cxx_plugins/function_proxy.hpp"
+#include "cxx_plugins/polymorphic_cast.hpp"
 #include "cxx_plugins/type_index.hpp"
 #include "cxx_plugins/vtable.hpp"
-#include "cxx_plugins/polymorphic_cast.hpp"
 
 namespace plugins {
 
@@ -363,16 +363,14 @@ public:
   }
 
   template <typename T> inline auto isA() const noexcept -> bool {
-    return type_id<T> == type_index_m;
+    return type_id<T>() == type_index_m;
   }
 
   inline auto typeIndex() const noexcept -> type_index const & {
     return type_index_m;
   }
 
-  operator bool() const noexcept{
-    return !isEmpty();
-  }
+  operator bool() const noexcept { return !isEmpty(); }
 
 private:
   /*
@@ -386,8 +384,10 @@ private:
   PointerT data_p_m = nullptr;
   FunctionTableT function_table_m;
 };
-
-template <typename... Signatures> class PrimitivePolymorphicPtr;
+template <std::size_t size, typename... OtherTags, typename... OtherFunctions>
+PolymorphicPtr(UniqueGenericPolymorphic<
+               size, TaggedSignature<OtherTags, OtherFunctions>...> &rhs)
+    -> PolymorphicPtr<TaggedSignature<OtherTags, OtherFunctions>...>;
 
 /*!
  * \brief

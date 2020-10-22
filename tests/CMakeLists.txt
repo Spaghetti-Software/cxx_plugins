@@ -29,6 +29,7 @@ target_sources(${This}
         polymorphic_allocator_tests.cpp
         parser_tests.cpp
         function_ref_tests.cpp
+        polymorphic_cast_tests.cpp
         )
 
 

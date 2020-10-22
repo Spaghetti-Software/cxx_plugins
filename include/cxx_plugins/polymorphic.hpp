@@ -256,12 +256,12 @@ public:
 
   void reset() noexcept {
     type_index_m = type_id<void>();
-    function_table_m.reset();
     destructAndDeallocate();
+    function_table_m.reset();
   }
 
   template <typename T> inline auto isA() const noexcept -> bool {
-    return type_id<T> == type_index_m;
+    return type_id<T>() == type_index_m;
   }
 
   inline auto typeIndex() const noexcept -> type_index const & {
