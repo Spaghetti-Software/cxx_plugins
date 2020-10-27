@@ -18,30 +18,41 @@
 #include <mutex>
 
 namespace plugins {
+namespace {
+struct DefaultResource {
+  std::mutex mutex;
+  ::utility::Mallocator mallocator = {};
+  MemoryResourcePtr resource = &mallocator;
+};
+} // namespace
 
-static std::mutex resource_mutex;
-static ::utility::Mallocator global_mallocator = {};
-static MemoryResourcePtr default_resource = &global_mallocator;
+static auto getDefaultResource() noexcept -> DefaultResource & {
+  static DefaultResource resource = {};
+  return resource;
+}
 
 auto getDefaultMemoryResource() noexcept -> MemoryResourcePtr {
   MemoryResourcePtr result;
+  auto &resource = getDefaultResource();
   {
-    std::scoped_lock lock(resource_mutex);
-    result = default_resource;
+    std::scoped_lock lock(resource.mutex);
+    result = resource.resource;
   }
   return result;
 }
 auto setDefaultMemoryResource(MemoryResourcePtr mem_resource) noexcept
     -> MemoryResourcePtr {
   MemoryResourcePtr previous;
+  auto &resource = getDefaultResource();
   if (!mem_resource.isEmpty()) {
-    std::scoped_lock lock(resource_mutex);
-    previous = default_resource;
-    default_resource = mem_resource;
-  } else {
-    std::scoped_lock lock(resource_mutex);
-    previous = default_resource;
-    default_resource = std::pmr::new_delete_resource();
+    std::scoped_lock lock(resource.mutex);
+    previous = resource.resource;
+    resource.resource = mem_resource;
+  }
+  else {
+    std::scoped_lock lock(resource.mutex);
+    previous = resource.resource;
+    resource.resource = resource.mallocator;
   }
   return previous;
 }
@@ -55,4 +66,4 @@ auto setDefaultMemoryResource(
   return setDefaultMemoryResource(MemoryResourcePtr{std_mem_resource});
 }
 
-} // namespace CxxPlugins
+} // namespace plugins
