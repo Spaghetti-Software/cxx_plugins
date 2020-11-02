@@ -20,6 +20,8 @@
 namespace plugins {
 namespace {
 struct DefaultResource {
+  DefaultResource() noexcept = default;
+
   std::mutex mutex;
   ::utility::Mallocator mallocator = {};
   MemoryResourcePtr resource = &mallocator;

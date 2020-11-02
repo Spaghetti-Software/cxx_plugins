@@ -118,9 +118,12 @@ struct VTableStorage<T, TaggedSignature<Tags, Signatures>...> {
 
   using FunctionPtrT = FnPtr<void()>;
 
-  static inline const FunctionPtrT value[size] = {
-      reinterpret_cast<FunctionPtrT>(
-          impl::polymorphic_trampoline_v<Tags, T, Signatures>)...};
+  static inline auto getValue()-> FunctionPtrT const(&)[size] {
+    static const FunctionPtrT value[size] = {
+        reinterpret_cast<FunctionPtrT>(
+            impl::polymorphic_trampoline_v<Tags, T, Signatures>)...};
+    return value;
+  }
 };
 
 template <typename... TaggedValues> struct VTable;
@@ -160,7 +163,7 @@ public:
   template <typename T>
   constexpr explicit VTable(std::in_place_type_t<T> /*unused*/) noexcept
       : function_table_p_m{VTableStorage<
-            T, TaggedSignature<Tags, Signatures>...>::value},
+            T, TaggedSignature<Tags, Signatures>...>::getValue()},
         permutations_m{Sequence::AsStdArray<DefaultSequenceT>::value} {}
 
   template <
@@ -280,7 +283,7 @@ public:
   template <typename T>
   constexpr VTable &operator=(std::in_place_type_t<T> /*unused*/) noexcept {
     function_table_p_m =
-        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value;
+        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::getValue();
     permutations_m = Sequence::AsStdArray<DefaultSequenceT>::value;
 
     return *this;
@@ -378,13 +381,13 @@ public:
   constexpr explicit PrimitiveVTable(
       std::in_place_type_t<T> /*unused*/) noexcept
       : function_table_p_m{
-            VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value} {}
+            VTableStorage<T, TaggedSignature<Tags, Signatures>...>::getValue()} {}
 
   template <typename T>
   constexpr PrimitiveVTable &
   operator=(std::in_place_type_t<T> /*unused*/) noexcept {
     function_table_p_m =
-        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::value;
+        VTableStorage<T, TaggedSignature<Tags, Signatures>...>::getValue();
     return *this;
   }
 
